@@ -68,7 +68,7 @@ void glibcurl_set_callback(GlibcurlCallback function, void* data);
     curl_multi_cleanup() and curl_global_cleanup(). */
 void glibcurl_cleanup();
 
-  //#warning "TODO: glibcurl proxy functions do nothing ATM"
+/* #warning "TODO: glibcurl proxy functions do nothing ATM" */
 void glibcurl_add_proxy(const char* protocol, const char* proxy);
 void glibcurl_add_noproxy(const char* host);
 
