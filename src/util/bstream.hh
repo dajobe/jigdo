@@ -72,7 +72,7 @@ protected:
 class bostream : virtual public bios {
 public:
   inline int put(int c) { return putc(c, f); }
-  inline bostream& seekp(long off, ios::seekdir dir = ios::beg);
+  inline bostream& seekp(off_t off, ios::seekdir dir = ios::beg);
   inline bostream& write(const char* p, streamsize n);
 protected:
   bostream() { }
@@ -83,7 +83,7 @@ class bistream : virtual public bios {
 public:
   inline int get();
   inline int peek();
-  inline bistream& seekg(long off, ios::seekdir dir = ios::beg);
+  inline bistream& seekg(off_t off, ios::seekdir dir = ios::beg);
   inline uint64 tellg() const;
   inline void getline(string& l);
   inline bistream& read(char* p, streamsize n);
@@ -136,7 +136,7 @@ int bistream::peek() {
   return r;
 }
 
-bistream& bistream::seekg(long off, ios::seekdir dir) {
+bistream& bistream::seekg(off_t off, ios::seekdir dir) {
   if (fail()) return *this;
   int whence;
   if (dir == ios::beg)
@@ -150,7 +150,7 @@ bistream& bistream::seekg(long off, ios::seekdir dir) {
   return *this;
 }
 
-bostream& bostream::seekp(long off, ios::seekdir dir) {
+bostream& bostream::seekp(off_t off, ios::seekdir dir) {
   if (fail()) return *this;
   int whence;
   if (dir == ios::beg)
