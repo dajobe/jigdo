@@ -446,7 +446,7 @@ void deduceName2(string& dest, const char* ext, const string& src) {
   Paranoid(dest.empty());
   string::size_type lastDot = src.rfind(EXTSEP);
   if (lastDot != string::npos) {
-    if (src.rfind(DIRSEP, lastDot + 1) != string::npos)
+    if (src.find(DIRSEP, lastDot + 1) != string::npos)
       lastDot = string::npos;
   }
   dest.assign(src, 0U, lastDot);
