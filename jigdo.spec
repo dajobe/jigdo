@@ -1,4 +1,4 @@
-%define version			0.7.0
+%define version			0.7.1
 %define release			5
 %define buildfordefault 	Red Hat Linux
 
