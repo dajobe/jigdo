@@ -44,10 +44,6 @@ AC_LANG_CPLUSPLUS
 AC_PROG_CXX
 CFLAGS=`echo "$CFLAGS" | sed 's/\(^\| \)-g\( \|$\)/ /'`
 CXXFLAGS=`echo "$CXXFLAGS" | sed 's/\(^\| \)-g\( \|$\)/ /'`
-if test "$GXX" = "yes"; then
-    CFLAGS="-Wall $CFLAGS -W"
-    CXXFLAGS="$CXXFLAGS -Wall -W -Wpointer-arith -Wconversion -Woverloaded-virtual"
-fi
 IF_GXX2="#"
 IF_NOGXX2=""
 if test "$GXX" = yes; then
@@ -246,12 +242,16 @@ if test "$jigdo_libdb" = "yes"; then
         installDevel "libdb4.2" "libdb4"
     fi
     for db in "db-$v.$vv" "db$v.$vv" "db-$v" "db$v" "db"; do
+#       Doesn't work: db.h does a "#define db_create db_create_4002"
+#       AC_CHECK_LIB($db, db_create, have_libdb="$db", have_libdb="no")
         AC_MSG_CHECKING(for db_create in lib$db)
-        AC_TRY_COMPILE([#include <db.h>], db_create(0, 0, 0),
-                       have_libdb="$db", have_libdb="no")
+        oldLIBS="$LIBS"
+        LIBS="$LIBS -l$db"
+        AC_TRY_LINK([#include <db.h>], db_create(0, 0, 0),
+                     have_libdb="yes", have_libdb="no")
         AC_MSG_RESULT($have_libdb)
-#        AC_CHECK_LIB($db, db_version, have_libdb="$db", have_libdb="no")
         if test "$have_libdb" != "no"; then break; fi
+        LIBS="$oldLIBS"
     done
     if test "$have_libdb" = "no" -o "$have_db_h" = "no"; then
         AC_MSG_RESULT([   * libdb not found - either install it, or use])
@@ -261,8 +261,6 @@ if test "$jigdo_libdb" = "yes"; then
         AC_MSG_RESULT([   * \`configure --with-libdb=-ldb'])
         installDevel "libdb4" "libdb4"
         AC_MSG_ERROR(libdb not found.)
-    else
-        LIBS="-l$have_libdb $LIBS"
     fi
     AC_DEFINE(HAVE_LIBDB, 1) dnl make compilation fail if libdb not there
 elif test "$jigdo_libdb" != "no" -a "$jigdo_libdb" != "NO"; then
@@ -643,6 +641,10 @@ dnl the tests fail.
 if test "$jigdo_debug" = "yes"; then
     #if test "$GCC" = yes; then CFLAGS="$CFLAGS -Werror"; fi
     if test "$GXX" = yes; then CXXFLAGS="$CXXFLAGS -Werror"; fi
+fi
+if test "$GXX" = "yes"; then
+    CFLAGS="-Wall $CFLAGS -W"
+    CXXFLAGS="$CXXFLAGS -Wall -W -Wpointer-arith -Wconversion -Woverloaded-virtual"
 fi
 dnl ______________________________________________________________________
 
