@@ -611,11 +611,20 @@ void MkTemplate::scanImage_mainLoop_fastForward(uint64 nextEvent,
   Assert(off >= blockLength);
 
   unsigned sectorMask = sectorLength - 1;
+  uint64 notSectorMask = ~implicit_cast<uint64>(sectorMask);
   while (off < nextEvent) {
     /* Calculate next value of off where a match would end up having an even
-       (i.e. sectorSize-aligned) start offset. */
+       (i.e. sectorSize-aligned) start offset.
+
+                             |----sectorLength----|----sectorLength----|
+                    |========+========+===========+===+===========+====+=====>EOF
+       File offset: 0                             |  off          |
+                                      |--blockLength--|           |
+                                                  |--blockLength--|
+                                                                  |
+                                                            nextAlignedOff */
     uint64 nextAlignedOff = off - blockLength;
-    nextAlignedOff = (nextAlignedOff + sectorLength) & ~sectorMask;
+    nextAlignedOff = (nextAlignedOff + sectorLength) & notSectorMask;
     nextAlignedOff += blockLength;
     Assert(nextAlignedOff > off);
 
@@ -661,6 +670,7 @@ void MkTemplate::scanImage_mainLoop_fastForward(uint64 nextEvent,
       Paranoid(matches->empty()
                || matches->front()->startOffset() >= unmatchedStart);
       sectorMask = sectorLength - 1;
+      notSectorMask = ~implicit_cast<uint64>(sectorMask);
     }
   } // endwhile (off < nextEvent)
 # endif

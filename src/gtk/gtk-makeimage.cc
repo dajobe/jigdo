@@ -202,7 +202,7 @@ void GtkMakeImage::makeImageDl_haveImageSection() {
   gtk_tree_store_set(jobList()->store(), row(),
                      JobList::COLUMN_OBJECT, mid.imageName().c_str(),
                      -1);
-  imageInfo.clear();
+  imageInfo.erase();
   const char* gtk[] = {
     "<b>", "</b>", // <b>, </b>
     "<i>", "</i>", // <i>, </i>
