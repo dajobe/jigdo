@@ -77,7 +77,7 @@ fetchAndMerge() {
   $jigdoFile $jigdoOpts --no-cache make-image --image="$image" \
     --jigdo="$jigdoF" --template="$template" "$imageTmp"
   jigdoErr="$?"
-  if test "$jigdoErr" -ge 2; then
+  if test "$jigdoErr" -ge 3; then
     echo "jigdo-file failed with code $jigdoErr - aborting."
     $error 1
   fi
@@ -350,7 +350,7 @@ scanFiles() {
     if test "$jigdoErr" -eq 0 -a -r "$image"; then
       finished
       $error 0 # All files were present on local filesystem
-    elif test "$jigdoErr" -ge 2; then
+    elif test "$jigdoErr" -ge 3; then
       echo "jigdo-file failed with code $jigdoErr - aborting."
       $error 1
     fi
@@ -414,7 +414,7 @@ scanFiles() {
     if test "$jigdoErr" -eq 0 -a -r "$image"; then
       finished
       $error 0 # All files were present on local filesystem
-    elif test "$jigdoErr" -ge 2; then
+    elif test "$jigdoErr" -ge 3; then
       echo "jigdo-file failed with code $jigdoErr - aborting."
       $error 1
     fi
@@ -541,7 +541,7 @@ imageDownload() {
     if test "$jigdoErr" -eq 0 -a -r "$image"; then
       finished
       return 0 # All files were present on local filesystem
-    elif test "$jigdoErr" -ge 2; then
+    elif test "$jigdoErr" -ge 3; then
       echo "jigdo-file failed with code $jigdoErr - aborting."
       return 1
     fi
@@ -575,7 +575,7 @@ imageDownload() {
     | $jigdoFile make-image --image="$image" --jigdo="$jigdoF" \
         --template="$template" $jigdoOpts --files-from=-
     jigdoErr="$?"
-    if test "$jigdoErr" -ge 2; then
+    if test "$jigdoErr" -ge 3; then
       echo "jigdo-file failed with code $jigdoErr - aborting."
       $error 1
     fi
