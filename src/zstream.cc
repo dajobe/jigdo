@@ -27,9 +27,10 @@
 //______________________________________________________________________
 
 DEBUG_UNIT("zstream")
-
+//________________________________________
 namespace {
 
+#warning remove throwZerror
   // Turn zlib error codes/messages into C++ exceptions
   void throwZerror(int status, const char* zmsg) {
     string m;
@@ -63,37 +64,25 @@ namespace {
 }
 //________________________________________
 
-void Zobstream::throwZerror(int status, const char* zmsg) {
-  ::throwZerror(status, zmsg);
-}
-void Zibstream::throwZerror(int status, const char* zmsg) {
-  ::throwZerror(status, zmsg);
-}
-//______________________________________________________________________
-
-void Zobstream::open(bostream& s, size_t chunkLimit, int level,
-                     int windowBits, int memLevel, size_t todoBufSz) {
-  Assert(!is_open());
-  todoBufSize = (MIN_TODOBUF_SIZE > todoBufSz ? MIN_TODOBUF_SIZE :todoBufSz);
-  chunkLim = chunkLimit;
-
-  todoCount = 0;
-  todoBuf = new byte[todoBufSize];
-  z.next_in = z.next_out = 0;
-  z.avail_out = (zipBuf == 0 ? 0 : ZIPDATA_SIZE);
-  z.total_in = 0;
-  int status = deflateInit2(&z, level, Z_DEFLATED, windowBits, memLevel,
-                            Z_DEFAULT_STRATEGY);
-  if (status != Z_OK) throwZerror(status, z.msg);
-  stream = &s;
-}
-//________________________________________
-
 void Zobstream::close() {
   if (!is_open()) return;
   zip(todoBuf, todoCount, Z_FINISH); // Flush out remain. buffer contents
 
-  int status = deflateEnd(&z);
+  try {
+    deflateEnd();
+  } catch (Zerror) {
+    zipBufLast = zipBuf;
+    // Deallocate memory
+    delete[] todoBuf;
+    todoBuf = 0;
+    todoBufSize = todoCount = 0; // Important; cf Zobstream()
+    stream = 0;
+    /* Only report errors *after* marking the stream as closed, to avoid
+       another exception being thrown when the Zobstream object goes out of
+       scope and ~Zobstream calls close() again. */
+    throw;
+  }
+
   zipBufLast = zipBuf;
 
   // Deallocate memory
@@ -101,18 +90,13 @@ void Zobstream::close() {
   todoBuf = 0;
   todoBufSize = todoCount = 0; // Important; cf Zobstream()
   stream = 0;
-
-  /* Only report errors *after* marking the stream as closed, to avoid
-     another exception being thrown when the Zobstream object goes out
-     of scope and ~Zobstream calls close() again. */
-  if (status != Z_OK) throwZerror(status, z.msg);
 }
 //______________________________________________________________________
 
 // Write compressed, flushed data to output stream
 void Zobstream::writeZipped() {
   debug("Writing %1 bytes compressed, was %2 uncompressed",
-        z.total_out, z.total_in);
+        totalOut(), totalIn());
 
   // #Bytes     Value   Description
   // ----------------------------------------------------------------------
@@ -123,9 +107,9 @@ void Zobstream::writeZipped() {
   byte buf[16];
   byte* p = buf;
   serialize4(0x41544144u, p); // DATA
-  uint64 l = z.total_out + 16;
+  uint64 l = totalOut() + 16;
   serialize6(l, p + 4);
-  l = z.total_in;
+  l = totalIn();
   serialize6(l, p + 10);
   writeBytes(*stream, buf, 16);
   if (!stream->good())
@@ -136,72 +120,24 @@ void Zobstream::writeZipped() {
   size_t len;
   while (true) {
     Paranoid(zd != 0);
-    len = (z.total_out < ZIPDATA_SIZE ? z.total_out : ZIPDATA_SIZE);
+    len = (totalOut() < ZIPDATA_SIZE ? totalOut() : ZIPDATA_SIZE);
     writeBytes(*stream, zd->data, len);
     if (md5sum != 0) md5sum->update(zd->data, len);
     if (!stream->good())
       throw Zerror(0, string(_("Could not write template data")));
     zd = zd->next;
     if (len < ZIPDATA_SIZE || zd == 0) break;
-    z.total_out -= ZIPDATA_SIZE;
+    setTotalOut(totalOut() - ZIPDATA_SIZE);
   }
 
   zipBufLast = zipBuf;
-  z.next_out = zipBuf->data;
-  z.avail_out = ZIPDATA_SIZE;
-  z.total_in = z.total_out = 0;
+  setNextOut(zipBuf->data);
+  setAvailOut(ZIPDATA_SIZE);
+  setTotalIn(0);
+  setTotalOut(0);
   // NB: next_in, avail_in are left alone
 
-  int status = deflateReset(&z);
-  if (status != Z_OK) throwZerror(status, z.msg);
-}
-//________________________________________
-
-void Zobstream::zip(byte* start, size_t len, int flush) {
-  Assert(is_open());
-
-  // If big enough, finish and write out this chunk
-  if (z.total_out > chunkLim) flush = Z_FINISH;
-
-  // true <=> must call deflate() at least once
-  bool callZlibOnce = (flush != Z_NO_FLUSH);
-
-  z.next_in = start;
-  z.avail_in = len;
-  while (z.avail_in != 0 || z.avail_out == 0 || callZlibOnce) {
-    callZlibOnce = false;
-
-    if (z.avail_out == 0) {
-      // Get another output buffer object
-      ZipData* zd;
-      if (zipBufLast == 0 || zipBufLast->next == 0) {
-        zd = new ZipData();
-        if (zipBuf == 0) zipBuf = zd;
-        if (zipBufLast != 0) zipBufLast->next = zd;
-      } else {
-        zd = zipBufLast->next;
-      }
-      zipBufLast = zd;
-      z.next_out = zd->data;
-      z.avail_out = ZIPDATA_SIZE;
-      //cerr << "Zob: new ZipData @ " << &zd->data << endl;
-    }
-
-    int status = deflate(&z, flush); // Call zlib
-    //cerr << "zip(" << (void*)start << ", " << len << ", " << flush
-    //     << ") returned " << status << endl;
-    if (status == Z_STREAM_END
-//      || (status == Z_OK && z.total_out > chunkLim)
-        || (flush == Z_FULL_FLUSH && z.total_in != 0)) {
-      writeZipped();
-      flush = Z_NO_FLUSH;
-    }
-
-    if (status == Z_STREAM_END) continue;
-    if (status != Z_OK) throwZerror(status, z.msg);
-  }
-
-  todoCount = 0;
+  deflateReset(); // Might throw
 }
 //______________________________________________________________________
 
