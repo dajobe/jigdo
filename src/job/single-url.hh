@@ -17,8 +17,9 @@
 #define SINGLE_URL_HH
 
 #include <bstream.hh>
-#include <job.hh>
+#include <datasource.hh>
 #include <download.hh>
+#include <job.hh>
 #include <nocopy.hh>
 #include <progress.hh>
 //______________________________________________________________________
@@ -46,8 +47,6 @@ namespace Job {
     </ul>*/
 class Job::SingleUrl : NoCopy, private Download::Output {
 public:
-  class IO;
-
   /** Number of bytes to download again when resuming a download. These bytes
       will be compared with the old data. */
   static const unsigned RESUME_SIZE = 16*1024;
@@ -62,16 +61,15 @@ public:
 
   /** Create object, but don't start the download yet - use run() to do that.
       @param uri URI to download */
-  SingleUrl(IO* ioPtr, const string& uri);
+  SingleUrl(DataSource::IO* ioPtr, const string& uri);
   virtual ~SingleUrl();
 
-  /** This class does not have a public io member because this interferes
-      with the way its derived classes (e.g. JigdoDownload) work. To access
-      the correct io object, use this method. */
-  virtual IOPtr<SingleUrl::IO>& io();
-  virtual const IOPtr<SingleUrl::IO>& io() const;
+  /** This class does not have a public io member because it is sometimes
+      accessed as an object of its parent class DataSource. */
+  virtual IOPtr<DataSource::IO>& io();
+  virtual const IOPtr<DataSource::IO>& io() const;
 
-  /*  Start download or resume it
+  /** Start download or resume it
 
       If resumeOffset>0, SingleUrl will first read RESUME_SIZE bytes from
       destStream at offset destOffset+resumeOffset-RESUME_SIZE (or less if
@@ -150,7 +148,7 @@ public:
   inline void setNoResumePossible();
 
 private:
-  IOPtr<IO> ioVal; // Points to e.g. a GtkSingleUrl
+  IOPtr<DataSource::IO> ioVal; // Points to e.g. a GtkSingleUrl
 
   // Virtual methods from Download::Output
   virtual void download_dataSize(uint64 n);
@@ -183,39 +181,6 @@ private:
   unsigned resumeLeft; // >0: Nr of bytes of resume overlap left
 
   int tries; // Nr of tries resuming after interrupted connection
-};
-//______________________________________________________________________
-
-/** User interaction for SingleUrl. */
-class Job::SingleUrl::IO : public Job::IO {
-public:
-
-  /** Called by the job when it is deleted or when a different IO object is
-      registered with it. If the IO object considers itself owned by its job,
-      it can delete itself. */
-  virtual void job_deleted() = 0;
-
-  /** Called when the job has successfully completed its task. */
-  virtual void job_succeeded() = 0;
-
-  /** Called when the job fails. The only remaining action after getting this
-      is to delete the job object. */
-  virtual void job_failed(string* message) = 0;
-
-  /** Informational message. */
-  virtual void job_message(string* message) = 0;
-
-  /** Called as soon as the size of the downloaded data is known. May not be
-      called at all if the size is unknown.
-      Problem with libwww: Returns size as long int - 2 GB size limit! */
-  virtual void singleUrl_dataSize(uint64 n) = 0;
-
-  /** Called during download whenever data arrives, with the data that just
-      arrived. You can write the data to a file, copy it away etc.
-      currentSize is the offset into the downloaded data (including the
-      "size" new bytes) - useful for "x% done" messages. */
-  virtual void singleUrl_data(const byte* data, size_t size,
-                              uint64 currentSize) = 0;
 };
 //======================================================================
 

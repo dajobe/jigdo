@@ -22,13 +22,16 @@
 
 #include <autoptr.hh>
 #include <debug.hh>
+#include <log.hh>
 #include <single-url.hh>
 #include <string-utf.hh>
 
 using namespace Job;
 //______________________________________________________________________
 
-SingleUrl::SingleUrl(IO* ioPtr, const string& uri)
+DEBUG_UNIT("single-url")
+
+SingleUrl::SingleUrl(DataSource::IO* ioPtr, const string& uri)
   : ioVal(ioPtr), download(uri, this), progressVal(), resumeFailedId(0),
     destStreamVal(0), destOff(0), destEndOff(0), resumeLeft(0), tries(0) {
 }
@@ -70,11 +73,11 @@ SingleUrl::~SingleUrl() {
 }
 //______________________________________________________________________
 
-IOPtr<SingleUrl::IO>& SingleUrl::io() {
+IOPtr<DataSource::IO>& SingleUrl::io() {
   return ioVal;
 }
 
-const IOPtr<SingleUrl::IO>& SingleUrl::io() const {
+const IOPtr<DataSource::IO>& SingleUrl::io() const {
   return ioVal;
 }
 //______________________________________________________________________
@@ -89,9 +92,7 @@ void SingleUrl::resumeFailed() {
 }
 
 gboolean SingleUrl::resumeFailed_callback(gpointer data) {
-# if DEBUG
-  cerr << "SingleUrl::resumeFailed_callback" << endl;
-# endif
+  debug("resumeFailed_callback");
   SingleUrl* self = static_cast<SingleUrl*>(data);
   self->download.stop();
   self->setNoResumePossible();
@@ -111,7 +112,7 @@ void SingleUrl::download_dataSize(uint64 n) {
     if (n > 0 && n != progressVal.dataSize()) resumeFailed();
   }
   if (!resuming()) {
-    if (ioVal) ioVal->singleUrl_dataSize(n);
+    if (ioVal) ioVal->dataSource_dataSize(n);
     return;
   }
 }
@@ -155,15 +156,11 @@ void SingleUrl::download_data(const byte* data, unsigned size,
 # if DEBUG
   Paranoid(resuming() || progressVal.currentSize() == currentSize - size);
   //g_usleep(10000);
-  cerr << "Got " << size << " bytes ["
-       << progressVal.currentSize() << ',' << currentSize - size << "]: ";
-  for (unsigned i = 0; i < (size < 65 ? size : 65); ++i) {
-    if (data[i] >= ' ' && data[i] < 127 || data[i] >= 160)
-      cerr << data[i];
-    else
-      cerr << '.';
-  }
-  cerr << endl;
+  string s;
+  for (unsigned i = 0; i < (size < 65 ? size : 65); ++i)
+    s += ((data[i] >= ' '&&data[i] < 127 || data[i] >= 160) ? data[i] : '.');
+  debug("Got %1 bytes [%2,%3]: %4",
+        size, progressVal.currentSize(), currentSize - size, s);
 # endif
 
   if (!progressVal.autoTick() // <-- extra check for efficiency only
@@ -175,7 +172,7 @@ void SingleUrl::download_data(const byte* data, unsigned size,
     progressVal.setCurrentSize(currentSize);
     if (writeToDestStream(destOff + currentSize - size, data, size)
         == FAILURE) return;
-    if (ioVal) ioVal->singleUrl_data(data, size, currentSize);
+    if (ioVal) ioVal->dataSource_data(data, size, currentSize);
     return;
   }
   //____________________
@@ -184,9 +181,8 @@ void SingleUrl::download_data(const byte* data, unsigned size,
      from destStream, don't pass them on. Note that progressVal.currentSize()
      is "stuck" at the value currentSize+resumeLeft, i.e. the offset of the
      end of the overlap area. */
-# if DEBUG
-  cerr<<"RESUME left="<<resumeLeft<<" off="<<destOff + currentSize - size<<" currentSize="<<currentSize<<endl;
-# endif
+  debug("RESUME left=%1 off=%2 currentSize=%3",
+        resumeLeft, destOff + currentSize - size, currentSize);
 
   // If resume already failed, ignore further calls
   if (resumeFailedId != 0) return;
@@ -210,8 +206,7 @@ void SingleUrl::download_data(const byte* data, unsigned size,
   while (size > 0 && b < bufEnd) {
     if (*data != *b) {
       resumeFailed();
-      if (DEBUG)
-        cerr << " fromfile=" << int(*b) << " fromnet=" << int(*data) << endl;
+      debug("  fromfile=%1 fromnet=%2", int(*b), int(*data));
       return;
     }
     ++data; ++b; --size; --resumeLeft;
@@ -229,7 +224,7 @@ void SingleUrl::download_data(const byte* data, unsigned size,
     progressVal.setCurrentSize(currentSize);
     if (writeToDestStream(destOff + currentSize - size, data, size)
         == FAILURE) return;
-    if (ioVal) ioVal->singleUrl_data(data, size, currentSize);
+    if (ioVal) ioVal->dataSource_data(data, size, currentSize);
   }
 }
 //______________________________________________________________________

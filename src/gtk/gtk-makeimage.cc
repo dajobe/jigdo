@@ -141,7 +141,7 @@ void GtkMakeImage::job_message(string* message) {
                      -1);
 }
 
-Job::SingleUrl::IO* GtkMakeImage::makeImageDl_new(
+Job::DataSource::IO* GtkMakeImage::makeImageDl_new(
     Job::SingleUrl* childDownload) {
 # if DEBUG
   msg("GtkMakeImage::makeImageDl_new", 0);

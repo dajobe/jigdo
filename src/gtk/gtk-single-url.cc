@@ -48,7 +48,7 @@ GtkSingleUrl::~GtkSingleUrl() {
   }
   if (job != 0) {
     // Ensure we're no longer called if anything happens to the download
-    IOPtr<Job::SingleUrl::IO>& io(job->io());
+    IOPtr<Job::DataSource::IO>& io(job->io());
     if (io.get() == this) {
       io.release();
     }
@@ -446,14 +446,14 @@ void GtkSingleUrl::job_message(string* message) {
 //______________________________________________________________________
 
 // Don't need this info - ignore
-void GtkSingleUrl::singleUrl_dataSize(uint64) {
+void GtkSingleUrl::dataSource_dataSize(uint64) {
   return;
 }
 //______________________________________________________________________
 
-void GtkSingleUrl::singleUrl_data(const byte* /*data*/, unsigned /*size*/,
+void GtkSingleUrl::dataSource_data(const byte* /*data*/, unsigned /*size*/,
                                   uint64 /*currentSize*/) {
-  debug("singleUrl_data %1", job->progress()->currentSize());
+  debug("dataSource_data %1", job->progress()->currentSize());
   if (!needTicks())
     callRegularly(&GtkSingleUrl::showProgress);
 

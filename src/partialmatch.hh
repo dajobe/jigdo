@@ -13,6 +13,7 @@
 
 #ifndef PARTIALMATCH_HH
 #include <debug.hh>
+#include <log.hh>
 #define PARTIALMATCH_HH
 
 #ifndef INLINE

@@ -229,7 +229,7 @@ bool RecurseDir::getName(string& result, struct stat* fileInfo)
       throw_RecurseError_forObject(result);
     if (alreadyVisited(fileInfo)) {
 #     if DEBUG
-      cerr << "Recurse: arg `" << result << "' ignored" << endl;
+      //cerr << "Recurse: arg `" << result << "' ignored" << endl;
 #     endif
       continue;
     }

@@ -26,8 +26,6 @@ namespace { Logger debug("assert", true); }
 int Debug::assertFail(const char* assertion, const char* file,
                       unsigned int line) {
   debug("%1:%2: `%3' failed", file, line, assertion);
-//   cerr << file << ':' << line << ": Assertion failed, `"
-//        << assertion << '\'' << endl;
   return 0;
 }
 //______________________________________________________________________

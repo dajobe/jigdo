@@ -63,7 +63,7 @@ void Logger::put(const char* format, int args, const Subst arg[]) const {
 
 /* The value of the --debug cmd line option is either missing (empty) or a
    comma-separated list of words (we also allow spaces for the fun of it).
-   Each word can be preceded by a '!' for negation (i.e. disable debug
+   Each word can be preceded by a '~' for negation (i.e. disable debug
    messages rather than enable them). The word is the name of a compilation
    unit, or one of the special values "all" or "help". */
 void Logger::scanOptions(const string& s, const char* binName) {
@@ -74,8 +74,8 @@ void Logger::scanOptions(const string& s, const char* binName) {
   while (i < len) {
     word.erase();
     enable = true;
-    while ((s[i] == '!' || s[i] == ' ') && i < len) {
-      if (s[i] == '!') enable = !enable;
+    while ((s[i] == '~' || s[i] == ' ') && i < len) {
+      if (s[i] == '~') enable = !enable;
       ++i;
     }
     while (s[i] != ' ' && s[i] != ',' && i < len) {
@@ -97,7 +97,7 @@ void Logger::scanOptions(const string& s, const char* binName) {
       "By default, debug output is disabled except for `assert'. Argument\n"
       "to --debug is a comma-separated list of unit names, or `all' for\n"
       "all units. Just `--debug' is equivalent to`--debug=all'. Output for\n"
-      "the listed units is enabled, precede a name with `!' to disable it.\n"
+      "the listed units is enabled, precede a name with `~' to disable it.\n"
       "Registered units:");
       while (l != 0) {
         cerr << ' ' << l->name();

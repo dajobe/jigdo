@@ -185,9 +185,8 @@ MkTemplate::PartialMatch* MkTemplate::PartialMatchQueue::findDropCandidate(
 
     // All of the matches are sector-aligned - increase sector size & retry
     *sectorLength *= 2;
-#   if DEBUG
-    MkTemplate::debug("Increased sector length to %1", *sectorLength);
-#   endif
+    LOCAL_DEBUG_TO(MkTemplate::debug);
+    debug("Increased sector length to %1", *sectorLength);
   }
 }
 
@@ -257,9 +256,9 @@ MkTemplate::PartialMatch* MkTemplate::PartialMatchQueue::findDropCandidate(
   if (findLowestStartOffset() == oddOffset1) oddOffset1 = oddOffset2;
   if (optDebug()) {
     if (oddOffset1 == 0)
-      cerr << "QUEUE CRAMMED" << endl;
+      debug("QUEUE CRAMMED");
     else
-      cerr << "DROPPING match with odd start offset" << endl;
+      debug("DROPPING match with odd start offset");
   }
   if (oddOffset1 == 0) crammedVal = true;
   return oddOffset1;

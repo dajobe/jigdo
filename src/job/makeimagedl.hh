@@ -20,9 +20,11 @@
 
 #include <string>
 
+#include <datasource.hh>
 #include <gunzip.hh>
 #include <job.hh>
 #include <makeimage.hh>
+#include <md5sum.hh>
 #include <nocopy.hh>
 #include <single-url.hh>
 //______________________________________________________________________
@@ -42,6 +44,10 @@ namespace Job {
       <li>"Owner" of the layout of the temporary directory, only component
       that directly makes modifications to this dir. (MakeImage only writes
       to the image file.)
+
+      <li>Does simple cache management; if requested file already downloaded,
+      immediately returns its data, or does an If-Modified-Since request; if
+      partially downloaded, resumes.
 
       <li>Starts further SingleURLs for download of individual parts.
 
@@ -101,6 +107,13 @@ private:
   // Write a ReadMe.txt to the download dir; fails silently
   void writeReadMe();
 
+  /** Return an object which returns the data of the requested URL. That
+      returned object is usually a newly started download, except if the file
+      (or its beginning) was already downloaded. The filename is based on
+      either the base64ified md checksum, or (if that is 0), the b64ied md5
+      checksum of the url. */
+  Job::DataSource* dataSourceFor(const string& url, const MD5* md = 0);
+
   // Wraps around a SingleUrl, for downloading the .jigdo file
   class JigdoDownload;
   friend class JigdoDownload;
@@ -152,7 +165,7 @@ public:
       happening to the SingleUrl child will be passed on to the object you
       return here. Can return null if nothing should be called, but this
       won't prevent the child download from being created. */
-  virtual Job::SingleUrl::IO* makeImageDl_new(Job::SingleUrl* childDownload)
+  virtual Job::DataSource::IO* makeImageDl_new(Job::SingleUrl* childDownload)
     = 0;
 
   /** A child has (successfully or not) finished. Immediately after this

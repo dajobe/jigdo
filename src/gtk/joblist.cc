@@ -45,6 +45,9 @@ JobList::~JobList() {
   /* Don't delete any widgets, GTK should take care of this itself when the
      window is deleted. */
 
+  // Delete active callback, if any
+  if (selectRowIdleId != 0) gtk_idle_remove(selectRowIdleId);
+
   /* Delete Jobs. When deleted, the job will erase itself from the list, so
      just keep getting the first list element.
      Careful: This might be called during static finalization, even in the
@@ -53,7 +56,7 @@ JobList::~JobList() {
   GtkTreeIter row;
   if (!empty()) {
     while (gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store()), &row)) {
-      if (DEBUG) cerr << "~JobList: Deleting " << &row << endl;
+      debug("~JobList: Deleting %1", &row);
       delete get(&row);
     }
   }
@@ -248,7 +251,7 @@ void JobList::assertValid() const {
   Assert(realEntryCount == entryCount());
   Assert(realSize == size());
   if (realSize != size())
-    cerr << "realSize=" << realSize << " size()=" << size() << endl;
+    debug("realSize=%1 size()=%2", realSize, size());
   Assert(entryCount() <= size());
   Assert(realNeedTicks == needTicks);
 }
@@ -276,19 +279,31 @@ gint JobList::timeoutCallback(gpointer jobList) {
 
 /* Called when the user clicks on a line in the job list. Simply passes the
    click on to the object whose line was clicked on, by calling its
-   selectRow() virtual method. */
+   selectRow() virtual method.
+
+   This is often called >1 times for just one click. Thus, register a
+   callback which is executed at the next iteration of the main loop, and
+   only call selectRow() if the callback isn't yet registered. */
 gboolean JobList::selectRowCallback(GtkTreeSelection* /*selection*/,
                                     GtkTreeModel* model,
                                     GtkTreePath* path,
-                                    gboolean path_currently_selected,
+                                    gboolean /*path_currently_selected*/,
                                     gpointer data) {
-  if (path_currently_selected) return TRUE;
-
   JobList* self = static_cast<JobList*>(data);
+  if (self->selectRowIdleId != 0)
+    return TRUE; // Callback already pending - do nothing
+  self->selectRowIdleId = gtk_idle_add(&selectRowIdle, self);
+
   GtkTreeIter row;
   bool ok = gtk_tree_model_get_iter(model, &row, path);
   Assert(ok);
   JobLine* job = self->get(&row);
   if (job != 0) job->selectRow();
   return TRUE;
+}
+
+gboolean JobList::selectRowIdle(gpointer data) {
+  JobList* self = static_cast<JobList*>(data);
+  self->selectRowIdleId = 0;
+  return FALSE; // "Don't call me again"
 }

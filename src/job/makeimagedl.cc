@@ -21,6 +21,7 @@
 
 #include <compat.hh>
 #include <jigdodownload.hh>
+#include <log.hh>
 #include <makeimagedl.hh>
 #include <md5sum.hh>
 #include <mimestream.hh>
@@ -62,12 +63,11 @@ void MakeImageDl::run() {
   Assert(!finalState());
 
   // Now create tmpdir
-  //cerr<<"TMPDIR="<<tmpDirVal<<endl;
   int status = compat_mkdir(tmpDir().c_str());
   if (status != 0) {
     if (errno == EEXIST) {
       // FIXME: Resume if EEXIST
-      cerr << "RESUME NOT YET SUPPORTED, SORRY" << endl;
+      msg("RESUME NOT YET SUPPORTED, SORRY");
     } else {
       string error = subst(_("Could not create temporary directory: "
                              "%L1"), strerror(errno));
@@ -75,8 +75,10 @@ void MakeImageDl::run() {
       return;
     }
   }
-
   writeReadMe();
+
+#warning jigdo = dataSourceFor(jigdoUrl, ---);
+
   jigdo = new JigdoDownload(this, 0, jigdoUrl, mi.configFile().end());
   jigdo->run();
 }
@@ -100,8 +102,9 @@ void Job::MakeImageDl::writeReadMe() {
     "Jigsaw Download - half-finished download\n"
     "\n"
     "This directory contains the data for a half-finished download of a\n"
-    ".jigdo file. Unless you do not want to continue with the download, do\n"
-    "not change or delete any of the files in this directory!\n"
+    ".jigdo file. Do not change or delete any of the files in this\n"
+    "directory! (Of course you can delete the entire directory if you do\n"
+    "not want to continue with the download.)\n"
     "\n"
     "If the jigdo application was stopped and you want it to resume this\n"
     "download, simply enter again the same values you used the first time.\n"

@@ -34,9 +34,12 @@
 #include <iostream>
 
 #include <jigdodownload.hh>
+#include <log.hh>
 
 using namespace Job;
 //______________________________________________________________________
+
+DEBUG_UNIT("jigdodownload")
 
 MakeImageDl::JigdoDownload::JigdoDownload(MakeImageDl* m, JigdoDownload* p,
                                           const string& jigdoUrl,
@@ -57,11 +60,11 @@ void MakeImageDl::JigdoDownload::run() {
 }
 //______________________________________________________________________
 
-IOPtr<SingleUrl::IO>& MakeImageDl::JigdoDownload::io() {
+IOPtr<DataSource::IO>& MakeImageDl::JigdoDownload::io() {
   return ioVal;
 }
 
-const IOPtr<SingleUrl::IO>& MakeImageDl::JigdoDownload::io() const {
+const IOPtr<DataSource::IO>& MakeImageDl::JigdoDownload::io() const {
   return ioVal;
 }
 //______________________________________________________________________
@@ -82,15 +85,15 @@ void MakeImageDl::JigdoDownload::job_failed(string* message) {
 void MakeImageDl::JigdoDownload::job_message(string* message) {
   if (ioVal) ioVal->job_message(message);
 }
-void MakeImageDl::JigdoDownload::singleUrl_dataSize(uint64 n) {
-  if (ioVal) ioVal->singleUrl_dataSize(n);
+void MakeImageDl::JigdoDownload::dataSource_dataSize(uint64 n) {
+  if (ioVal) ioVal->dataSource_dataSize(n);
 }
-void MakeImageDl::JigdoDownload::singleUrl_data(const byte* data,
+void MakeImageDl::JigdoDownload::dataSource_data(const byte* data,
                                                 size_t size,
                                                 uint64 currentSize) {
   if (master->state() == ERROR) return;
   Assert(master->state() == DOWNLOADING_JIGDO);
-  if (DEBUG) cerr << "jigdodownload: Got " << size << " bytes" << endl;
+  debug("Got %1 bytes", size);
   try {
     gunzip.inject(data, size);
   } catch (Error e) {
@@ -98,7 +101,7 @@ void MakeImageDl::JigdoDownload::singleUrl_data(const byte* data,
     master->stateVal = ERROR;
     return;
   }
-  if (ioVal) ioVal->singleUrl_data(data, size, currentSize);
+  if (ioVal) ioVal->dataSource_data(data, size, currentSize);
 }
 //______________________________________________________________________
 
@@ -134,7 +137,7 @@ void MakeImageDl::JigdoDownload::gunzip_data(Gunzip*, byte* decompressed, unsign
       if (g_utf8_validate(lineChars, p - stringStart, NULL) != TRUE)
         throw Error(_("Input .jigdo data is not valid UTF-8"));
       line.append(lineChars, p - stringStart);
-      if (DEBUG) cerr << "jigdo line: >" << line << '<' << endl;
+      debug("jigdo line: `%1'", line);
       configFile().push_back();
       swap(configFile().back(), line);
       ++p;
@@ -150,14 +153,13 @@ void MakeImageDl::JigdoDownload::gunzip_data(Gunzip*, byte* decompressed, unsign
 
   if (stringStart == gunzipBuf && p == stringStart + GUNZIP_BUF_SIZE) {
     // A single line fills the whole buffer. Truncate it at that length.
-    if (DEBUG)
-      cerr << "MakeImageDl::JigdoDownload::gunzip_data: long line" << endl;
+    debug("gunzip_data: long line");
     Paranoid(line.empty());
     const char* lineChars = reinterpret_cast<const char*>(stringStart);
     if (g_utf8_validate(lineChars, p - stringStart, NULL) != TRUE)
       throw Error(_("Input .jigdo data is not valid UTF-8"));
     line.append(lineChars, p - stringStart);
-    if (DEBUG) cerr << "jigdo line; >" << line << '<' << endl;
+    debug("jigdo line: \"%1\"", line);
     configFile().push_back();
     swap(configFile().back(), line);
     // Trick: To ignore remainder of huge line, prepend a comment char '#'

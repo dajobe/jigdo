@@ -106,10 +106,7 @@ int JigdoFileCmd::addLabels(JigdoCache& cache) {
     entry.first.assign(*i, 0U, firstEquals);
     entry.second.assign(*i, firstEquals + 1, string::npos);
     // Add mapping to uriMap
-#   if DEBUG
-    cerr << "URI mapping: `" << entry.first << "' => `" << entry.second
-         << "'" << endl;
-#   endif
+    msg("URI mapping: `%1' => `%2'", entry.first, entry.second);
     uriMap.insert(entry);
   }
   optUris.clear();

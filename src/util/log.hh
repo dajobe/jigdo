@@ -30,15 +30,15 @@
   Is like DEBUG_UNIT, except that the calls to debug() are always compiled
   in, regardless of the setting of DEBUG. Don't forget the #undef debug!
 
-  Use DEBUG_UNIT_LOCAL to define "debug" in the current scope/namespace.
+  Use LOCAL_DEBUG_UNIT to define "debug" in the current scope/namespace.
 
   With DEBUG_TO(FooBar::debug), you can use a non-local debug object (e.g.
   defined in a header somewhere; the macro will define a local "debug"
   reference to FooBar::debug. Making direct calls to FooBar::debug would fail
-  if DEBUG=0. Again, there's also a DEBUG_TO_LOCAL, to be used e.g. inside a
+  if DEBUG=0. Again, there's also a LOCAL_DEBUG_TO, to be used e.g. inside a
   function.
 
-  A "DEBUG_UNIT_LOCAL_DECL;" line should be used inside class definitions to
+  A "LOCAL_DEBUG_UNIT_DECL;" line should be used inside class definitions to
   introduce a static debug object (or non-static dummy if DEBUG=0). In the
   corresponding .cc file, you will need to add the following:
   #if DEBUG
@@ -58,17 +58,17 @@
 
 #if DEBUG
 #  define DEBUG_UNIT(_name) namespace { Logger debug(_name); }
-#  define DEBUG_UNIT_LOCAL(_name) Logger debug(_name);
-#  define DEBUG_UNIT_LOCAL_DECL static Logger debug;
+#  define LOCAL_DEBUG_UNIT(_name) Logger debug(_name);
+#  define LOCAL_DEBUG_UNIT_DECL static Logger debug;
 #  define DEBUG_TO(_realobject) namespace { Logger& debug(_realobject); }
-#  define DEBUG_TO_LOCAL(_realobject) Logger& debug(_realobject);
+#  define LOCAL_DEBUG_TO(_realobject) Logger& debug(_realobject);
 #else
 #  if HAVE_VARMACRO
 #    define DEBUG_UNIT(_name)
-#    define DEBUG_UNIT_LOCAL(_name)
-#    define DEBUG_UNIT_LOCAL_DECL
+#    define LOCAL_DEBUG_UNIT(_name)
+#    define LOCAL_DEBUG_UNIT_DECL
 #    define DEBUG_TO(_realobject)
-#    define DEBUG_TO_LOCAL(_realobject)
+#    define LOCAL_DEBUG_TO(_realobject)
 #    if defined(__GNUC__) && __GNUC__ < 3
 #      define debug(_args...) do { } while (false)
 #    else
@@ -76,10 +76,10 @@
 #    endif
 #  else
 #    define DEBUG_UNIT(_name) namespace { IgnoreLogger debug; }
-#    define DEBUG_UNIT_LOCAL(_name) IgnoreLogger debug;
-#    define DEBUG_UNIT_LOCAL_DECL IgnoreLogger debug;
+#    define LOCAL_DEBUG_UNIT(_name) IgnoreLogger debug;
+#    define LOCAL_DEBUG_UNIT_DECL IgnoreLogger debug;
 #    define DEBUG_TO(_realobject) namespace { IgnoreLogger debug; }
-#    define DEBUG_TO_LOCAL(_realobject) IgnoreLogger debug;
+#    define LOCAL_DEBUG_TO(_realobject) IgnoreLogger debug;
      /* Var-arg macros not supported, we have to define a dummy class.
         Disadvantage: Arguments of debug() will be evaluated even in
         non-debug builds. */

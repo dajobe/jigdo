@@ -51,13 +51,14 @@
 
 #include <bstream.hh>
 #include <jigdoconfig.hh>
-#include <scan.hh>
-#include <string.hh>
+#include <log.hh>
 #include <md5sum.hh>
 #include <mimestream.hh>
 #include <mkimage.hh>
 #include <mktemplate.hh>
 #include <recursedir.hh>
+#include <scan.hh>
+#include <string.hh>
 
 // mingw doesn't define SSIZE_MAX (maximum amount to read() at a time)
 #ifndef SSIZE_MAX
@@ -65,7 +66,7 @@
 #  define SSIZE_MAX (UINT_MAX)
 #endif
 
-DEBUG_UNIT_LOCAL("torture")
+LOCAL_DEBUG_UNIT("torture")
 //______________________________________________________________________
 
 /* I sometimes run torture on machines on which 'niced', the nice

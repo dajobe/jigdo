@@ -92,9 +92,7 @@ inline void cmdOptions(int argc, char* argv[]) {
     case '?': error = true;
     case ':': break;
     default:
-#     if DEBUG
-      cerr << "getopt returned " << static_cast<int>(c) << endl;
-#     endif
+      msg("getopt returned %1", static_cast<int>(c));
       break;
     }
   }
@@ -112,7 +110,7 @@ inline void cmdOptions(int argc, char* argv[]) {
     "  --debug[=all|=UNIT1,UNIT2...|=help]\n"
     "                   [make-template] Print debugging information for\n"
     "                   all units, or for specified units, or print list\n"
-    "                   of units. Can use `!', e.g. `all,!UNIT1'\n"
+    "                   of units. Can use `~', e.g. `all,~libwww'\n"
     "  --no-debug       [make-template] No debugging info [default]\n"),
     binaryName) << endl;
     exit(0);
@@ -201,8 +199,7 @@ int main (int argc, char *argv[]) {
 # if DEBUG && !WINDOWS
   const char* preload = getenv("LD_PRELOAD");
   if (preload != 0 && strstr(preload, "libmemintercept") != 0) {
-    cerr << "Detected memprof - doing sleep() to allow you to find leaks"
-         << endl;
+    msg("Detected memprof - doing sleep() to allow you to find leaks");
     while (true) sleep(1024);
   }
 # endif

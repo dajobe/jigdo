@@ -23,8 +23,11 @@
 #include <time.h> /* time() */
 
 #include <debug.hh>
+#include <log.hh>
 #include <serialize.hh>
 //______________________________________________________________________
+
+DEBUG_UNIT("cachefile")
 
 CacheFile::CacheFile(const char* dbName) {
   memset(&data, 0, sizeof(DBT));
@@ -44,18 +47,13 @@ CacheFile::CacheFile(const char* dbName) {
       throw DbError(e);
     /* If the DB file is old or corrupted, just regenerate it from
        scratch, otherwise throw error. */
-#   if DEBUG
-    cerr << "Cache file corrupt, recreating it" << endl;
-#   endif
+    debug("Cache file corrupt, recreating it");
     if (db->open(db, dbName, "jigdo filecache v0", DB_BTREE,
                  DB_CREATE | DB_TRUNCATE, 0666) != 0)
       throw DbError(e);
   }
 
   data.flags |= DB_DBT_REALLOC;
-# if DEBUG
-  //cerr << "Cache file: " << dbName << endl;
-# endif
 }
 //______________________________________________________________________
 
@@ -144,39 +142,14 @@ void CacheFile::expire(time_t t) {
       unserialize4(lastAccess, static_cast<byte*>(data.data) + ACCESS);
     // Same as 'if (lastAccess<t)', but deals with wraparound:
     if (static_cast<signed>(t - lastAccess) > 0) {
-#     if DEBUG
-      string name(static_cast<char*>(key.data), key.size);
-      cerr << "Cache: expiring "<<name <<endl;
-#     endif
+      debug("Cache: expiring %1",
+            string(static_cast<char*>(key.data), key.size));
       cursor.del(0);
     }
   }
   if (status != DB_NOTFOUND)
     throw DbError(status);
 }
-//______________________________________________________________________
-
-// void CacheFile::insert(const byte* inData, size_t inSize,
-//     const string& fileName, time_t mtime, uint64 fileSize) {
-//   // Allocate enough memory for the new entry
-//   void* tmp = realloc(data.get_data(), USER_DATA + inSize);
-//   if (tmp == 0) throw bad_alloc();
-//   data.set_data(tmp);
-//   data.set_size(USER_DATA + inSize);
-//   byte* buf = static_cast<byte*>(tmp);
-
-//   // Write our data members
-//   time_t now = time(0);
-//   serialize4(now, buf + ACCESS);
-//   serialize4(mtime, buf + MTIME);
-//   serialize6(fileSize, buf + SIZE);
-//   // Append supplied data members
-//   memcpy(buf + USER_DATA, inData, inSize);
-
-//   // Insert in database
-//   Dbt key(const_cast<char*>(fileName.c_str()), fileName.size());
-//   db.put(0, &key, &data, 0); // No transaction, overwrite
-// }
 //______________________________________________________________________
 
 /* Prepare for an insertion of data, by allocating a sufficient amount

@@ -91,7 +91,6 @@ void Zobstream::open(bostream& s, size_t chunkLimit, int level,
 
 void Zobstream::close() {
   if (!is_open()) return;
-  //cerr<<"zobstream:close()" << endl;
   zip(todoBuf, todoCount, Z_FINISH); // Flush out remain. buffer contents
 
   int status = deflateEnd(&z);

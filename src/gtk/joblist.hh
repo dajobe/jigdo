@@ -51,7 +51,7 @@ public:
      of TICK_INTERVAL */
   static const int TICK_INTERVAL = 250; // = progress report update interval
 
-  DEBUG_UNIT_LOCAL_DECL;
+  LOCAL_DEBUG_UNIT_DECL;
 
   typedef unsigned size_type;
   inline JobList();
@@ -142,9 +142,10 @@ private:
                                gpointer data);
   // Load file with progress bar images, prepare it for display
   static void pixbufForJobLine_init();
-
   // Helper for prepend()
   static gboolean progressScrollToTop(gpointer view);
+  // Set selectRowIdleId to 0
+  static gboolean selectRowIdle(gpointer data);
 
   /* Used by initAfterGtk(): Nr of pixbufs to subdivide the progress XPM
      into, filename to load from. */
@@ -164,6 +165,8 @@ private:
      they need tick() calls. */
   int needTicks;
   int timeoutId; // as returned by gtk_timeout_add()
+
+  int selectRowIdleId; // Callback avoids mult. calls to entries' selectRow()
 };
 //______________________________________________________________________
 
@@ -175,7 +178,8 @@ namespace GUI {
 //======================================================================
 
 JobList::JobList() : storeVal(0), sizeVal(0), entryCountVal(0),
-                     windowOwnerValue(0), needTicks(0) {
+                     windowOwnerValue(0), needTicks(0),
+                     selectRowIdleId(0) {
   // Mustn't access widgets here because GTK+ is not initialized yet!
 }
 

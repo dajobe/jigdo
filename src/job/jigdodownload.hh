@@ -32,7 +32,7 @@
     GtkSingleUrl. */
 class Job::MakeImageDl::JigdoDownload
     : SingleUrl, // This object is a special kind of SingleUrl
-      SingleUrl::IO,
+      DataSource::IO,
       Gunzip::IO {
 public:
   /** @param m Master which owns us
@@ -46,8 +46,8 @@ public:
   void run();
 
   /** Access the correct io member, i.e. for the derived class. */
-  virtual IOPtr<SingleUrl::IO>& io();
-  virtual const IOPtr<SingleUrl::IO>& io() const;
+  virtual IOPtr<DataSource::IO>& io();
+  virtual const IOPtr<DataSource::IO>& io() const;
 
 private:
   /** Methods from SingleUrl::IO */
@@ -55,9 +55,9 @@ private:
   virtual void job_succeeded();
   virtual void job_failed(string* message);
   virtual void job_message(string* message);
-  virtual void singleUrl_dataSize(uint64 n);
-  virtual void singleUrl_data(const byte* data, size_t size,
-                              uint64 currentSize);
+  virtual void dataSource_dataSize(uint64 n);
+  virtual void dataSource_data(const byte* data, size_t size,
+                               uint64 currentSize);
 
   // Virtual methods from Gunzip::IO
   virtual void gunzip_deleted();
@@ -71,7 +71,7 @@ private:
   MakeImageDl* master; // Ptr to the MakeImageDl which owns us
   JigdoDownload* parent; // Ptr to the download which [Include]d us, or null
   // IO for this SingleUrl, given by master. Points to e.g. a GtkSingleUrl
-  IOPtr<Job::SingleUrl::IO> ioVal;
+  IOPtr<Job::DataSource::IO> ioVal;
 
   /* Transparent gunzipping of .jigdo file. GUNZIP_BUF_SIZE is also the max
      size a single line in the .jigdo is allowed to have */
