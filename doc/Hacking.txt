@@ -6,7 +6,9 @@ This file is not very organized... if in doubt, use the source, Luke!
 
 Use --enable-debug when hacking the source, this enables quite a few
 additional sanity checks (the "Paranoid()" assertions - the "Assert()"
-assertions are always enabled), #defines GTK_DISABLE_DEPRECATED, etc.
+assertions are always enabled), #defines GTK_DISABLE_DEPRECATED, calls
+abort() on failed assertions instead of just printing the assertion,
+etc.
 
 
 Mailing list, CVS
@@ -257,12 +259,13 @@ processing a .jigdo file), the GTK GUI decides to visualize this as
 one line in the display.
 
 The GTK code maintains a list of JobLines, each of which references a
-Job of some kind. A simple type job is a SingleURL, which takes care of
-downloading a single big file.
+Job of some kind. A simple type of job is a SingleURL, which takes
+care of downloading a single file.
 
 A more complicated job is the processing of a .jigdo file. This
 involves a number of sub-jobs for downloading data. The "master" job
-is a MakeImageDl, it starts other jobs for the individual downloads.
+is a MakeImageDl, it starts other "child" jobs for the individual
+downloads.
 
 The action of *assembling* the data is not implemented as a job,
 instead as a MakeImage object which is owned by the MakeImageDl and
@@ -272,7 +275,8 @@ Important for the UI: Any UI (whether GTK+ or other) is only allowed
 to create and destroy top-level jobs. Any job created by a "master"
 MakeImageDl can only be deleted by the same MakeImageDl. This means
 that the GUI code which handles SingleURL GTK+ visualization must
-distinguish between a "child mode" and "non-child mode".
+distinguish between a "child mode" (we don't own the SingleUrl) and
+"non-child mode" (we created and own the SingleUrl).
 
 
 MakeImageDl
@@ -288,8 +292,8 @@ implemented by the "consumer" of the data. This consumer is fed the
 data via calls to virtual methods like
 SingleUrl::IO::singleUrl_data(). There are many IO classes; Job::IO is
 their base (see job.hh). Implementers of SingleUrl::IO include
-GtkSingleUrl (GTK+ frontend) and JigdoIO (decompression of .jigdo
-data.)
+GtkSingleUrl (GTK+ frontend) and JigdoIO (decompression/parsing of
+.jigdo data.)
 
 Often, there is more than one consumer, resulting in chains or even
 trees of consumers. For example, when downloading .jigdo data, the
@@ -306,7 +310,7 @@ In the most complicated scenario, the downloaded data must also be
 decompressed by the JigdoIO, resulting in the following flow of data -
 the "->" can be interpreted both as "an IO* points this way" and
 "information flows this way":
-                                     -> Gunzip -> JigdoIO
+                                     -> JigdoIO
   Download -> SingleUrl -> JigdoIO -|
                                      -> GtkSingleUrl
 
@@ -319,12 +323,11 @@ MakeImageDl's job is to start downloads as necessary and to pump their
 data into the MakeImage object it owns. MakeImage then creates the
 output image.
 
-With dataSourceFor(), MakeImageDl is a factory of DataSource objects. A
+With childFor(), MakeImageDl is a factory of DataSource objects. A
 DataSource can be either a download (SingleUrl) or a "dummy" spooler
-object which just reads data from a file in the cache (CachedUrl).
+object which just reads data from a file in the cache (CachedUrl). 
 After creation of the DataSource, an appropriate consumer for the
-downloaded data (e.g. a JigdoIO) is attached to it, and ownership of
-the DataSource is even transferred to the consumer JigdoIO.
+downloaded data (e.g. a JigdoIO) is attached to it.
 
 JigdoIO and its related classes are helpers of the MakeImageDl. They
 hold a pointer to their "master" MakeImageDl and notify it whenever
