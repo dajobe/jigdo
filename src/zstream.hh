@@ -22,6 +22,7 @@
 
 #include <config.h>
 
+#warning "remove include <zlib.h>"
 #include <zlib.h>
 #include <iostream>
 

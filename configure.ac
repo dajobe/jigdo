@@ -329,6 +329,7 @@ if test "$jigdo_gui" = "yes"; then
         jigdo_gui_failed
     fi
     if test "$is_windows" = yes; then gth="gthread-2.0"; else gth=""; fi
+#gth="gthread-2.0"
     GTKCFLAGS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 $gth --cflags 2>/dev/null`"
     GTKLIBS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 $gth --libs 2>/dev/null`"
     GLIBLIBS="`pkg-config $jigdo_pkg_config_prefix glib-2.0 $gth --libs 2>/dev/null`"

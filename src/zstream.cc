@@ -30,7 +30,6 @@ DEBUG_UNIT("zstream")
 //________________________________________
 namespace {
 
-#warning remove throwZerror
   // Turn zlib error codes/messages into C++ exceptions
   void throwZerror(int status, const char* zmsg) {
     string m;
