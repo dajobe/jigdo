@@ -975,13 +975,30 @@ image-info   <replaceable>image-length  image-md5sum  rsyncsum-size</replaceable
     characters with special meaning (the characters
     <literal>'"#\</literal> and space/tab) must be quoted with
     <literal>\</literal> to appear in the value. As with the shell,
-    there is a difference between <literal>''</literal> and
-    <literal>""</literal>: Within <literal>''</literal>, the
-    characters <literal>"#\</literal> and whitespace lose their
-    special meaning, whereas within <literal>""</literal>, only the
-    characters <literal>'#</literal> and whitespace lose their special
-    meaning - in other words, backslash escapes still work inside
-    <literal>""</literal>, but not <literal>''</literal>.</para>
+    there is a difference between <literal>'&nbsp;'</literal> and
+    <literal>"&nbsp;"</literal>: Within <literal>'&nbsp;'</literal>,
+    the characters <literal>"#\</literal> and whitespace lose their
+    special meaning and become ordinary characters, whereas within
+    <literal>"&nbsp;"</literal>, only the characters
+    <literal>'#</literal> and whitespace lose their special meaning -
+    in other words, backslash escapes still work inside
+    <literal>"&nbsp;"</literal>, but not
+    <literal>'&nbsp;'</literal>.</para>
+
+    <para>`<filename>.jigdo</filename>' files can optionally be
+    compressed with <citerefentry>
+	<refentrytitle>gzip</refentrytitle><manvolnum>1</manvolnum>
+    </citerefentry>. <command>jigdo-file</command> always outputs
+    uncompressed files, which you can compress yourself. 
+    <command>jigdo-lite</command> supports single uncompressed and
+    compressed files. <command>jigdo</command> additionally supports
+    any number of concatenated plaintext and gzipped parts in the
+    files - for example, you can compress a
+    `<filename>.jigdo</filename>' file and then add a couple of lines
+    of uncompressed data to the end. In all cases, the
+    `<filename>.gz</filename>' extension should be removed from the
+    filename - the tools will determine automatically from the file
+    contents whether a file is compressed or not.</para>
 
     <para>Below is a description of the individual section names used
     by jigdo.</para>
