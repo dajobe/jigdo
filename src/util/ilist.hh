@@ -20,6 +20,7 @@
 #include <log.hh>
 //______________________________________________________________________
 
+/** Derived classes can be list members. */
 class IListBase {
   template<class T> friend class IList;
 public:
@@ -43,23 +44,36 @@ private:
   IListBase* iListBase_next;
 };
 
+/** The list object. */
 template<class T>
 class IList {
 public:
   typedef unsigned size_type;
   typedef T value_type;
   class iterator;
-  //class const_iterator;
+  class const_iterator;
   friend class iterator;
-  //friend class const_iterator;
+  friend class const_iterator;
   typedef T& reference;
-  //typedef const T& const_reference;
+  typedef const T& const_reference;
 
   IList() { e.iListBase_prev = e.iListBase_next = &e; }
+  /** Releases all member objects from the list, does not delete them. */
+  ~IList() {
+    IListBase* p = e.iListBase_next;
+    while (p != &e) {
+      IListBase* q = p->iListBase_next;
+      p->iListBase_prev = p->iListBase_next = 0;
+      p = q;
+    }
+  }
   bool empty() const { return e.iListBase_next == &e; }
   void push_back(T& x) {
     //msg("IList::push_back %1", &x);
+
+    // Object must not already be a list member
     Assert(x.iListBase_prev == 0 && x.iListBase_next == 0);
+
     x.iListBase_prev = e.iListBase_prev;
     x.iListBase_next = &e;
     x.iListBase_prev->iListBase_next = &x;
@@ -69,8 +83,14 @@ public:
   T& front() const { return *static_cast<T*>(e.iListBase_next); }
   T& back() const { return *static_cast<T*>(e.iListBase_prev); }
 
-  inline iterator begin() const { return iterator(e.iListBase_next); }
-  inline iterator end() const { return iterator(const_cast<IListBase*>(&e));}
+  inline iterator begin() {
+    return iterator(e.iListBase_next); }
+  inline iterator end() {
+    return iterator(&e); }
+  inline const_iterator begin() const {
+    return const_iterator(e.iListBase_next); }
+  inline const_iterator end() const {
+    return const_iterator(&e); }
 
 private:
   // For the iterator class, which cannot be a friend of IListBase
@@ -84,8 +104,13 @@ private:
 
 template<class T>
 class IList<T>::iterator {
+  friend class const_iterator;
 public:
   iterator(IListBase* pp) : p(pp) { }
+  iterator(const iterator& i) : p(i.p) { }
+  iterator& operator=(const iterator& i) { p = i.p; return *this; }
+  iterator& operator=(const const_iterator& i) { p = i.p; return *this; }
+
   T& operator*() { return *getT(); }
   const T& operator*() const { return *getT(); }
   T* operator->() { return getT(); }
@@ -99,11 +124,26 @@ private:
   IListBase* p;
 };
 
-// template<class T>
-// class IList::iterator {
-// public:
-// private:
-//   IListBase* p;
-// };
+template<class T>
+class IList<T>::const_iterator {
+  friend class iterator;
+public:
+  const_iterator(IListBase* pp) : p(pp) { }
+  const_iterator(const IListBase* pp) : p(pp) { }
+  explicit const_iterator(const iterator& i) : p(i.p) { }
+  const_iterator& operator=(const iterator& i) { p = i.p; return *this; }
+  const_iterator(const const_iterator& i) : p(i.p) { }
+  const_iterator& operator=(const const_iterator& i) { p = i.p; return *this; }
+
+  const T& operator*() const { return *getT(); }
+  const T* operator->() const { return getT(); }
+  const_iterator& operator++() { p = IList<T>::next(p); return *this; }
+  const_iterator& operator--() { p = IList<T>::prev(p); return *this; }
+  bool operator==(const const_iterator i) const { return p == i.p; }
+  bool operator!=(const const_iterator i) const { return p != i.p; }
+private:
+  const T* getT() const { return static_cast<const T*>(p); }
+  const IListBase* p;
+};
 
 #endif
