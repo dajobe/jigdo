@@ -52,11 +52,12 @@ windows-res =	@UNIX_COMMENT@ jigdo.res
 objects-jigdo =	configfile.o glibc-md5.o gtk/gtk-makeimage.o \
 		gtk/gtk-single-url.o gtk/gui.o gtk/interface.o gtk/jigdo.o \
 		gtk/jobline.o gtk/joblist.o gtk/messagebox.o gtk/support.o \
-		gtk/treeiter.o jigdoconfig.o job/datasource.o job/jigdo-io.o \
-		job/makeimage.o job/makeimagedl.o job/single-url.o md5sum.o \
-		net/download.o net/glibwww-callbacks.o net/glibwww-init.o \
-		net/proxyguess.o util/glibc-getopt.o util/glibc-getopt1.o \
-		util/gunzip.o util/log.o util/progress.o util/string-utf.o \
+		gtk/treeiter.o jigdoconfig.o job/cached-url.o \
+		job/datasource.o job/jigdo-io.o job/makeimage.o \
+		job/makeimagedl.o job/single-url.o md5sum.o net/download.o \
+		net/glibwww-callbacks.o net/glibwww-init.o net/proxyguess.o \
+		util/glibc-getopt.o util/glibc-getopt1.o util/gunzip.o \
+		util/log.o util/progress.o util/string-utf.o \
 		$(libwww-hacks) $(windows-res) \
 		util/debug.o # this must come last!
 objects-jigdo-file = cachefile.o compat.o configfile.o glibc-md5.o \
@@ -75,10 +76,10 @@ objects-torture = cachefile.o compat.o configfile.o glibc-md5.o \
 .SUFFIXES:
 .SUFFIXES: .c .cc .h .o
 .cc.o:
-		-@echo $(CXX) '{options}' -c $< -o $@
+		-@echo $(CXX) '$$cpp $$cxx' -c $< -o $@
 		@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c "$<" -o "$@"
 .c.o:
-		-@echo $(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+		-@echo $(CC) '$$cpp $$c  ' -c $< -o $@
 		@$(CC) $(CPPFLAGS) $(CFLAGS) -c "$<" -o "$@"
 #______________________________________________________________________
 
@@ -87,8 +88,11 @@ objects-torture = cachefile.o compat.o configfile.o glibc-md5.o \
 #NoMinGW#
 all:		all-msg Makefile $(programs) @DEBUG_PROGRAMS@ #TAGS
 all-msg:
-		-@test "$$EMACS" = t || \
-		    echo Using these '{options}': $(CPPFLAGS) $(CXXFLAGS)
+		-@if test "$$EMACS" != t; then \
+		    echo "export cpp='$(CPPFLAGS)'"; \
+		    echo "export cxx='$(CXXFLAGS)'"; \
+		    echo "export c='$(CFLAGS)'"; \
+		fi
 #MinGW#all:	Makefile all-msg $(programs)
 #MinGW#all-msg:
 #MinGW#		@echo Using these {options}: $(CPPFLAGS) $(CXXFLAGS)
@@ -133,9 +137,12 @@ make-makedeps =	(cd "$(srcdir)" && find . -type f \
 		| xargs $(AWK) -f "$(srcdir)/../scripts/depend.awk" \
 		    "$(srcdir)" $(SUBDIRS) -
 # No dependency - don't normally remake Makedeps on gtk/interface.cc remake
+# (Touching Makedeps/Makefile necessary, or circ. dep. Makefile->Makedeps.)
 Makedeps:
 		if test ! -r gtk/interface.cc; then \
-		    $(MAKE) gtk/interface.cc; fi
+		    touch "$(srcdir)/Makedeps" Makefile; \
+		    $(MAKE) gtk/interface.cc; \
+		fi
 		$(make-makedeps)
 # Dependency ensures auto-generated files are there & appear in depend output
 dep depend:	gtk/interface.cc
