@@ -48,11 +48,16 @@ if test "$GXX" = "yes"; then
     CFLAGS="-Wall $CFLAGS -W"
     CXXFLAGS="$CXXFLAGS -Wall -W -Wpointer-arith -Wconversion -Wmissing-prototypes -Woverloaded-virtual"
 fi
+IF_GXX2="#"
+IF_NOGXX2=""
 if test "$GXX" = yes; then
     AC_MSG_CHECKING(for GCC version)
     gccver=`$CXX -dumpversion`
     AC_MSG_RESULT($gccver);
     case "$gccver" in
+        2.*)
+            IF_GXX2=""
+            IF_NOGXX2="#";;
         3.2|3.2.*|3.3|3.3.*)
         AC_MSG_RESULT([   * Big file support may be broken in GCC 3.2 and])
         AC_MSG_RESULT([   * 3.3! If you compile jigdo on Linux (and maybe])
@@ -60,6 +65,8 @@ if test "$GXX" = yes; then
         AC_MSG_RESULT([   * files bigger than 2 GB, such as DVD images.])
     esac
 fi
+AC_SUBST(IF_GXX2)
+AC_SUBST(IF_NOGXX2)
 AC_PROG_INSTALL
 dnl ____________________
 
@@ -126,6 +133,8 @@ if test "$jigdo_debug" = "yes"; then
     AC_DEFINE(DEBUG, 1)
     if test "$ac_cv_prog_cc_g" = "yes"; then CFLAGS="$CFLAGS -g"; fi
     if test "$ac_cv_prog_cxx_g" = "yes"; then CXXFLAGS="$CXXFLAGS -g"; fi
+    #if test "$GCC" = yes; then CFLAGS="$CFLAGS -Werror"; fi
+    if test "$GXX" = yes; then CXXFLAGS="$CXXFLAGS -Werror"; fi
 elif test "$jigdo_debug" != "no"; then
     AC_MSG_ERROR(Invalid argument to --enable-debug option)
 else
@@ -452,6 +461,21 @@ if test "$jigdo_cv_prog_cxx_stringcmp" = "yes"; then
     AC_DEFINE(HAVE_STRINGCMP, 1)
 else
     AC_DEFINE(HAVE_STRINGCMP, 0)
+fi
+AC_CACHE_CHECK([for string::compare(size_t,size_t,const char*,size_t)],
+               jigdo_cv_prog_cxx_stringstrcmp,
+    AC_TRY_COMPILE(
+    [ #include <string>
+      namespace std { }
+      using namespace std; ],
+    [ string s; const char* t = "x";
+      s.compare(0, std::string::npos, t, 1); ],
+    jigdo_cv_prog_cxx_stringstrcmp="yes", jigdo_cv_prog_cxx_stringstrcmp="no")
+)
+if test "$jigdo_cv_prog_cxx_stringstrcmp" = "yes"; then
+    AC_DEFINE(HAVE_STRINGSTRCMP, 1)
+else
+    AC_DEFINE(HAVE_STRINGSTRCMP, 0)
 fi
 dnl ____________________
 

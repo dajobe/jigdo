@@ -46,7 +46,7 @@ test-programs =	job/jigdo-io-test@exe@ job/makeimagedl-info-test@exe@ \
 		util/mimestream-test@exe@ util/string-utf-test@exe@
 
 # fmt -s -w1|sed 's%[^a-zA-Z0-9./-]\+%%g'|sort|fmt -w60|sed 's%$% \\%'
-objects-jigdo =	gtk/gtk-makeimage.o gtk/gtk-single-url.o gtk/gui.o \
+objects-jigdo =	compat.o gtk/gtk-makeimage.o gtk/gtk-single-url.o gtk/gui.o \
 		gtk/interface.o gtk/jigdo.o gtk/jobline.o gtk/joblist.o \
 		gtk/messagebox.o gtk/support.o gtk/treeiter.o jigdoconfig.o \
 		job/cached-url.o job/datasource.o job/jigdo-io.o \
@@ -85,7 +85,7 @@ objects-torture = cachefile.o compat.o jigdoconfig.o mkimage.o mkjigdo.o \
 .PHONY:         all all-msg clean distclean mostlyclean maintainer-clean \
                 dep depend doc strip test test-v test-c
 all:		all-msg Makefile $(programs) $(debug-programs) \
-		@IF_DEBUG@ test
+		@IF_DEBUG@@IF_NOGXX2@ test
 all-msg:
 		-@if test "$$EMACS" != t; then \
 		    echo "export cpp='$(CPPFLAGS)'"; \

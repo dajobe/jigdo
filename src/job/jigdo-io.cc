@@ -654,7 +654,7 @@ void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
       }
 #     if DEBUG
       Base64String b64;
-      b64.write(*templateMd5, 16).flush();
+      b64.write(implicit_cast<byte*>(*templateMd5), 16).flush();
       Paranoid(b64.result() == value.front());
 #     endif
     } else if (*label == "ShortInfo") {

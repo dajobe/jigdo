@@ -103,6 +103,12 @@
                        size_type pos2, size_type n2) const; */
 #define HAVE_STRINGCMP 1
 
+/* Define to 1 if the following function is supported by the C++
+   library:
+   int string::compare(size_type pos, size_type n,
+                       const char* s, size_type len = npos) const; */
+#define HAVE_STRINGSTRCMP 1
+
 /* Define to 1 if setenv(const char *name, const char *value, int overwrite);
    is available. If this is not the case (e.g. on Solaris), a kludge of a
    workaround using putenv() is used. */

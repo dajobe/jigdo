@@ -64,6 +64,10 @@ coincides with my ideas - just to avoid frustration later on. I'm
 pretty open to all ideas, though, especially if they save me some
 work. :)
 
+ATM, GCC 2.95 is still supported, so contributed code should compile
+with GCC 2.95 as well as the latest GCC 3.x. See compat.hh for a few
+replacements for things which GCC 2.95 doesn't have.
+
 
 Sub-projects
 ~~~~~~~~~~~~
@@ -86,7 +90,7 @@ Non-interactive frontend for jigdo:
   which behaves more like wget, or which uses curses, or...
 
   The code is organized in a way which makes adding new frontends
-  quite easy. (Model-View yada yada...;-)
+  quite easy.
 
 CGI-like program for on-the-fly creation from .jigdo/.template files:
 
@@ -265,6 +269,10 @@ script. See also the comments in scripts/depend.awk.
 
 Unit tests
 ~~~~~~~~~~
+Note: Because the unit tests use stringstreams and other useful stuff
+which GCC 2.95 doesn't provide, they won't work with that version of
+GCC.
+
 I tried out cppunit and had a look at other things, but did not like
 any of the solutions, because IMHO they are over-engineered and
 unnecessarily complicated.
@@ -307,6 +315,7 @@ sets up the debug units for which output is to be enabled - just like
 the arg to the --debug switch of jigdo and jigdo-file. Add support for
 this in main() as follows:
 
+#include <log.hh>
 int main(int argc, char* argv[]) {
   if (argc == 2) Logger::scanOptions(argv[1], argv[0]);
   ...
@@ -314,6 +323,8 @@ int main(int argc, char* argv[]) {
 This is useful while testing the unit test: Whereas "make test" will
 call the test as "subdir/foobar-test", you can execute it as
 "subdir/foobar-test all" to enable debug output.
+
+Have a look at log.hh for the useful debug("fmt", args...) feature.
 
 
 Implementation

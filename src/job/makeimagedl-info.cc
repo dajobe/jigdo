@@ -13,6 +13,7 @@
 
 #include <config.h>
 
+#include <compat.hh>
 #include <jigdoconfig.hh>
 #include <makeimagedl.hh>
 //______________________________________________________________________
@@ -37,8 +38,8 @@ void MakeImageDl::setImageSection(string* imageName, string* imageInfo,
      can immediately start the .template download. */
   unsigned labelLen = JigdoConfig::findLabelColon(templateUrlVal);
   if (labelLen == 0 // relative URL, methinks
-      || templateUrlVal.compare(0, 6, "http:/", 6) == 0
-      || templateUrlVal.compare(0, 5, "ftp:/", 5) == 0) {
+      || compat_compare(templateUrlVal, 0, 6, "http:/", 6) == 0
+      || compat_compare(templateUrlVal, 0, 5, "ftp:/", 5) == 0) {
     string templ;
     Download::uriJoin(&templ, jigdoUri(), templateUrlVal);
     debug("Template: %1", templ);
@@ -175,11 +176,11 @@ void MakeImageDl::imageInfo(string* output, bool escapedText,
   GMarkupParseContext* context =
     g_markup_parse_context_new(&p, (GMarkupParseFlags)0, &myData, 0);
   GError* err = 0;
-  g_markup_parse_context_parse(context, "<x>", 3, &err)
-    && g_markup_parse_context_parse(context, imageInfoVal.data(),
-                                    imageInfoVal.length(), &err)
-    && g_markup_parse_context_parse(context, "</x>", 4, &err)
-    && g_markup_parse_context_end_parse(context, &err);
+  if (g_markup_parse_context_parse(context, "<x>", 3, &err)
+      && g_markup_parse_context_parse(context, imageInfoVal.data(),
+                                      imageInfoVal.length(), &err)
+      && g_markup_parse_context_parse(context, "</x>", 4, &err)
+      && g_markup_parse_context_end_parse(context, &err)) { }
   g_markup_parse_context_free(context);
   if (err != 0) {
     g_error_free(err);

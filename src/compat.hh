@@ -122,26 +122,22 @@ inline int compat_compare(const string& s1, string::size_type pos1,
   return s1.compare(pos1, n1, s2, pos2, n2);
 }
 #else
-inline int compat_compare(const string& s1, string::size_type pos1,
+int compat_compare(const string& s1, string::size_type pos1,
     string::size_type n1, const string& s2, string::size_type pos2 = 0,
+    string::size_type n2 = string::npos);
+#endif
+//______________________________________________________________________
+
+#if HAVE_STRINGSTRCMP
+inline int compat_compare(const string& s1, string::size_type pos1,
+                          string::size_type n1, const char* s2,
                           string::size_type n2 = string::npos) {
-  string::size_type r1 = s1.length() - pos1;
-  if (r1 > n1) r1 = n1;
-  string::size_type r2 = s2.length() - pos2;
-  if (r2 > n2) r2 = n2;
-  string::size_type r = r2;
-  int rdiff = r1 - r2;
-  if (rdiff < 0) r = r1;
-  string::const_iterator i1 = s1.begin() + pos1;
-  string::const_iterator i2 = s2.begin() + pos2;
-  while (r > 0) {
-    if (*i1 < *i2) return -1;
-    if (*i1 > *i2) return 1;
-    ++i1; ++i2;
-    --r;
-  }
-  return rdiff;
+  return s1.compare(pos1, n1, s2, n2);
 }
+#else
+int compat_compare(const string& s1, string::size_type pos1,
+                   string::size_type n1, const char* s2,
+                   string::size_type n2 = string::npos);
 #endif
 //______________________________________________________________________
 

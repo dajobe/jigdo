@@ -16,6 +16,8 @@ jigdo 0.7.1 -- Richard Atterer,
   - GUI: Added code for processing of .jigdo files and [Include]
   - GUI: Added simple caching of downloaded data during .jigdo
     downloads
+  - Bugfix for "jigdo-file make-image" (Steve McIntyre): Failed
+    assertion `nextAlignedOff>off' and huge .template with >4GB image.
   - Bugfix for "jigdo-file make-template": Sometimes *incorrectly*
     reports: "You have found a bug". (Maxim Reznik)
   - Bugfix for "jigdo-file make-image": Handle I/O errors more
