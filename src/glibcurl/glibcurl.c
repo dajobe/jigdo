@@ -202,7 +202,7 @@ static gpointer selectThread(gpointer data) {
     g_cond_wait(curlSrc->cond, curlSrc->mutex);
     D((stderr, "selectThread: post-wait\n"));
 
-  } /* endwhile (TRUE) */
+  }
 
   curlSrc->selectThread = NULL;
   D((stderr, "selectThread: exit\n"));
