@@ -32,34 +32,10 @@ using namespace Job;
 DEBUG_UNIT("single-url")
 
 SingleUrl::SingleUrl(DataSource::IO* ioPtr, const string& uri)
-  : ioVal(ioPtr), download(uri, this), progressVal(), resumeFailedId(0),
-    destStreamVal(0), destOff(0), destEndOff(0), resumeLeft(0), tries(0) {
-}
-
-void SingleUrl::run(uint64 resumeOffset, bfstream* destStream,
-                    uint64 destOffset, uint64 destEndOffset,
-                    bool pragmaNoCache) {
-  if (resumeFailedId != 0) {
-    g_source_remove(resumeFailedId);
-    resumeFailedId = 0;
-  }
-
-  destStreamVal = destStream;
-  destOff = destOffset;
-  destEndOff = destEndOffset;
-  if (destEndOffset > destOffset)
-    progressVal.setDataSize(destEndOffset - destOffset);
-  ++tries;
-
-  Assert(resumeOffset == 0 || destStreamVal != 0);
-  if (resumeOffset < RESUME_SIZE)
-    resumeLeft = resumeOffset;
-  else
-    resumeLeft = RESUME_SIZE;
-  // Not "resumeOffset - resumeLeft", won't be calling io for a while:
-  progressVal.setCurrentSize(resumeOffset);
-  progressVal.reset();
-  download.run(resumeOffset - resumeLeft, pragmaNoCache);
+  : DataSource(ioPtr), download(uri, this), progressVal(), resumeFailedId(0),
+    destStreamVal(0), destOff(0), destEndOff(0), resumeLeft(0),
+    haveResumeOffset(false), haveDestination(false),
+    havePragmaNoCache(false), tries(0) {
 }
 //________________________________________
 
@@ -71,14 +47,55 @@ SingleUrl::~SingleUrl() {
     g_source_remove(resumeFailedId);
   }
 }
+
+const Progress* Job::SingleUrl::progress() const { return &progressVal; }
 //______________________________________________________________________
 
-IOPtr<DataSource::IO>& SingleUrl::io() {
-  return ioVal;
+void SingleUrl::setResumeOffset(uint64 resumeOffset) {
+  if (resumeOffset < RESUME_SIZE)
+    resumeLeft = resumeOffset;
+  else
+    resumeLeft = RESUME_SIZE;
+  // Not "resumeOffset - resumeLeft", won't be calling io for a while:
+  progressVal.setCurrentSize(resumeOffset);
+  download.setResumeOffset(resumeOffset - resumeLeft);
+
+  haveResumeOffset = true;
 }
 
-const IOPtr<DataSource::IO>& SingleUrl::io() const {
-  return ioVal;
+void SingleUrl::setDestination(bfstream* destStream,
+                               uint64 destOffset, uint64 destEndOffset) {
+  destStreamVal = destStream;
+  destOff = destOffset;
+  destEndOff = destEndOffset;
+
+  haveDestination = true;
+}
+
+void SingleUrl::run() {
+  if (resumeFailedId != 0) {
+    g_source_remove(resumeFailedId);
+    resumeFailedId = 0;
+  }
+
+  if (!haveResumeOffset) setResumeOffset(0);
+  haveResumeOffset = false;
+  if (!haveDestination) setDestination(0, 0, 0);
+  haveDestination = false;
+  if (!havePragmaNoCache) setPragmaNoCache(false);
+  havePragmaNoCache = false;
+
+  if (destEndOff > destOff)
+    progressVal.setDataSize(destEndOff - destOff);
+  else
+    progressVal.setDataSize(0);
+
+  ++tries;
+
+  Assert(resumeLeft == 0 || destStreamVal != 0);
+
+  progressVal.reset();
+  download.run();
 }
 //______________________________________________________________________
 
@@ -97,7 +114,7 @@ gboolean SingleUrl::resumeFailed_callback(gpointer data) {
   self->download.stop();
   self->setNoResumePossible();
   string error(_("Resume failed"));
-  if (self->ioVal) self->ioVal->job_failed(&error);
+  if (self->io) self->io->job_failed(&error);
 
   self->resumeFailedId = 0;
   return FALSE; // "Don't call me again"
@@ -112,7 +129,7 @@ void SingleUrl::download_dataSize(uint64 n) {
     if (n > 0 && n != progressVal.dataSize()) resumeFailed();
   }
   if (!resuming()) {
-    if (ioVal) ioVal->dataSource_dataSize(n);
+    if (io) io->dataSource_dataSize(n);
     return;
   }
 }
@@ -132,18 +149,18 @@ bool SingleUrl::writeToDestStream(uint64 off, const byte* data,
   writeBytes(*destStream(), data, realSize);
   if (!destStream()->good()) {
     download.stop();
-    if (ioVal) {
+    if (io) {
       string error = subst("%L1", strerror(errno));
-      ioVal->job_failed(&error);
+      io->job_failed(&error);
     }
     return FAILURE;
   }
   if (realSize < size) {
     // Server sent more than we expected; error
     download.stop();
-    if (ioVal) {
+    if (io) {
       string error = _("Server sent more data than expected");
-      ioVal->job_failed(&error);
+      io->job_failed(&error);
     }
     return FAILURE;
   }
@@ -172,7 +189,7 @@ void SingleUrl::download_data(const byte* data, unsigned size,
     progressVal.setCurrentSize(currentSize);
     if (writeToDestStream(destOff + currentSize - size, data, size)
         == FAILURE) return;
-    if (ioVal) ioVal->dataSource_data(data, size, currentSize);
+    if (io) io->dataSource_data(data, size, currentSize);
     return;
   }
   //____________________
@@ -213,7 +230,7 @@ void SingleUrl::download_data(const byte* data, unsigned size,
   }
 
   string info = subst(_("Resuming... %1kB"), resumeLeft / 1024);
-  if (ioVal) ioVal->job_message(&info);
+  if (io) io->job_message(&info);
 
   if (resumeLeft > 0) return;
 
@@ -224,7 +241,7 @@ void SingleUrl::download_data(const byte* data, unsigned size,
     progressVal.setCurrentSize(currentSize);
     if (writeToDestStream(destOff + currentSize - size, data, size)
         == FAILURE) return;
-    if (ioVal) ioVal->dataSource_data(data, size, currentSize);
+    if (io) io->dataSource_data(data, size, currentSize);
   }
 }
 //______________________________________________________________________
@@ -241,10 +258,10 @@ void SingleUrl::download_succeeded() {
 //          RESUME_SIZE bytes later */
 //       progressVal.setCurrentSize(currentSize + (resumeEnd - resumePos));
 //     }
-//     ioVal->job_failed(&error);
+//     io->job_failed(&error);
 //     return;
 //   }
-  if (ioVal) ioVal->job_succeeded();
+  if (io) io->job_succeeded();
 }
 //______________________________________________________________________
 
@@ -255,12 +272,12 @@ void SingleUrl::download_failed(string* message) {
        RESUME_SIZE bytes later */
     progressVal.setCurrentSize(progressVal.currentSize() + resumeLeft);
   }
-  if (ioVal) ioVal->job_failed(message);
+  if (io) io->job_failed(message);
 }
 //______________________________________________________________________
 
 void SingleUrl::download_message(string* message) {
-  if (ioVal) ioVal->job_message(message);
+  if (io) io->job_message(message);
 }
 //______________________________________________________________________
 

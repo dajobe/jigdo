@@ -68,17 +68,39 @@ public:
   SingleUrl(DataSource::IO* ioPtr, const string& uri);
   virtual ~SingleUrl();
 
-  /** This class does not have a public io member because it is sometimes
-      accessed as an object of its parent class DataSource. */
-  virtual IOPtr<DataSource::IO>& io();
-  virtual const IOPtr<DataSource::IO>& io() const;
+  /** Set offset to resume from - download must not yet have been started,
+      call before run(). By default, the offset is 0 after object creation
+      and after a download has finished. If resumeOffset>0, SingleUrl will
+      first read RESUME_SIZE bytes from destStream at offset
+      destOffset+resumeOffset-RESUME_SIZE (or less if the first read byte
+      would be <destOffset otherwise). These bytes are compared to bytes
+      downloaded and *not* passed on to the IO object.
+      @param resumeOffset 0 to start download from start. Otherwise,
+      destStream[destOffset;destOffset+resumeOffset) is expected to contain
+      data from an earlier, partial download. The last up to RESUME_SIZE
+      bytes of these will be read from the file and compared to newly
+      downloaded data. */
+  void setResumeOffset(uint64 resumeOffset);
+
+  /** Behaviour as above. Defaults if not called before run() is (0,0,0).
+      @param destStream Stream to write downloaded data to, or null. Is *not*
+      closed from the dtor!
+      @param destOffset Offset of URI's data within the file. 0 for
+      single-file download, >0 if downloaded data is to be written somewhere
+      inside a bigger file.
+      @param destEndOffset Offset of first byte in destStream (>destOffset)
+      which the SingleUrl is not allowed to overwrite. 0 means don't care, no
+      limit. */
+  void setDestination(bfstream* destStream,
+                      uint64 destOffset, uint64 destEndOffset);
+
+  /** Behaviour as above. Defaults if not called before run() is false, i.e.
+      don't add "Pragma: no-cache" header.
+      @param pragmaNoCache If true, perform a "reload", discarding anything
+      cached e.g. in a proxy. */
+  inline void setPragmaNoCache(bool pragmaNoCache);
 
   /** Start download or resume it
-
-      If resumeOffset>0, SingleUrl will first read RESUME_SIZE bytes from
-      destStream at offset destOffset+resumeOffset-RESUME_SIZE (or less if
-      the first read byte would be <destOffset otherwise). These bytes are
-      compared to bytes downloaded and *not* passed on to the IO object.
 
       All following bytes are written to destStream as well as passed to the
       IO object. We seek to the correct position each time when writing, so
@@ -88,35 +110,18 @@ public:
       it, or if the server wants to send more data than expected, i.e. the
       byte at destEndOffset inside destStream would be overwritten, or if
       destEndOffset is set and the size of the data as reported by the server
-      is not destEndOffset-destOffset.
-
-      @param resumeOffset 0 to start download from start. Otherwise,
-      destStream[destOffset;destOffset+resumeOffset) is expected to contain
-      data from an earlier, partial download. The last up to RESUME_SIZE
-      bytes of these will be read from the file and compared to newly
-      downloaded data.
-      @param destStream Stream to write downloaded data to, or null. Is *not*
-      closed from the dtor!
-      @param destOffset Offset of URI's data within the file. 0 for
-      single-file download, >0 if downloaded data is to be written somewhere
-      inside a bigger file.
-      @param destEndOffset Offset of first byte in destStream (>destOffset)
-      which the SingleUrl is not allowed to overwrite. 0 means don't care, no
-      limit.
-      @param pragmaNoCache If true, perform a "reload", discarding anything
-      cached e.g. in a proxy. */
-  void run(uint64 resumeOffset, bfstream* destStream, uint64 destOffset,
-           uint64 destEndOffset, bool pragmaNoCache);
+      is not destEndOffset-destOffset. */
+  virtual void run();
 
   /** Current try - possible values are 1..MAX_TRIES (inclusive) */
   inline int currentTry() const;
 
-  /** Is the download currently paused? */
-  bool paused() const;
-  /** Pause the download. */
-  void pause();
-  /** Continue downloading. */
-  void cont();
+  /** Is the download currently paused? From DataSource. */
+  virtual bool paused() const;
+  /** Pause the download. From DataSource. */
+  virtual void pause();
+  /** Continue downloading. From DataSource. */
+  virtual void cont();
   /** Stop download. */
   inline void stop();
 
@@ -131,14 +136,14 @@ public:
       dropped) */
   inline bool succeeded() const;
 
-  /** Return the internal progress object */
-  inline const Progress* progress() const;
+  /** Return the internal progress object. From DataSource. */
+  virtual const Progress* progress() const;
 
   /** Return the registered destination stream, or null */
   inline bfstream* destStream() const;
 
   /** Set destination stream, can be null */
-  inline void setDestStream(bfstream* destStream);
+  //inline void setDestStream(bfstream* destStream);
 
   /** Call this after the download has failed (and your job_failed() has been
       called), to check whether resuming the download is possible. Returns
@@ -152,8 +157,6 @@ public:
   inline void setNoResumePossible();
 
 private:
-  IOPtr<DataSource::IO> ioVal; // Points to e.g. a GtkSingleUrl
-
   // Virtual methods from Download::Output
   virtual void download_dataSize(uint64 n);
   virtual void download_data(const byte* data, unsigned size,
@@ -163,7 +166,7 @@ private:
   virtual void download_message(string* message);
 
   /* Write bytes at specified offset. Return FAILURE and call
-     ioVal->job_failed() if error during writing or if written data would
+     io->job_failed() if error during writing or if written data would
      exceed destEndOff. */
   inline bool writeToDestStream(uint64 off, const byte* data, unsigned size);
 
@@ -172,7 +175,6 @@ private:
 
   // Register resumeFailed_callback
   inline void resumeFailed();
-
   /* A callback function which is registered if the resume needs to be
      aborted. It'll get executed the next time the main glib loop is
      executed. This delayed execution is necessary because libwww doesn't
@@ -184,19 +186,27 @@ private:
   uint64 destOff, destEndOff;
   unsigned resumeLeft; // >0: Nr of bytes of resume overlap left
 
+  /* Was setResumeOffset()/setDestination()/setPragmaNoCache() called before
+     run()? If false, run() will call it with default values. */
+  bool haveResumeOffset, haveDestination, havePragmaNoCache;
+
   int tries; // Nr of tries resuming after interrupted connection
 };
 //======================================================================
 
+
+void Job::SingleUrl::setPragmaNoCache(bool pragmaNoCache) {
+  download.setPragmaNoCache(pragmaNoCache);
+  havePragmaNoCache = true;
+}
 int Job::SingleUrl::currentTry() const { return tries; }
 bool Job::SingleUrl::resuming() const { return resumeLeft > 0; }
 bool Job::SingleUrl::failed() const { return download.failed(); }
 bool Job::SingleUrl::succeeded() const { return download.succeeded(); }
-const Progress* Job::SingleUrl::progress() const { return &progressVal; }
 bfstream* Job::SingleUrl::destStream() const { return destStreamVal; }
-void Job::SingleUrl::setDestStream(bfstream* destStream) {
-  destStreamVal = destStream;
-}
+// void Job::SingleUrl::setDestStream(bfstream* destStream) {
+//   destStreamVal = destStream;
+// }
 bool Job::SingleUrl::resumePossible() const {
   if (tries >= MAX_TRIES || !download.interrupted()) return false;
   if (progressVal.currentSize() == 0) return true;

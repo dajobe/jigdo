@@ -67,7 +67,7 @@ public:
   static void create(const char* uri, const char* dest);
 
 protected:
-  typedef void (JobLine::*tickHandler)();
+  typedef void (JobLine::*TickHandler)();
   /// Pointer to JobList
   inline JobList* jobList() const;
   /** Iterator for our row in the list. Do not modify the returned value,
@@ -84,23 +84,23 @@ protected:
       handler function pointer - if no JobLine at all registers a tick
       handler, the callback fnc will not be registered at all, saving some
       CPU time. */
-  inline void callRegularly(tickHandler handler);
+  inline void callRegularly(TickHandler handler);
   /// Return current tick handler
-  tickHandler getHandler() const { return tick; }
+  TickHandler getHandler() const { return tick; }
   /// Does this object need to be called regularly?
   bool needTicks() const { return tick != 0; }
   /** Wait appropriate nr of ticks, then register the supplied handler.
       Effectively, this means the JobLine pauses for a while - e.g. so the
       user can read some status report. */
-  inline void callRegularlyLater(const int milliSec, tickHandler handler);
+  inline void callRegularlyLater(const int milliSec, TickHandler handler);
 
 private:
   void waitTick();
   int waitCountdown;
-  tickHandler waitDestination;
+  TickHandler waitDestination;
 
   JobList* jobVec;
-  tickHandler tick;
+  TickHandler tick;
   /* A reference to the row that this JobLine object is stored in.
      GtkTreeModel doc sez: GtkTreeStore and GtkListStore "guarantee that an
      iterator is valid for as long as the node it refers to is valid" */
@@ -114,7 +114,7 @@ JobList* JobLine::jobList() const { return jobVec; }
 GtkTreeIter* JobLine::row() { return &rowVal; }
 //________________________________________
 
-void JobLine::callRegularly(tickHandler handler) {
+void JobLine::callRegularly(TickHandler handler) {
   if (!needTicks() && handler != 0)
     jobList()->registerTicks(); // no previous handler, now handler
   else if (needTicks() && handler == 0)
@@ -122,7 +122,7 @@ void JobLine::callRegularly(tickHandler handler) {
   tick = handler;
 }
 
-void JobLine::callRegularlyLater(const int milliSec, tickHandler handler) {
+void JobLine::callRegularlyLater(const int milliSec, TickHandler handler) {
   waitCountdown = milliSec / JobList::TICK_INTERVAL;
   waitDestination = handler;
   callRegularly(&JobLine::waitTick);

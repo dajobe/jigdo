@@ -21,6 +21,8 @@
 
 #include <config.h>
 
+#include <debug.hh>
+
 #include <string>
 //______________________________________________________________________
 
@@ -39,8 +41,7 @@ namespace Job {
     swap(), e.g. with myMessage.swap(*message);
 
     The messages are always in valid UTF-8. Their text is *never* "quoted",
-    e.g. "<" is not replaced with "&lt;". Neither are they allowed to contain
-    any markup.
+    e.g. "<" is not replaced with "&lt;". Neither do they contain any markup.
 
     The names of all methods here start with "job_". If a child class
     Job::SomeClass::IO adds any further methods, their name starts with
@@ -51,7 +52,54 @@ public:
 
   virtual ~IO() { }
 
-  /** Called by the job when it is deleted or when a different IO object is
+  /** Called from IOPtr.remove(), gets as argument the object that was passed
+      to it, returns the new pointer to store inside the IOPtr. Override the
+      default implementation like this to implement chained IOs:
+
+      <pre>
+        IO* child;
+        virtual Job::IO* job_removeIo(Job::IO* rmIo) {
+          if (rmIo == this) {
+            IO* c = child;
+            delete this; // May of course omit this if not desired
+            return c;
+          } else if (child != 0) {
+            Job::IO* c = child->job_removeIo(rmIo);
+            Paranoid(c == 0 || dynamic_cast<IO*>(c) != 0);
+            child = static_cast<IO*>(c);
+          }
+          return this;
+        }
+        virtual void job_deleted() {
+          if (child != 0) child->job_deleted();
+          delete this; // May of course omit this if not desired
+        }
+      </pre>
+
+      However, in the normal, simple case that there isn't a child, use:
+
+      <pre>
+        virtual Job::IO* job_removeIo(Job::IO* rmIo) {
+          if (rmIo != this) return this; // Or just: Paranoid(rmIo == this);
+          delete this; // May of course omit this if not desired
+          return 0;    // New value to be stored inside IOPtr
+        }
+      </pre>
+
+      *Constructing* chains of IOs is not handled here, you must provide some
+      way to do this in your derived class.
+
+      Important: If you return a non-null value, it must point to an object
+      of your *derived* class, even though it is just passed as a plain IO*.
+      There is a runtime check (if DEBUG=1) in the IOPtr code for this.
+
+      The default impl doesn't delete this: */
+  virtual Job::IO* job_removeIo(Job::IO* rmIo) {
+    if (rmIo != this) return this;
+    return 0;
+  }
+
+  /** Called by the IOPtr when it is deleted or when a different IO object is
       registered with it. If the IO object considers itself owned by its job,
       it can delete itself. */
   virtual void job_deleted() = 0;
@@ -81,22 +129,29 @@ public:
 
     </pre>*/
 template<class SomeIO>
-class IOPtr {
+class IOPtr { // NB: No specialization for void* possible
 public:
   IOPtr(SomeIO* io) : ptr(io) { }
   ~IOPtr() { if (ptr != 0) ptr->job_deleted(); }
 
-  SomeIO& operator*()  const throw() { return *ptr; }
-  SomeIO* operator->() const throw() { return ptr; }
-  operator bool()      const throw() { return ptr != 0; }
-  SomeIO* get()        const throw() { return ptr; }
-  /** Calls the IO object's job_deleted() method before overwriting the
-      value, except if the old and new IO are identical */
+  SomeIO& operator*()  { return *ptr; }
+  SomeIO* operator->() { return ptr; }
+  operator bool()      { return ptr != 0; }
+  SomeIO* get()        { return ptr; }
+  /** Set up pointer to IO object. Must not already have been set up. */
   void set(SomeIO* io) {
-    if (ptr == io) return;
-    if (ptr != 0) ptr->job_deleted();
+    Paranoid(ptr == 0);
     ptr = io;
   }
+  /** Remove pointer from chain of IO objects. */
+  void remove(SomeIO* rmIo) {
+    Paranoid(ptr != 0);
+    Job::IO* newPtr = ptr->job_removeIo(rmIo);
+    // Upcast is OK if the job_removeIo() implementation plays by the rules
+    Paranoid(newPtr == 0 || dynamic_cast<SomeIO*>(newPtr) != 0);
+    ptr = static_cast<SomeIO*>(newPtr);
+  }
+
   /** Like set(0), but doesn't call the IO object's job_deleted() method */
   void release() { ptr = 0; }
 

@@ -27,36 +27,46 @@
 #include <single-url.hh>
 //______________________________________________________________________
 
-/** The front-end for a single-file download. It is a JobLine, so can be
-    paused etc. like all JobLines. It registers as a Job::SingleUrl::IO with
-    the Job::SingleUrl that it owns, to be notified whenever the job has
-    something to say.
+/** This class is two things at once:
 
-    Additionally, it takes care of actually writing the downloaded data to
-    the output file. This is a slight violation of our design "functionality
-    only in the job classes", but writing to a file is such a simple
-    operation... */
+    1) Normal GtkSingleUrl mode: The frontend for a single-file download. It
+    is a JobLine, so can be paused etc. like all JobLines. It registers as a
+    Job::SingleUrl::IO with the Job::SingleUrl _that_it_owns_, to be notified
+    whenever the job has something to say.
+
+    2) GtkDataSource-which-just-isnt-called-like-that, aka "child mode": The
+    frontend for a Job::DataSource object. This object is _not_ owned by the
+    GtkSingleUrl object. This is used if a MakeImageDl starts new child
+    downloads.
+
+    The two modes share so much code that IMHO doing two classes would not be
+    better. */
 class GtkSingleUrl : public JobLine, public Job::DataSource::IO {
 public:
+  /** Only in child mode, delay (millisec) between the MakeImageDl telling us
+      that it has deleted its child and the moment we delete the
+      corresponding line from the JobList. The delay allows the user to read
+      a "finished" or error message. */
+  static const int CHILD_FINISHED_DELAY = 3000;
+
   /** Create a new GtkSingleUrl, and also create an internal Job::SingleUrl
       to do the actual download. Delete the internal SingleURl from
       ~GtkSingleUrl(). */
   GtkSingleUrl(const string& uriStr, const string& destFile);
   /** Create a new GtkSingleUrl, but use it with an already existing
-      Job::SingleUrl. The Job::SingleUrl will not be owned by the
-      GtkSingleUrl and will not be deleted by its dtor. If created like this,
-      the downloaded data is never written to a file, it is simply discarded.
-      This mode is used to create "child downloads" during .jigdo processing:
-      The IO object registered with the supplied Job::SingleUrl is set up to
-      do with the data what it wants, and then to pass the call on to this
-      GtkSingleUrl (more accurately, the methods that this GtkSingleUrl
-      inherits from Job::DataSource::IO). See also
-      GtkMakeImage::makeImageDl_new().
+      Job::DataSource. The Job::DataSource will not be owned by the
+      GtkSingleUrl and will not be deleted by its dtor. This mode is used to
+      create "child downloads" during .jigdo processing: The IO object
+      registered with the supplied Job::DataSource is set up to do with the
+      data what it wants, and then to pass the call on to this GtkSingleUrl
+      (more accurately, the methods that this GtkSingleUrl inherits from
+      Job::DataSource::IO). See also GtkMakeImage::makeImageDl_new().
+
       @param destDesc A descriptive string like "/foo/bar/image, offset
       3453", NOT a filename! Supplied for information only, to be displayed
       to the user. */
   GtkSingleUrl(const string& uriStr, const string& destDesc,
-               Job::SingleUrl* download);
+               Job::DataSource* download);
   virtual ~GtkSingleUrl();
 
   // Virtual methods from JobLine
@@ -68,9 +78,9 @@ public:
   virtual void stop();
   virtual void percentDone(uint64* cur, uint64* total);
 
-  typedef void (GtkSingleUrl::*tickHandler)();
-  inline void callRegularly(tickHandler handler);
-  inline void callRegularlyLater(const int milliSec, tickHandler handler);
+  typedef void (GtkSingleUrl::*TickHandler)();
+  inline void callRegularly(TickHandler handler);
+  inline void callRegularlyLater(const int milliSec, TickHandler handler);
 
   // Called from gui.cc
   void on_startButton_clicked();
@@ -79,8 +89,16 @@ public:
   void on_restartButton_clicked();
   void on_closeButton_clicked();
 
+  /** Cause this child download to remove itself from the JobList after
+      CHILD_FINISHED_DELAY */
+  inline void childIsFinished();
+
 private:
-  // From Job::SingleUrl:IO
+  enum State {
+    CREATED, RUNNING, PAUSED, STOPPED, ERROR, SUCCEEDED
+  };
+
+  // From Job::DataSource:IO
   virtual void job_deleted();
   virtual void job_succeeded();
   virtual void job_failed(string* message);
@@ -104,11 +122,18 @@ private:
   void startResume();
   // Reload with "Pragma: no-cache" header, discards previously fetched data
   void restart();
+  /** Just executes "delete this". Used to remove the job line with
+      callRegularlyLater() if this is a child download. */
+  void deleteThis();
   // Only ask user if discarded data not worth more seconds than this
   static const int RESTART_WARNING_THRESHOLD = 30;
   static void afterStartButtonClickedResponse(GtkDialog*, int r, gpointer);
   static void afterCloseButtonClickedResponse(GtkDialog*, int r, gpointer);
   static void afterRestartButtonClickedResponse(GtkDialog*, int r, gpointer);
+
+  /* true if the object was created using the second ctor, i.e. with a
+     pre-created Job::DataSource object. */
+  bool childMode;
 
   string uri; // Source URI
   string dest; // Destination filename
@@ -116,27 +141,26 @@ private:
   string treeViewStatus; // Status section in the list of jobs
   bfstream* destStream;
 
-  /* true if the object was created using the second ctor, i.e. with a
-     pre-created Job::SingleUrl object. If true, will never write to any
-     output file. */
-  bool childMode;
-
   MessageBox::Ref messageBox;
-  Job::SingleUrl* job; // Job which handles the download
+  // If !childMode, the next two point to the same object!
+  Job::DataSource* job;      // Pointer to SingleUrl or to DataSource object
+  Job::SingleUrl* singleUrl; // Pointer to SingleUrl object, or null
   GTimeVal pauseStart; // timestamp of last download pause, or uninitialized
+
+  State state;
 };
 //______________________________________________________________________
 
 /* The static_cast from GtkSingleUrl::* to JobLine::* (i.e. member fnc of
    base class) is OK because we know for certain that the handler will only
    be invoked on SingleUrl objects. */
-void GtkSingleUrl::callRegularly(tickHandler handler) {
-  JobLine::callRegularly(static_cast<JobLine::tickHandler>(handler));
+void GtkSingleUrl::callRegularly(TickHandler handler) {
+  JobLine::callRegularly(static_cast<JobLine::TickHandler>(handler));
 }
 void GtkSingleUrl::callRegularlyLater(const int milliSec,
-                                      tickHandler handler) {
+                                      TickHandler handler) {
   JobLine::callRegularlyLater(milliSec,
-                              static_cast<JobLine::tickHandler>(handler));
+                              static_cast<JobLine::TickHandler>(handler));
 }
 //________________________________________
 
@@ -149,6 +173,11 @@ void GtkSingleUrl::on_pauseButton_clicked() {
 void GtkSingleUrl::on_stopButton_clicked() {
   stop();
   gtk_label_set_text(GTK_LABEL(GUI::window.download_buttonInfo), "");
+}
+//________________________________________
+
+void GtkSingleUrl::childIsFinished() {
+  callRegularlyLater(CHILD_FINISHED_DELAY, &GtkSingleUrl::deleteThis);
 }
 
 #endif

@@ -47,12 +47,26 @@ public:
   Download(const string& uri, Output* o /*= 0*/);
   ~Download();
 
+  /** Set offset to resume from - download must not yet have been started,
+      call before run(). Caution: The offset is not reset after the download
+      has finished/failed and will be reused if you re-run(), so better
+      *always* call this immediately before run(). */
+  inline void setResumeOffset(uint64 offset);
+  /** Value passed to setResumeOffset() */
+  inline uint64 resumeOffset() const;
+
+  /** Whether to send a "Pragma: no-cache" header. The header is sent iff
+      pragmaNoCache==true. Caution: The setting is not reset after the
+      download has finished/failed and will be reused if you re-run(), so
+      better *always* call this immediately before run(). */
+  void setPragmaNoCache(bool pragmaNoCache);
+
   /** Start downloading. Returns (almost) immediately and runs the download
       in the background via the glib/libwww event loop. If resumeOffset > 0,
       continue downloading the data from a given byte position. If a resume
       is not possible (e.g. server does not support HTTP ranges), there's an
       error. */
-  void run(uint64 resumeOffset, bool pragmaNoCache);
+  void run();
 
   inline const string& uri() const;
 
@@ -81,9 +95,6 @@ public:
       stop() must not be called when libwww is delivering data, i.e. you must
       not call it from your download_data() method. */
   void stop();
-
-  /** Value passed to resume(), or 0 if downloading from start. */
-  inline uint64 resumeOffset() const;
 
   /** Return the Output object */
   inline Output* output() const;
@@ -209,5 +220,8 @@ bool Download::succeeded() const { return state == SUCCEEDED; }
 bool Download::interrupted() const { return state == INTERRUPTED; }
 
 uint64 Download::resumeOffset() const { return resumeOffsetVal; }
+void Download::setResumeOffset(uint64 resumeOffset) {
+  resumeOffsetVal = resumeOffset;
+}
 
 #endif

@@ -17,6 +17,7 @@
 #include <config.h>
 
 #include <debug.hh>
+#include <jigdo-io.hh>
 #include <jigdoconfig.hh>
 #include <nocopy.hh>
 //______________________________________________________________________

@@ -183,7 +183,7 @@ public:
 
   /** Scan value of the --debug cmd line option. It is either missing (empty)
       or a comma-separated list of words (we also allow spaces). Each word
-      can be preceded by a '!' for negation (i.e. disable debug messages
+      can be preceded by a '~' for negation (i.e. disable debug messages
       rather than enable them). The word is the name of a compilation unit,
       or one of the special values "all" or "help". */
   static void scanOptions(const string& s, const char* binName);
@@ -197,7 +197,7 @@ private:
   const char* unitNameVal;
   unsigned char unitNameLen;
   bool enabledVal; // only print messages if true
-  Logger* next; // Next in linked list
+  Logger* next; // Next in linked list, or null
 };
 //______________________________________________________________________
 

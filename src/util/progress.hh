@@ -19,6 +19,8 @@
 #include <iosfwd>
 #include <string>
 #include <glib.h>
+
+#include <progress.fh>
 //______________________________________________________________________
 
 class Progress {

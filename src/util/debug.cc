@@ -13,6 +13,7 @@
 #if defined DEBUG && defined HAVE_UNISTD_H
 #  include <unistd.h> /* for sleep() */
 #endif
+#include <stdlib.h>
 
 #include <config.h>
 #include <debug.hh>
@@ -26,7 +27,11 @@ namespace { Logger debug("assert", true); }
 int Debug::assertFail(const char* assertion, const char* file,
                       unsigned int line) {
   debug("%1:%2: `%3' failed", file, line, assertion);
+# if DEBUG
+  abort();
+# else
   return 0;
+# endif
 }
 //______________________________________________________________________
 

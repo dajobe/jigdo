@@ -18,20 +18,20 @@
 
 #include <config.h>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <string>
 
 #include <datasource.hh>
 #include <gunzip.hh>
 #include <job.hh>
 #include <makeimage.hh>
+#include <makeimagedl.fh>
 #include <md5sum.hh>
 #include <nocopy.hh>
 #include <single-url.hh>
 //______________________________________________________________________
-
-namespace Job {
-  class MakeImageDl;
-}
 
 /**
     MakeImageDl: Everything related to downloads
@@ -114,6 +114,11 @@ private:
       checksum of the url.
       @return New object, or null if error (and io->job_failed was called) */
   DataSource* dataSourceFor(const string& url, const MD5* md = 0);
+  // Helper methods for above
+  DataSource* dataSourceForCompleted(const struct stat& fileInfo,
+                                     const string& filename, const MD5* md);
+  DataSource* dataSourceForSemiCompleted(const struct stat& fileInfo,
+                                         const string& filename);
 
   // Wraps around a SingleUrl, for downloading the .jigdo file
   class JigdoDownload;
@@ -124,12 +129,10 @@ private:
   // Return true if current state is final
   inline bool finalState() const;
 
-  // State, e.g. "downloading jigdo file", "error"
-  State stateVal;
+  State stateVal; // State, e.g. "downloading jigdo file", "error"
 
-  // URL of .jigdo file, corresponding download handler (null if finished)
-  string jigdoUrl;
-  DataSource* jigdo;
+  string jigdoUrl; // URL of .jigdo file
+  Job::JigdoIO* jigdo; // .jigdo file; may contain tree of [Include]d files
 
   string dest; // Destination dir. No trailing '/', empty string for root dir
   string tmpDirVal; // Temporary dir, a subdir of dest
@@ -162,6 +165,8 @@ public:
       the download of the .jigdo file or the .template file, or the download
       of a part. The GTK+ GUI uses this to display the new SingleUrl as a
       "child" of the MakeImageDl.
+      @param childDownload For example a SingleUrl, but could also be an
+      object which just outputs existing cache contents.
       @param destDesc A descriptive string like "/foo/bar/image, offset
       3453", NOT a filename! Supplied for information only, to be displayed
       to the user.
@@ -170,11 +175,19 @@ public:
       return here. Can return null if nothing should be called, but this
       won't prevent the child download from being created. */
   virtual Job::DataSource::IO* makeImageDl_new(
-      Job::SingleUrl* childDownload, const string& destDesc) = 0;
+      Job::DataSource* childDownload, const string& destDesc) = 0;
 
-  /** A child has (successfully or not) finished. Immediately after this
-      call, the childDownload will be deleted. */
-  virtual void makeImageDl_finished(Job::SingleUrl* childDownload) = 0;
+  /** Usually called when the child has (successfully or not) finished, i.e.
+      just after yourIo->job_succeeded/failed() was called. childDownload
+      will be deleted after calling this.
+
+      Also called if you have a JigdoIO chained in front of a DataSource::IO
+      and then IOPtr::remove() the JigdoIO - however, this second case should
+      not happen with the current code. :)
+
+      @param yourIo The value you returned from makeImageDl_new() */
+  virtual void makeImageDl_finished(Job::DataSource* childDownload,
+                                    Job::DataSource::IO* yourIo) = 0;
 };
 //______________________________________________________________________
 

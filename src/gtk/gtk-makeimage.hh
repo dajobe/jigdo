@@ -34,9 +34,9 @@ public:
   virtual void stop();
   virtual void percentDone(uint64* cur, uint64* total);
 
-  typedef void (GtkMakeImage::*tickHandler)();
-  inline void callRegularly(tickHandler handler);
-  inline void callRegularlyLater(const int milliSec, tickHandler handler);
+  typedef void (GtkMakeImage::*TickHandler)();
+  inline void callRegularly(TickHandler handler);
+  inline void callRegularlyLater(const int milliSec, TickHandler handler);
 
   // Called from gui.cc
   void on_startButton_clicked();
@@ -52,8 +52,9 @@ private:
   virtual void job_failed(string* message);
   virtual void job_message(string* message);
   virtual Job::DataSource::IO* makeImageDl_new(
-      Job::SingleUrl*childDownload, const string& destDesc);
-  virtual void makeImageDl_finished(Job::SingleUrl* childDownload);
+      Job::DataSource* childDownload, const string& destDesc);
+  virtual void makeImageDl_finished(Job::DataSource* childDownload,
+                                    Job::DataSource::IO* yourIo);
 
   // Update info in main window
   void updateWindow();
@@ -68,13 +69,13 @@ private:
 /* The static_cast from GtkMakeImage::* to JobLine::* (i.e. member fnc of
    base class) is OK because we know for certain that the handler will only
    be invoked on SingleUrl objects. */
-void GtkMakeImage::callRegularly(tickHandler handler) {
-  JobLine::callRegularly(static_cast<JobLine::tickHandler>(handler));
+void GtkMakeImage::callRegularly(TickHandler handler) {
+  JobLine::callRegularly(static_cast<JobLine::TickHandler>(handler));
 }
 void GtkMakeImage::callRegularlyLater(const int milliSec,
-                                      tickHandler handler) {
+                                      TickHandler handler) {
   JobLine::callRegularlyLater(milliSec,
-                              static_cast<JobLine::tickHandler>(handler));
+                              static_cast<JobLine::TickHandler>(handler));
 }
 
 #endif
