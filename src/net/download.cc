@@ -241,8 +241,8 @@ void Download::glibcurlCallback(void*) {
     Download* download = reinterpret_cast<Download*>(privatePtr);
 
     if (msg->msg == CURLMSG_DONE) {
-      debug("glibcurlCallback: Download %1 done, code %2 (%3)", download,
-            msg->data.result, download->curlError);
+      debug("glibcurlCallback: Download %1 done, code %2 (%3)",
+            download, msg->data.result, download->curlError);
       if (msg->data.result == CURLE_OK) {
         download->state = SUCCEEDED;
         download->outputVal->download_succeeded();
@@ -305,7 +305,8 @@ void Download::stop() {
     debug("stop later");
     // Cannot call curl_easy_cleanup() (segfaults), so do it later
     if (stopLaterId != 0) return;
-    stopLaterId = g_idle_add_full(G_PRIORITY_HIGH_IDLE, &stopLater_callback,
+    stopLaterId = g_idle_add_full(G_PRIORITY_DEFAULT_IDLE,
+                                  &stopLater_callback,
                                   (gpointer)this, NULL);
     Assert(stopLaterId != 0); // because we use 0 as a special value
   } else {
@@ -319,82 +320,6 @@ void Download::stop() {
   //string err = _("Download stopped");
   //outputVal->download_failed(&err);
   //outputVal->download_succeeded();
-}
-
-namespace {
-
-#if 0
-  const char* curlStrErr(CURLcode cc) {
-    switch (cc) {
-    CURLE_OK: return x("No error");
-    CURLE_UNSUPPORTED_PROTOCOL: return x("Unsupported protocol");
-    CURLE_URL_MALFORMAT: return x("The URL was not properly formatted");
-    CURLE_URL_MALFORMAT_USER: return x("The user part of the URL syntax was not correct");
-    CURLE_COULDNT_RESOLVE_PROXY: return x("The given proxy host could not be resolved");
-    CURLE_COULDNT_RESOLVE_HOST: return x("The given remote host could not be resolved");
-    CURLE_COULDNT_CONNECT: return x("Failed to connect to host or proxy");
-    CURLE_FTP_WEIRD_SERVER_REPLY: return "Weird FTP server reply";
-    CURLE_FTP_ACCESS_DENIED: return x("Access denied on FTP server");
-    CURLE_FTP_USER_PASSWORD_INCORRECT: return x("Incorrect username and/or password");
-    CURLE_FTP_WEIRD_PASS_REPLY: return "Weird FTP server reply to PASS";
-    CURLE_FTP_WEIRD_USER_REPLY: return "Weird FTP server reply to USER";
-    CURLE_FTP_WEIRD_PASV_REPLY: return "Weird FTP server reply to PASV";
-    CURLE_FTP_WEIRD_227_FORMAT: return "Weird FTP server `227' reply";
-    CURLE_FTP_CANT_GET_HOST: return "Failure to lookup the host used for the new FTP connection";
-    CURLE_FTP_CANT_RECONNECT: return "Cannot reconnect to FTP server after weird PASV or EPSV answer";
-    CURLE_FTP_COULDNT_SET_BINARY: return x("Error when trying to set FTP transfer mode to binary");
-    CURLE_PARTIAL_FILE: return x("Transfer interrupted");
-    CURLE_FTP_COULDNT_RETR_FILE: return "Weird FTP server reply to RETR";
-    CURLE_FTP_WRITE_ERROR: return "No `transfer successful' after FTP upload";
-    CURLE_FTP_QUOTE_ERROR: return "Error after FTP QUOTE command";
-    CURLE_HTTP_RETURNED_ERROR: return x("HTTP error");
-    CURLE_WRITE_ERROR: return "Network write error";
-    CURLE_MALFORMAT_USER: return "Malformat user";
-    CURLE_FTP_COULDNT_STOR_FILE: return "FTP server denied the STOR operation";
-    CURLE_READ_ERROR: return x("Network read error");
-    CURLE_OUT_OF_MEMORY: return "Out of memory";
-    CURLE_OPERATION_TIMEOUTED: return x("Timeout");
-    CURLE_FTP_COULDNT_SET_ASCII: return x("Error when trying to set FTP transfer mode to ASCII");
-    CURLE_FTP_PORT_FAILED: return x("FTP PORT command failed");
-    CURLE_FTP_COULDNT_USE_REST: return x("Resuming of downloads unsupported");
-    CURLE_FTP_COULDNT_GET_SIZE: return x("FTP server does not support file size command");
-    CURLE_HTTP_RANGE_ERROR: return x("Resuming of downloads unsupported");
-    CURLE_HTTP_POST_ERROR: return "HTTP POST error";
-    CURLE_SSL_CONNECT_ERROR: return x("");
-    CURLE_BAD_DOWNLOAD_RESUME: return x("");
-    CURLE_FILE_COULDNT_READ_FILE: return x("");
-    CURLE_LDAP_CANNOT_BIND: return x("");
-    CURLE_LDAP_SEARCH_FAILED: return x("");
-    CURLE_LIBRARY_NOT_FOUND: return x("");
-    CURLE_FUNCTION_NOT_FOUND: return x("");
-    CURLE_ABORTED_BY_CALLBACK: return x("");
-    CURLE_BAD_FUNCTION_ARGUMENT: return x("");
-    CURLE_BAD_CALLING_ORDER: return x("");
-    CURLE_HTTP_PORT_FAILED: return x("");
-    CURLE_BAD_PASSWORD_ENTERED: return x("");
-    CURLE_TOO_MANY_REDIRECTS : return x("");
-    CURLE_UNKNOWN_TELNET_OPTION: return x("");
-    CURLE_TELNET_OPTION_SYNTAX : return x("");
-    CURLE_OBSOLETE: return x("");
-    CURLE_SSL_PEER_CERTIFICATE: return x("");
-    CURLE_GOT_NOTHING: return x("");
-    CURLE_SSL_ENGINE_NOTFOUND: return x("");
-    CURLE_SSL_ENGINE_SETFAILED: return x("");
-    CURLE_SEND_ERROR: return x("");
-    CURLE_RECV_ERROR: return x("");
-    CURLE_SHARE_IN_USE: return x("");
-    CURLE_SSL_CERTPROBLEM: return x("");
-    CURLE_SSL_CIPHER: return x("");
-    CURLE_SSL_CACERT: return x("");
-    CURLE_BAD_CONTENT_ENCODING: return x("");
-    CURLE_LDAP_INVALID_URL: return x("");
-    CURLE_FILESIZE_EXCEEDED: return x("");
-    CURLE_FTP_SSL_FAILED: return x("");
-    default: return x("Unknown network error");
-    }
-  }
-#endif
-
 }
 
 gboolean Download::stopLater_callback(gpointer data) {
@@ -417,6 +342,8 @@ gboolean Download::stopLater_callback(gpointer data) {
    non-recoverable way. cc is a CURLcode. Note that outputVal may decide to
    delete us when called. */
 void Download::generateError(State newState, int cc) {
+  debug("generateError: state=%1 newState=%2 curlError=%3",
+        state, newState, cc);
   if (state == ERROR || state == INTERRUPTED || state == SUCCEEDED) return;
   string s;
   state = newState;
@@ -434,7 +361,7 @@ void Download::generateError(State newState, int cc) {
   case CURLE_PARTIAL_FILE:
     s = _("Transfer interrupted");
     break;
-  case CURLE_HTTP_RETURNED_ERROR:
+  case CURLE_HTTP_RETURNED_ERROR: {
     int httpCode = 0;
     for (const char* p = curlError; *p != 0; ++p) {
       if (*p >= '0' && *p <= '9')
@@ -457,6 +384,15 @@ void Download::generateError(State newState, int cc) {
       case 503: s = _("503 Service Unavailable"); break;
     }
     break;
+  }
+  default:
+#   if ENABLE_NLS
+    // See lib/strerror.c in curl's source for possible error strings
+    s = gettext(curl_easy_strerror(static_cast<CURLcode>(cc)));
+#   else
+    s = curl_easy_strerror(static_cast<CURLcode>(cc));
+#   endif
+    s[0] = toupper(s[0]);
   }
   if (s.empty() && curlError[0] != '\0') {
     s = toupper(curlError[0]);

@@ -31,6 +31,9 @@
 #include <string.h>
 #include <assert.h>
 
+/* #define D(_args) fprintf _args; */
+#define D(_args)
+
 /* #if 1 */
 #ifdef G_OS_WIN32
 /*______________________________________________________________________*/
@@ -39,9 +42,6 @@
    curl_multi_fdset(3) says we should call curl_multi_perform() at regular
    intervals. */
 #define GLIBCURL_TIMEOUT 500
-
-/* #define D(_args) fprintf _args; */
-#define D(_args)
 
 /* A structure which "derives" (in glib speak) from GSource */
 typedef struct CurlGSource_ {
@@ -82,7 +82,8 @@ static GSourceFuncs curlFuncs = {
 void glibcurl_init() {
   /* Create source object for curl file descriptors, and hook it into the
      default main context. */
-  curlSrc = (CurlGSource*)g_source_new(&curlFuncs, sizeof(CurlGSource));
+  GSource* src = g_source_new(&curlFuncs, sizeof(CurlGSource));
+  curlSrc = (CurlGSource*)src;
   g_source_attach(&curlSrc->source, NULL);
 
   if (!g_thread_supported()) g_thread_init(NULL);
@@ -172,6 +173,7 @@ void glibcurl_set_callback(GlibcurlCallback function, void* data) {
 static gpointer selectThread(gpointer data) {
   int fdCount;
   struct timeval timeout;
+  assert(data == 0); /* Just to get rid of unused param warning */
 
   D((stderr, "selectThread\n"));
   g_mutex_lock(curlSrc->mutex);
@@ -194,7 +196,8 @@ static gpointer selectThread(gpointer data) {
     D((stderr, "selectThread: select() fdCount=%d\n", fdCount));
 
     g_atomic_int_inc(&curlSrc->gtkBlockAndWait); /* "GTK thread, block!" */
-    D((stderr, "selectThread: waking up GTK thread\n"));
+    D((stderr, "selectThread: waking up GTK thread %d\n",
+       curlSrc->gtkBlockAndWait));
     /* GTK thread will almost immediately block in prepare() */
     g_main_context_wakeup(NULL);
 
@@ -216,8 +219,9 @@ static gpointer selectThread(gpointer data) {
    not a problem, we use g_main_context_wakeup to wake it up */
 /* Returns TRUE iff it holds the mutex lock */
 gboolean prepare(GSource* source, gint* timeout) {
-/*   D((stderr, "prepare: callPerform=%d, thread=%p\n", */
-/*      curlSrc->callPerform, curlSrc->selectThread)); */
+  assert(source == &curlSrc->source);
+  D((stderr, "prepare: callPerform=%d, thread=%p\n",
+     curlSrc->callPerform, curlSrc->selectThread));
 
   *timeout = -1;
 
@@ -231,9 +235,10 @@ gboolean prepare(GSource* source, gint* timeout) {
     g_atomic_int_inc(&curlSrc->gtkBlockAndWait);
   }
 
+  /* Usual behaviour: Nothing happened, so don't dispatch. */
   if (!curlSrc->callPerform) return FALSE;
 
-  /* Always dispatch if callPerform */
+  /* Always dispatch if callPerform, i.e. 1st download just starting. */
   D((stderr, "prepare: trying lock 2\n"));
   /* Problem: We can block up to GLIBCURL_TIMEOUT msecs here, until the
      select() call returns. However, under Win32 this does not appear to be a
@@ -245,8 +250,7 @@ gboolean prepare(GSource* source, gint* timeout) {
   if (curlSrc->selectThread == NULL) {
     D((stderr, "prepare: starting select thread\n"));
     /* Note that the thread will stop soon because we hold mutex */
-    curlSrc->selectThread = g_thread_create(&selectThread, curlSrc, FALSE,
-                                            NULL);
+    curlSrc->selectThread = g_thread_create(&selectThread, 0, FALSE, NULL);
     assert(curlSrc->selectThread != NULL);
   }
   return TRUE;
@@ -255,6 +259,7 @@ gboolean prepare(GSource* source, gint* timeout) {
 
 /* Called after all the file descriptors are polled by glib. */
 gboolean check(GSource* source) {
+  assert(source == &curlSrc->source);
   return FALSE;
 }
 /*______________________________________________________________________*/
@@ -264,6 +269,7 @@ gboolean dispatch(GSource* source, GSourceFunc callback,
   CURLMcode x;
   int multiCount;
 
+  assert(source == &curlSrc->source);
   do {
     x = curl_multi_perform(curlSrc->multiHandle, &multiCount);
     D((stderr, "dispatched: code=%d, reqs=%d\n", x, multiCount));
@@ -272,7 +278,7 @@ gboolean dispatch(GSource* source, GSourceFunc callback,
   if (multiCount == 0)
     curlSrc->selectRunning = FALSE;
 
-  if (callback != 0) (*callback)(user_data); /***/
+  if (callback != 0) (*callback)(user_data);
 
   /* Let selectThread call select() again */
   g_cond_signal(curlSrc->cond);
@@ -296,9 +302,6 @@ void finalize(GSource* source) {
    curl_multi_fdset(3) says we should call curl_multi_perform() at regular
    intervals. */
 #define GLIBCURL_TIMEOUT 1000
-
-/* #define D(_args) fprintf _args; */
-#define D(_args)
 
 /* GIOCondition event masks */
 #define GLIBCURL_READ  (G_IO_IN | G_IO_PRI | G_IO_ERR | G_IO_HUP)
@@ -468,13 +471,13 @@ static void registerUnregisterFds() {
    We must have a look at all fds that libcurl wants polled. If any of them
    are new/no longer needed, we have to (de)register them with glib. */
 gboolean prepare(GSource* source, gint* timeout) {
+  D((stderr, "prepare\n"));
   assert(source == &curlSrc->source);
 
   if (curlSrc->multiHandle == 0) return FALSE;
 
   registerUnregisterFds();
 
-/*   D((stderr, "prepare\n")); */
   *timeout = GLIBCURL_TIMEOUT;
 /*   return FALSE; */
   return curlSrc->callPerform == -1 ? TRUE : FALSE;
