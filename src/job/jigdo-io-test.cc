@@ -110,7 +110,7 @@ namespace {
   MemData* memData(MakeImageDl& m, const char* url) {
     Assert(!m.children().empty());
     MemData* result = 0;
-    typedef MakeImageDl::ChildList::iterator Iter;
+    typedef MakeImageDl::ChildList::const_iterator Iter;
     for (Iter i = m.children().begin(), e = m.children().end(); i != e; ++i){
       if (i->source()->location() == url) {
         result = dynamic_cast<MemData*>(i->source());
@@ -226,8 +226,8 @@ Job::MakeImageDl::~MakeImageDl() { }
 const char* Job::MakeImageDl::destDescTemplateVal =
     _("Cache entry %1  --  %2");
 
-void MakeImageDl::childFailed(Child* childDl, DataSource::IO* /*childIo*/,
-                              DataSource::IO* /*frontend*/) {
+void MakeImageDl::childFailed(Child* childDl, DataSource::IO*,
+                              DataSource::IO*, bool) {
   msg("childFailed: %1",
       childDl->source() ? childDl->source()->location() :"[deleted source]");
   // No: delete childDl;

@@ -34,9 +34,9 @@
     whenever the job has something to say.
 
     2) GtkDataSource-which-just-isnt-called-like-that, aka "child mode": The
-    frontend for a Job::DataSource object. This object is _not_ owned by the
-    GtkSingleUrl object. This is used if a MakeImageDl starts new child
-    downloads.
+    frontend for a Job::DataSource object. This DataSource object is _not_
+    owned by the GtkSingleUrl object. This is used if a MakeImageDl starts
+    new child downloads.
 
     The two modes share so much code that IMHO doing two classes would not be
     better. */
