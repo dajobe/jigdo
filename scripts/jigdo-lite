@@ -122,12 +122,12 @@ imageMenu() {
         while $readLine l <&3; do
           case "$l" in
             "["*"]"*) break;;
-            Filename=*) image="`echo $l | sed -e 's/^Filename= *//; s%['\\''\"$\\\`|&/[]%%g'`";;
-            Template=*) templateURI="`echo $l | sed -e 's/^Template= *//; s%['\\''\"$\\\`|&[]%%g'`";;
-            Template-MD5Sum=*) templateMD5="`echo $l | sed -e 's/^Template-MD5Sum= *//; s%['\\''\"$\\\`|&/[]%%g'`";;
+            Filename=*) image="`echo $l | sed -e 's/^Filename= *//; s%[['\\''\"$\\\`|&/]%%g'`";;
+            Template=*) templateURI="`echo $l | sed -e 's/^Template= *//; s%[['\\''\"$\\\`|&]%%g'`";;
+            Template-MD5Sum=*) templateMD5="`echo $l | sed -e 's/^Template-MD5Sum= *//; s%[['\\''\"$\\\`|&/]%%g'`";;
             Template-MD5Sum=*) templateMD5="`echo $l | sed -e 's/^Template-MD5Sum= *//; s%[^a-zA-Z0-9_-]%%g'`";;
-            ShortInfo=*) shortInfo="`echo $l | sed -e 's/^ShortInfo= *//; s%[$\\\`|[]%%g'`";;
-            Info=*) info="`echo $l | sed -e 's/^Info= *//; s%['\\''\"$\\\`|[]%%g'`";;
+            ShortInfo=*) shortInfo="`echo $l | sed -e 's/^ShortInfo= *//; s%[[$\\\`|]%%g'`";;
+            Info=*) info="`echo $l | sed -e 's/^Info= *//; s%[['\\''\"$\\\`|]%%g'`";;
           esac
         done
         # Image section read, check for validity

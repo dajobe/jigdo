@@ -3,6 +3,7 @@ Changelog for Jigsaw Download                               -*- Text -*-
 
 Current CVS version
 
+  - jigdo-lite: Fixed regular expressions so they work with sed 4.1
   - jigdo-lite: --noask switch to allow running jigdo-lite from cron
     jobs
   - Fix for compilation on 64 bit architectures
