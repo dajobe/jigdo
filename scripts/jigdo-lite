@@ -652,7 +652,7 @@ imageDownload() {
 
 echo
 echo 'Jigsaw Download "lite"'
-echo "Copyright (C) 2001-2003  |  jigdo@"
+echo "Copyright (C) 2001-2004  |  jigdo@"
 echo "Richard Atterer          |  atterer.net"
 
 jigdoFile="jigdo-file"
