@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 }
 
 size_t curlWriter(void* ptr, size_t size, size_t nmemb, void *stream) {
-  if (ptr == 0) return 0; // NOP, just to avoid "unused param" warning
+  if (ptr == 0) return 0; /* NOP, just to avoid "unused param" warning */
   putchar(*(char*)stream); fflush(stdout);
   nBytes += size * nmemb;
   return size * nmemb;
