@@ -30,7 +30,8 @@ namespace {
       if (lineNr > 0) cerr << lineNr << ": ";
       cerr << message << endl;
     }
-  } myPR;
+  };
+  PR myPR;
 
 }
 

@@ -134,7 +134,8 @@ public:
   /** Read data from file and update() this checksum with it.
       @param s The stream to read from
       @param size Total number of bytes to read
-      @param r Reporter object
+      @param bufSize Size of temporary read buffer
+      @param pr Reporter object
       @return Number of bytes read (==size if no error) */
   uint64 updateFromStream(bistream& s, uint64 size,
       size_t bufSize = 128*1024, ProgressReporter& pr = noReport);

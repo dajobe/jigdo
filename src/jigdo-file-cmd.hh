@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   Implementation of the different jigdo-file commands. To be used only
   by main() in jigdo-file.cc
 
@@ -98,7 +100,7 @@ class JigdoFileCmd {
   static Command cmdOptions(int argc, char* argv[]);
   //________________________________________
 
-  /** Functions corresponding to the jigdo-file commands, defined in
+  /** @{ Functions corresponding to the jigdo-file commands, defined in
       jigdo-file-cmd.cc */
   static int makeTemplate();
   static int makeImage();
@@ -107,13 +109,15 @@ class JigdoFileCmd {
   static int verifyImage();
   static int listTemplate();
   static int md5sumFiles();
+  /*@}*/
 
-  /* Helper functions for the above functions, only to be used in
+  /* @{ Helper functions for the above functions, only to be used in
      jigdo-file-cmd.cc */
   static int addLabels(JigdoCache& cache);
   static void addUris(ConfigFile& config);
   static bool printMissing_lookup(JigdoConfig& jc, const string& query,
                                   bool printAll);
+  /*@}*/
 };
 //______________________________________________________________________
 

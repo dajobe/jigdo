@@ -161,8 +161,8 @@ public:
       - Except inside '', escaping double quote, space, # or backslash
         with \ is possible.
       - A comment can be added at the end of the line.
-      Escapes like \012, \xff, \n, \t are *not* supported, behaviour
-      is undefined. (Possible future extension, TODO: Allow \ at end
+      Escapes like \\012, \\xff, \\n, \\t are *not* supported, behaviour
+      is undefined. (Possible future extension, TODO: Allow \\ at end
       of line for multi-line entries?) */
   template<class Container> // E.g. vector<string>; anything with push_back()
   static void split(Container& out, const string& s, size_t offset = 0);
@@ -291,7 +291,10 @@ public:
   class Find {
   public:
     // Default copy ctor, dtor
-    /** @param i where to start searching. If i points to a [section]
+    /** @param c The ConfigFile to search in
+        @param sectName Section name
+        @param labelName Label name
+        @param i where to start searching. If i points to a [section]
         line, the search will start there, if it doesn't, the search
         will start beginning with the next section after i. If you
         search for the implicit section with an empty name (for labels
@@ -309,10 +312,7 @@ public:
         advance both section() and label() to the next section of that
         name. Next, advance label() to the next label called
         labelName. Repeat the process with further sections if no
-        label of that name in this section.
-        @param offset If non-null, is overwritten with 0
-        (unsuccessful) or the offset in the line to the character
-        after '=', i.e. the offset to the entry's value. */
+        label of that name in this section. */
     size_t next();
     /// Current section line. NB takes a copy, can't change the Find object
     iterator section() const { return sectionIter; }

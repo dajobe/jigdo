@@ -247,7 +247,9 @@ void Download::glibcurlCallback(void*) {
         download->state = SUCCEEDED;
         download->outputVal->download_succeeded();
       } else {
-        download->generateError(ERROR, msg->data.result);
+        State newState =
+          (msg->data.result == CURLE_PARTIAL_FILE ? INTERRUPTED : ERROR);
+        download->generateError(newState, msg->data.result);
       }
       //glibcurl_remove(download->handle);
     }

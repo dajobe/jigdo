@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   Create image from template / merge new files into image.tmp
 
 */
@@ -39,7 +41,7 @@ struct JigdoDescError : Error {
     classes. */
 class JigdoDesc {
 public:
-  /// Types of entries in a description section
+  /** Types of entries in a description section */
   enum Type {
     IMAGE_INFO = 5, UNMATCHED_DATA = 2, MATCHED_FILE = 6, WRITTEN_FILE = 7,
     OBSOLETE_IMAGE_INFO = 1, OBSOLETE_MATCHED_FILE = 3,
@@ -52,16 +54,16 @@ public:
   inline bool operator!=(const JigdoDesc& x) const { return !(*this == x); }
   virtual ~JigdoDesc() = 0;
 
-  /// Entry type of JigdoDesc child class
+  /** Entry type of JigdoDesc child class */
   virtual Type type() const = 0;
-  /// Output human-readable summary
+  /** Output human-readable summary */
   virtual ostream& put(ostream& s) const = 0;
-  /// Size of image area or whole image
+  /** Size of image area or whole image */
   virtual uint64 size() const = 0;
 
-  /* There are no virtual templates, so this wouldn't work:
-     template<class Iterator>
-     virtual Iterator serialize(Iterator i) const; */
+  /** There are no virtual templates, so this wouldn't work:<code>
+      template<class Iterator>
+      virtual Iterator serialize(Iterator i) const; </code> */
   virtual size_t serialSizeOf() const = 0;
 
   /** Check whether the file is a .template file, i.e. has the
@@ -96,7 +98,7 @@ private:
 inline ostream& operator<<(ostream& s, JigdoDesc& jd) { return jd.put(s); }
 //______________________________________________________________________
 
-/// Information about the image file
+/** Information about the image file */
 class JigdoDesc::ImageInfo : public JigdoDesc {
 public:
   inline ImageInfo(uint64 s, const MD5& m, size_t b);
@@ -143,7 +145,7 @@ private:
 };
 //________________________________________
 
-/// Info about data that *was* matched by an input file
+/** Info about data that *was* matched by an input file */
 class JigdoDesc::MatchedFile : public JigdoDesc {
 public:
   inline MatchedFile(uint64 o, uint64 s, const RsyncSum64& r, const MD5& m);
@@ -197,9 +199,9 @@ public:
 class JigdoDesc::ProgressReporter {
 public:
   virtual ~ProgressReporter() { }
-  /// General-purpose error reporting.
+  /** General-purpose error reporting. */
   virtual void error(const string& message);
-  /// Like error(), but for purely informational messages.
+  /** Like error(), but for purely informational messages. */
   virtual void info(const string& message);
   /** Called when the output image (or a temporary file) is being
       written to. It holds that written==imgOff and
@@ -236,10 +238,10 @@ public:
       accumulated lengths of the other parts. */
   bostream& put(bostream& file, MD5Sum* md = 0) const;
 
-  /// List contents of a JigdoDescVec to a stream in human-readable format.
+  /** List contents of a JigdoDescVec to a stream in human-readable format. */
   void list(ostream& s) throw();
 private:
-  /// Disallow copying (too inefficient). Use swap() instead.
+  // Disallow copying (too inefficient). Use swap() instead.
   inline JigdoDescVec& operator=(const JigdoDescVec&);
 };
 

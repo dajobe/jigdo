@@ -132,6 +132,7 @@ public:
   /** Enable/disable messages for specific units. By default, messages are
       disabled.
       @param unitName Name, or null for all units
+      @param enable true to enable, false to disable
       @return true if successful (i.e. unit exists) */
   static bool setEnabled(const char* unitName, bool enable = true);
 

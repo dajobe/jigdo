@@ -61,9 +61,11 @@ public:
       (more accurately, the methods that this GtkSingleUrl inherits from
       Job::DataSource::IO). See also GtkMakeImage::makeImageDl_new().
 
+      @param uriStr URL
       @param destDesc A descriptive string like "/foo/bar/image, offset
       3453", NOT a filename! Supplied for information only, to be displayed
-      to the user. */
+      to the user.
+      @param download The download we are attached to */
   GtkSingleUrl(const string& uriStr, const string& destDesc,
                Job::DataSource* download);
   virtual ~GtkSingleUrl();

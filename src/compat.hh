@@ -7,7 +7,9 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  Cross-platform compatibility
+*//** @file
+
+  Cross-platform compatibility support
 
 */
 
@@ -38,8 +40,8 @@ inline ostream& operator<<(ostream& s, const uint64 x) {
 #endif
 //______________________________________________________________________
 
-/* Truncate a file to a given length. Behaviour undefined if given
-   length is bigger than current file size */
+/** Truncate a file to a given length. Behaviour undefined if given
+    length is bigger than current file size */
 #if HAVE_TRUNCATE
 inline int compat_truncate(const char* path, uint64 length) {
   return truncate(path, length);
@@ -49,8 +51,8 @@ int compat_truncate(const char* path, uint64 length);
 #endif
 //______________________________________________________________________
 
-/* Rename a file. Mingw does provide rename(), but gives an error if
-   the destination name already exists. This one doesn't. */
+/** Rename a file. Mingw does provide rename(), but gives an error if
+    the destination name already exists. This one doesn't. */
 #if WINDOWS
 int compat_rename(const char* src, const char* dst);
 #else
@@ -60,7 +62,7 @@ inline int compat_rename(const char* src, const char* dst) {
 #endif
 //______________________________________________________________________
 
-/* Create a directory */
+/** Create a directory */
 #if WINDOWS
 inline int compat_mkdir(const char* newDir) {
   return mkdir(newDir);
@@ -72,7 +74,7 @@ inline int compat_mkdir(const char* newDir) {
 #endif
 //______________________________________________________________________
 
-// Set/overwrite environment variable, return SUCCESS or FAILURE
+/** Set/overwrite environment variable, return SUCCESS or FAILURE */
 #if WINDOWS
 inline bool compat_setenv(const char* name, const char* value) {
   return (SetEnvironmentVariable(name, value) != 0) ? SUCCESS : FAILURE;
@@ -86,8 +88,8 @@ bool compat_setenv(const char* name, const char* value);
 #endif
 //______________________________________________________________________
 
-/* Width in characters of the tty (for progress display), or 0 if not
-   a tty or functions not present on system. */
+/** Width in characters of the tty (for progress display), or 0 if not a tty
+    or functions not present on system. */
 #if WINDOWS
 inline int ttyWidth() { return 80; }
 #elif !HAVE_IOCTL_WINSZ || !HAVE_FILENO
@@ -115,6 +117,7 @@ inline void compat_swapFileUriChars(string& s) {
 }
 //______________________________________________________________________
 
+/** Three-way comparison between arbitrary substrings */
 #if HAVE_STRINGCMP
 inline int compat_compare(const string& s1, string::size_type pos1,
     string::size_type n1, const string& s2, string::size_type pos2 = 0,
@@ -128,6 +131,7 @@ int compat_compare(const string& s1, string::size_type pos1,
 #endif
 //______________________________________________________________________
 
+/** Three-way comparison between arbitrary substrings */
 #if HAVE_STRINGSTRCMP
 inline int compat_compare(const string& s1, string::size_type pos1,
                           string::size_type n1, const char* s2,

@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   Create location list (.jigdo) and image template (.template)
 
 */
@@ -55,14 +57,12 @@ public:
   /** A create operation with no files known to it yet.
       @param jcache Cache for the files (will not be deleted in dtor)
       @param imageStream The large image file
-      @param jigdoStream Stream for outputting location list
+      @param jigdoInfo Where to output .jigdo data to
       @param templateStream Stream for outputting binary image template
       @param pr Function object which is called at regular intervals
       during run() to inform about files scanned, nr of bytes scanned,
       matches found etc.
-      @param minLen Minimum length of a part for it to be "worth it"
-      to exclude it from image template, i.e. only include it by MD5
-      reference. Any value smaller than 4k is silently set to 4k.
+      @param zipQuality 0 (fast) to 9 (smallest output)
       @param readAmnt Number of bytes that are read at a time with one
       read() call by the operation before the data is processed.
       Should not be too large because the OS copes best when small
@@ -95,7 +95,7 @@ public:
   bool run(const string& imageLeafName = "image",
            const string& templLeafName = "template");
 
-  /// Default reporter: Only prints error messages to stderr
+  /** Default reporter: Only prints error messages to stderr */
   static ProgressReporter noReport;
 
 private:
@@ -216,14 +216,12 @@ private:
 class MkTemplate::ProgressReporter {
 public:
   virtual ~ProgressReporter() { }
-  /// General-purpose error reporting
+  /** General-purpose error reporting */
   virtual void error(const string& message);
   /** Called during second pass, when the image file is scanned.
-      @param offset Offset in image file
-      @param total Total size of image file, or 0 if unknown (i.e.
-      fed to stdin */
+      @param offset Offset in image file */
   virtual void scanningImage(uint64 offset);
-  /// Error while reading the image file - aborting immediately
+  // Error while reading the image file - aborting immediately
 //   virtual void abortingScan();
   /** Called during second pass, when MkTemplate has found an area in
       the image whose MD5Sum matches that of a file

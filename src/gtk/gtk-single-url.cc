@@ -148,6 +148,7 @@ void GtkSingleUrl::openOutputAndResume() {
                      Job::SingleUrl::RESUME_SIZE / 1024);
       updateWindow();
       if (job == 0) job = singleUrl = new Job::SingleUrl(uri);
+      iList_remove();
       singleUrl->io.addListener(*this);
       singleUrl->setResumeOffset(fileInfo.st_size);
       singleUrl->setDestination(destStream.get(), 0, 0);
@@ -166,7 +167,7 @@ void GtkSingleUrl::openOutputAndResume() {
 }
 //______________________________________________________________________
 
-/* Auto-resume, c alled e.g. after the connection dropped unexpectedly, to
+/* Auto-resume, called e.g. after the connection dropped unexpectedly, to
    resume the download. */
 void GtkSingleUrl::startResume() {
   Paranoid(!childMode);
@@ -199,6 +200,8 @@ void GtkSingleUrl::startResume() {
   status = subst(_("Resuming download - overlap is %1kB"),
                  Job::SingleUrl::RESUME_SIZE / 1024);
   updateWindow();
+  iList_remove();
+  singleUrl->io.addListener(*this);
   singleUrl->setResumeOffset(job->progress()->currentSize());
   singleUrl->setDestination(destStream.get(), 0, 0);
   singleUrl->run();
@@ -293,7 +296,7 @@ void GtkSingleUrl::updateWindow() {
   if (job != 0) {
     if (state == PAUSED)
       canStart = TRUE;
-    else if (!childMode && (state == SUCCEEDED || state == STOPPED
+    else if (!childMode && (/*state == SUCCEEDED ||*/ state == STOPPED
                             ||state == ERROR && singleUrl->resumePossible()))
       canStart = TRUE;
   }
@@ -428,7 +431,8 @@ void GtkSingleUrl::job_failed(const string& message) {
   if (!childMode) singleUrl->setDestination(0, 0, 0);
   destStream.clear();
   if (state != STOPPED) state = ERROR;
-  debug("job_failed: %1", message);
+  debug("job_failed: %1 job=%2 state=%3 resumePoss=%4",
+        message, job, state, singleUrl->resumePossible());
 
   bool resumePossible = (job != 0
                          && !childMode

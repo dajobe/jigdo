@@ -205,6 +205,8 @@ BfstreamCounted* Job::SingleUrl::destStream() const {
   return destStreamVal.get(); }
 
 bool Job::SingleUrl::resumePossible() const {
+//   msg("Job::SingleUrl::resumePossible tries=%1 interr=%2 curSiz=%3",
+//       tries, download.interrupted(), progressVal.currentSize());
   if (tries >= MAX_TRIES || !download.interrupted()) return false;
   if (progressVal.currentSize() == 0
       || progressVal.dataSize() == 0) return true;

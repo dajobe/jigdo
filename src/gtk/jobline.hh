@@ -60,10 +60,10 @@ public:
   /** Kind of a JobLine factory, called when the user clicks on OK to start a
       new download. It decides whether a normal file download or a .jigdo
       download is needed and creates the appropriate object. Additionally,
-      the Job is appended to the list of jobs, and run. @param url What to
-      download (if it ends in ".jigdo" and dest is a directory, will start
-      jigdo processing) @param dest Where to put downloaded data, either a
-      dir or a file. */
+      the Job is appended to the list of jobs, and run.
+      @param uri What to download (if it ends in ".jigdo" and dest is a
+      directory, will start jigdo processing)
+      @param dest Where to put downloaded data, either a dir or a file. */
   static void create(const char* uri, const char* dest);
 
 protected:

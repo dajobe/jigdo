@@ -117,7 +117,7 @@ public:
 
   /** jigdoFile argument is only used for displaying error messages when
       scanning the .jigdo file contents.
-      @param destDir destination directory that the final image should be
+      TODO param destDir destination directory that the final image should be
       written to. Initially, MakeImage will create a temporary dir (name
       based on jigdoFile leafname) to store administrative data in. */
   inline explicit MakeImage();

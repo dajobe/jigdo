@@ -31,7 +31,8 @@ namespace {
     GRand* r;
     RandSingleton() : r(g_rand_new()) { }
     ~RandSingleton() { g_rand_free(r); }
-  } r;
+  };
+  RandSingleton r;
 
 }
 

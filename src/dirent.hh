@@ -7,7 +7,9 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  Compatibility header for glib+mingw.
+*//** @file
+
+  Compatibility header for glib+mingw. Probably no longer an issue.y
 
 */
 

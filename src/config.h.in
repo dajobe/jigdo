@@ -1,138 +1,144 @@
 // -*- C++ -*-
 
+/** @file
+    Auto-generated from config.h.in */
+
 // System-dependent configuration
 #ifndef CONFIG_H
 #define CONFIG_H
 
-/* What OS do we compile for? Exactly one of these must be 1.
-   Assumes a native Windows environment like mingw32, not Cygwin. */
+/** @{ What OS do we compile for? Exactly one of these must be 1.  Assumes a
+    native Windows environment like mingw32, not Cygwin. */
 #define WINDOWS 0
 #define UNIX 0
+/*@}*/
 
-// Define if target architecture is big-endian
+/** Define if target architecture is big-endian */
 #undef WORDS_BIGENDIAN
 
-// An unsigned integer type with at least 64, possibly more bits
+/** An unsigned integer type with at least 64, possibly more bits */
 #undef TYPE_UINT64
 
-// Define to 1 if the type "unsigned long long" is supported
+/** Define to 1 if the type "unsigned long long" is supported */
 #define HAVE_UNSIGNED_LONG_LONG 1
 
-// Define to 1 if "uint64 x; cout << x;" works
+/** Define to 1 if "uint64 x; cout << x;" works */
 #define HAVE_OUTUINT64 1
 
-// Is "#define debug(format, ...)" possible in C++? The C99 standard has it.
+/** Is "#define debug(format, ...)" possible in C++? The C99 standard has
+    it. */
 #define HAVE_VARMACRO 0
 
-// Define to 1 if header <stddef.h> is available on the system
+/** Define to 1 if header <stddef.h> is available on the system */
 #define HAVE_STDDEF_H 0
 #if HAVE_STDDEF_H
 #  include <stddef.h> /* to get size_t */
 #endif
 
-// Define to 1 if header <unistd.h> is available on the system
+/** Define to 1 if header <unistd.h> is available on the system */
 #define HAVE_UNISTD_H 0
 
-// Define to 1 if header <limits.h> is available on the system
+/** Define to 1 if header <limits.h> is available on the system */
 #define HAVE_LIMITS_H 0
 
-// Define to 1 if header <string.h> is available on the system
+/** Define to 1 if header <string.h> is available on the system */
 #define HAVE_STRING_H 1
 
-// Define to `unsigned' if <sys/types.h> doesn't define.
+/** Define to `unsigned' if <sys/types.h> doesn't define. */
 #undef size_t
 
-// Define if you have the ANSI C header files.
+/** Define if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
-/* Define to 1 if gettext is installed, if you want support for translation
-  of program messages. PACKAGE_LOCALE_DIR is a string like
-  "/usr/local/share/locale" under Unix - gettext will load e.g.
-  "/usr/local/share/locale/de/LC_MESSAGES/jigdo.mo" for German
-  translations */
+/** Define to 1 if gettext is installed, if you want support for translation
+    of program messages. PACKAGE_LOCALE_DIR is a string like
+    "/usr/local/share/locale" under Unix - gettext will load e.g.
+    "/usr/local/share/locale/de/LC_MESSAGES/jigdo.mo" for German
+    translations */
 #define ENABLE_NLS 0
 
-/* Define if your system provides getopt_long in <getopt.h> (will compile in
-   own version if not) */
+/** Define if your system provides getopt_long in <getopt.h> (will compile in
+    own version if not) */
 #define HAVE_GETOPT_LONG 0
 
-/* Define if your system provides uname in <sys/utsname.h> */
+/** Define if your system provides uname in <sys/utsname.h> */
 #define HAVE_UNAME 0
 
-/* Define to 1 if libdb is present on the system. If set to 0, some
-   functionality (jigdo-file's --cache option) will not be available. */
+/** Define to 1 if libdb is present on the system. If set to 0, some
+    functionality (jigdo-file's --cache option) will not be available. */
 #define HAVE_LIBDB 0
 
-/* Define to 1 if "int lstat(const char *file_name, struct stat *buf)" is
-   available, i.e. symbolic links are supported. If defined to 0, stat() is
-   used instead. */
+/** Define to 1 if "int lstat(const char *file_name, struct stat *buf)" is
+    available, i.e. symbolic links are supported. If defined to 0, stat() is
+    used instead. */
 #define HAVE_LSTAT 0
 
-/* Preferably, we want to use "int truncate(const char *path, off_t length)"
-   to truncate a file to a given length. Alternatively, if "int ftruncate(int
-   fd, off_t length)" is available, compat.cc truncates using that. */
+/** Preferably, we want to use "int truncate(const char *path, off_t length)"
+    to truncate a file to a given length. Alternatively, if "int
+    ftruncate(int fd, off_t length)" is available, compat.cc truncates using
+    that. */
 #define HAVE_TRUNCATE 0
 #define HAVE_FTRUNCATE 0
 
-/* Define to 1 if "void * mmap(void *start, size_t length, int prot, int
-   flags, int fd, off_t offset)" and "int munmap(void *start, size_t length)"
-   are present. Only used in torture. */
+/** Define to 1 if "void * mmap(void *start, size_t length, int prot, int
+    flags, int fd, off_t offset)" and "int munmap(void *start, size_t
+    length)" are present. Only used in torture. */
 #define HAVE_MMAP 0
 
-// Define to 1 if memcpy is is present
+/** Define to 1 if memcpy is is present */
 #define HAVE_MEMCPY 1
 
-/* Define to 1 if "int fileno( FILE *stream)" for getting the Unix file
-   descriptor for an ANSI C FILE* is present. */
+/** Define to 1 if "int fileno( FILE *stream)" for getting the Unix file
+    descriptor for an ANSI C FILE* is present. */
 #define HAVE_FILENO 0
 
-/* Define to 1 if "ioctl(fileno(stdout), TIOCGWINSZ, &winsize)" can be used
-   to read the width in characters of the TTY, for formatting of progress
-   reports. This probably only works on Linux. */
+/** Define to 1 if "ioctl(fileno(stdout), TIOCGWINSZ, &winsize)" can be used
+    to read the width in characters of the TTY, for formatting of progress
+    reports. This probably only works on Linux. */
 #define HAVE_IOCTL_WINSZ 0
 
-/* Both MinGW32 and glib declare 'struct dirent' and 'struct DIR'. If there
-   are problems using the relevant headers together, define to 1 to do some
-   really dirty things with the preprocessor to disable the glib
-   declaration. */
+/** Both MinGW32 and glib declare 'struct dirent' and 'struct DIR'. If there
+    are problems using the relevant headers together, define to 1 to do some
+    really dirty things with the preprocessor to disable the glib
+    declaration. */
 #define DIRENT_HACK 0
 
-/* Define to 1 if the following function is supported by the C++
-   library:
-   int string::compare(size_type pos, size_type n, const string& s,
-                       size_type pos2, size_type n2) const; */
+/** Define to 1 if the following function is supported by the C++
+    library:<code>
+    int string::compare(size_type pos, size_type n, const string& s,
+                       size_type pos2, size_type n2) const; </code> */
 #define HAVE_STRINGCMP 1
 
-/* Define to 1 if the following function is supported by the C++
-   library:
-   int string::compare(size_type pos, size_type n,
-                       const char* s, size_type len = npos) const; */
+/** Define to 1 if the following function is supported by the C++
+    library:<code>
+    int string::compare(size_type pos, size_type n,
+                        const char* s, size_type len = npos) const; </code> */
 #define HAVE_STRINGSTRCMP 1
 
-/* Define to 1 if setenv(const char *name, const char *value, int overwrite);
-   is available. If this is not the case (e.g. on Solaris), a kludge of a
-   workaround using putenv() is used. */
+/** Define to 1 if setenv(const char *name, const char *value, int overwrite);
+    is available. If this is not the case (e.g. on Solaris), a kludge of a
+    workaround using putenv() is used. */
 #define HAVE_SETENV 0
 
-// On native MinGW32, redefine snprintf to _snprintf
+/** On native MinGW32, redefine snprintf to _snprintf */
 #undef snprintf
-// On native MinGW32, redefine stat to _stati64 for big file support
+/** On native MinGW32, redefine stat to _stati64 for big file support */
 #undef stat
 
-/* Big file support is broken in the libstdc++ on GCC 3.x, x<4. There's a
-   rather gruesome workaround in bstream.hh for that case. */
+/** Big file support is broken in the libstdc++ on GCC 3.x, x<4. There's a
+    rather gruesome workaround in bstream.hh for that case. */
 #if __GNUC__ == 3 && __GNUC_MINOR__ < 4 && !defined __MINGW32__
 #  define HAVE_WORKING_FSTREAM 0
 #else
 #  define HAVE_WORKING_FSTREAM 1
 #endif
 
-// Define to 1 to compile in lots of additional run-time checks
+/** Define to 1 to compile in lots of additional run-time checks */
 #ifndef DEBUG
 #define DEBUG 0
 #endif
 
-// Program version
+/** Program version */
 #undef JIGDO_VERSION
 
 #endif /* CONFIG_H */

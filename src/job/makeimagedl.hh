@@ -7,6 +7,8 @@
   under the terms of the GNU General Public License, version 2. See the file
   COPYING for details.
 
+*//** @file
+
   Download .jigdo/.template and file URLs. MakeImageDl takes care of
   downloading the data from the appropriate places and then passes it to its
   private MakeImage member. See also makeimage.hh.
@@ -87,6 +89,7 @@ public:
   //inline static const char* destDescTemplate();
 
   /** Prepare object. No download is started yet.
+      @param jigdoUri URL of top-level .jigdo
       @param destination Name of directory to create tmp directory in, for
       storing data during the download. */
   MakeImageDl(/*IO* ioPtr,*/const string& jigdoUri, const string& destination);
@@ -157,6 +160,8 @@ public:
       object, to make them register their own child listeners with the new
       Child object.
 
+      @param url URL to download
+      @param md Expected checksum of downloaded data, null if unknown
       @param leafnameOut If non-null, string is overwritten with file's
       leafname in cache on exit.
       @param reuseChild For internal use only, should usually be set to
@@ -199,16 +204,16 @@ public:
       normal text should be kept escaped as "&lt;". escapedText=false will
       unescape the "&lt;" to "<".
 
-      The subst argument is of the form:
+      @param subst The subst argument is of the form:<code>
       {
-        "", "", // <b>, </b>
-        "", "", // <i>, </i>
-        "", "", // <tt>, </tt>
-        "", "", // <u>, </u>
-        "", "", // <big>, </big>
-        "", "", // <small>, </small>
-        "", "", // <br/>
-      };
+        "", "", // &lt;b>, &lt;/b>
+        "", "", // &lt;i>, &lt;/i>
+        "", "", // &lt;tt>, &lt;/tt>
+        "", "", // &lt;u>, &lt;/u>
+        "", "", // &lt;big>, &lt;/big>
+        "", "", // &lt;small>, &lt;/small>
+        "", "", // &lt;br/>
+      };</code>
 
       @param output String to append image info to
       @param escapedText true if the characters <>& should be escaped as
@@ -337,6 +342,7 @@ public:
       the download of the .jigdo file or the .template file, or the download
       of a part. The GTK+ GUI uses this to display the new SingleUrl as a
       "child" of the MakeImageDl.
+      @param uri URL of download that was started
       @param childDownload For example a SingleUrl, but could also be an
       object which just outputs existing cache contents. If the method
       implementer is interested in displaying progress info for this
@@ -404,8 +410,8 @@ public:
       @param m Master MakeImageDl
       @param listHead Pointer to master->children
       @param src SingleUrl or other source of downloaded data
-      @expectedContent null if no md5sum known, or non-null ptr to expected
-      checksum; is copied away. */
+      @param expectedContent null if no md5sum known, or non-null ptr to
+      expected checksum; is copied away. */
   inline Child(MakeImageDl* m, ChildList* listHead,
                DataSource* src, const MD5* expectedContent);
   /** Only to be called by MakeImageDl and its helper classes (JigdoIO) */

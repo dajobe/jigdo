@@ -65,6 +65,7 @@ public:
       same signature, but only removes one byte.) */
   inline RsyncSum& addBackNtimes(byte x, size_t n);
   /** Remove memory area from start of area covered by the checksum
+      @param mem Data to remove
       @param len Number of bytes to remove from area, so it will cover
       area-len bytes after call
       @param areaSize Size covered by area before call (necessary for

@@ -7,7 +7,9 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  Helper class for mktemplate - queue of partially matched files
+*//** @file
+
+  Helper class for MkTemplate - queue of partially matched files
 
 */
 
@@ -81,7 +83,7 @@ public:
 
   bool full() const { return freeHead == 0; }
 
-  /** If true is returned, the queue is not only full, findDropCandidate() is
+  /* If true is returned, the queue is not only full, findDropCandidate() is
       also going to always return 0 from now on. Intended to be used for
       optimisation: As long as crammed()==true, needn't even check for
       further prospective matches.
@@ -128,6 +130,7 @@ public:
   /** If the queue is full, use some heuristics to find a PartialMatch in the
       queue which is "unlikely to lead to an actual match", or 0 if none
       exists.
+      @param sectorLength assumed "sector size"
       @param newStartOffset start offset of the new match which is to replace
       the object returned by this function. The heuristics favours offsets
       which are multiples of the assumed "sector size". */

@@ -189,6 +189,8 @@ public:
       checksum=>PartUrlMapping mappings of this UrlMap, it /may/ alter the
       Label=>ServerUrlMapping mappings, and the returned/appended
       PartUrlMapping will reference the server mappings of this UrlMap.
+      @param baseUrl Base URL, in case value.front() is a relative URL
+      @param value value.front() is the URL, followed by args for the part
       @param oldList Pointer to 0 SmartPtr for first call, will create list
       head, or pointer to SmartPtr to list head, will then add to list. */
   const char* addPart(const string& baseUrl, const vector<string>& value,
@@ -196,6 +198,7 @@ public:
 
   /** Add info about a [Servers] line, cf addPart(). For a line
       "Foobar=Label:some/path" in the [Servers] section:
+      @param baseUrl Base URL, in case value.front() is a relative URL
       @param label == "Foobar"
       @param value arguments; value.front()=="Label:some/path"
       @return null if success, else error message */
