@@ -145,6 +145,7 @@ uint64 bistream::tellg() const {
 }
 
 bostream& bostream::write(const char* p, streamsize n) {
+  Paranoid(f != 0);
   fwrite(p, 1, n, f);
   return *this;
 }
@@ -168,7 +169,9 @@ void bifstream::open(const char* name, ios::openmode DEBUG_ONLY_PARAM(m)) {
 }
 
 bofstream::bofstream(const char* name, ios::openmode m) : bostream() {
-  open(name, m);
+  /* Without the trunc, bofstream("foo", ios::binary) will fail if "foo" does
+     not yet exist. The trunc causes it to be created. */
+  open(name, m | ios::trunc);
 }
 
 #endif /* HAVE_WORKING_FSTREAM */

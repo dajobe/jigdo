@@ -29,6 +29,8 @@ bostream& bostream::seekp(off_t off, ios::seekdir dir) {
     whence = SEEK_SET;
   else if (dir == ios::end)
     whence = SEEK_END;
+  else if (dir == ios::cur)
+    whence = SEEK_CUR;
   else
     { Assert(false); whence = SEEK_SET; }
   /*int r =*/ fseeko(f, off, whence);
@@ -43,6 +45,8 @@ bistream& bistream::seekg(off_t off, ios::seekdir dir) {
     whence = SEEK_SET;
   else if (dir == ios::end)
     whence = SEEK_END;
+  else if (dir == ios::cur)
+    whence = SEEK_CUR;
   else
     { Assert(false); whence = SEEK_SET; }
   /*int r =*/ fseeko(f, off, whence);
@@ -64,10 +68,14 @@ void bistream::getline(string& l) {
 void bofstream::open(const char* name, ios::openmode m) {
   Paranoid((m & ios::binary) != 0 && f == 0);
   Paranoid((m & ios::ate) == 0);
-  if ((m & ios::trunc) != 0)
+  if ((m & ios::trunc) != 0) {
     f = fopen(name, "w+b");
-  else
-    f = fopen(name, "r+b");
+    return;
+  }
+  // Open existing file for reading and writing
+  f = fopen(name, "r+b");
+  if (f == NULL && errno == ENOENT)
+    f = fopen(name, "w+b"); // ...or create new, empty file
 }
 
 bfstream::bfstream(const char* name, ios::openmode m) : biostream() {
