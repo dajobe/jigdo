@@ -129,7 +129,7 @@ install-po:
 Makefile:	Makefile.in configure jigdo.spec
 		sh config.status # update Makefile from Makefile.in
 
-configure:	configure.in
+configure:	configure.ac
 		cd "$(srcdir)" && autoconf
 		rm -f config.cache
 
