@@ -15,6 +15,8 @@
 
 #include <errno.h>
 #include <string.h>
+#include <zlib.h>
+
 #include <algorithm>
 #include <fstream>
 #include <new>
@@ -24,6 +26,7 @@
 #include <serialize.hh>
 #include <string.hh>
 #include <zstream.hh>
+#include <zstream-gz.hh>
 //______________________________________________________________________
 
 DEBUG_UNIT("zstream")
@@ -116,7 +119,7 @@ void Zobstream::writeZipped() {
   if (md5sum != 0) md5sum->update(buf, 16);
 
   ZipData* zd = zipBuf;
-  size_t len;
+  unsigned len;
   while (true) {
     Paranoid(zd != 0);
     len = (totalOut() < ZIPDATA_SIZE ? totalOut() : ZIPDATA_SIZE);
@@ -152,16 +155,22 @@ Zobstream& Zobstream::put(uint32 x) {
   ++todoCount;
   return *this;
 }
-//______________________________________________________________________
+
+//======================================================================
 
 void Zibstream::open(bistream& s) {
   Assert(!is_open());
   Paranoid(buf == 0);
   buf = new byte[bufSize];
-  z.next_in = z.next_out = 0;
-  z.avail_in = z.total_out = 0;
-  int status = inflateInit(&z);
-  if (status != Z_OK) throwZerror(status, z.msg);
+
+  z = new ZibstreamGz(); // TODO switch for each block
+  z->setNextIn(0);
+  z->setNextOut(0);
+  z->setAvailIn(0);
+  z->setAvailOut(0);
+  z->init();
+  if (!z->ok()) z->throwError();
+
   dataLen = dataUnc = 0;
   stream = &s;
 }
@@ -169,7 +178,7 @@ void Zibstream::open(bistream& s) {
 void Zibstream::close() {
   if (!is_open()) return;
 
-  int status = inflateEnd(&z);
+  z->end();
 
   // Deallocate memory
   delete[] buf;
@@ -177,38 +186,37 @@ void Zibstream::close() {
   stream = 0;
 
   /* Only report errors *after* marking the stream as closed, to avoid
-     another exception being thrown when the Zibstream object goes out
-     of scope and ~Zibstream calls close() again. */
-  if (status != Z_OK) throwZerror(status, z.msg);
+     another exception being thrown when the Zibstream object goes out of
+     scope and ~Zibstream calls close() again. */
+  if (!z->ok()) z->throwError();
 }
 //________________________________________
 
-Zibstream& Zibstream::read(byte* dest, size_t n) {
+Zibstream& Zibstream::read(byte* dest, unsigned n) {
   gcountVal = 0; // in case n == 0
   if (!good()) return *this;
-  z.next_out = dest;
-  z.avail_out = n;
+  z->setNextOut(dest);
+  z->setAvailOut(n);
 
-  //cerr << "Zibstream::read: " << n << " to read, avail_in=" << z.avail_in
+  //cerr << "Zibstream::read: " << n << " to read, avail_in=" << z->availIn()
   //     << endl;
   SerialIstreamIterator in(*stream);
-  while (z.avail_out > 0) {
+  while (z->availOut() > 0) {
     //____________________
 
     /* If possible, uncompress into destination buffer. Handling this
        case first for speed */
-    if (z.avail_in != 0) {
-      byte* oldNextOut = z.next_out;
-      int status = inflate(&z, Z_NO_FLUSH);
-      gcountVal = z.next_out - dest;
-      dataUnc -= z.next_out - oldNextOut;
-      debug("read: avail_out=%1 dataLen=%2 dataUnc=%3 status=%4 - "
-            "inflated %5", z.avail_out, dataLen, dataUnc, status,
-            z.next_out - oldNextOut);
-      Assert(dataUnc > 0 || (status == Z_STREAM_END || status == Z_OK));
-      if (z.avail_out == 0) break;
-      if (status != Z_OK && status != Z_STREAM_END)
-        throwZerror(status, z.msg);
+    if (z->availIn() != 0) {
+      byte* oldNextOut = z->nextOut();
+      z->inflate();
+      gcountVal = z->nextOut() - dest;
+      dataUnc -= z->nextOut() - oldNextOut;
+      debug("read: avail_out=%1 dataLen=%2 dataUnc=%3 - inflated %4",
+            z->availOut(), dataLen, dataUnc, z->nextOut() - oldNextOut);
+      Assert(dataUnc > 0 || z->streamEnd() || z->ok());
+      if (z->availOut() == 0) break;
+      if (!z->ok() && !z->streamEnd())
+        z->throwError();
       continue;
     }
     //____________________
@@ -221,6 +229,8 @@ Zibstream& Zibstream::read(byte* dest, size_t n) {
       byte x;
       while (*cur != '\0' && *stream) {
         x = stream->get(); // Any errors handled below, after end of while()
+        //debug("read: cur=%1, infile=%2 @%3", int(*cur), x,
+        //      implicit_cast<uint64>(stream->tellg()) - 1);
         if (*cur != x) { // Reached end of file or non-DATA part
           stream->seekg(hdr - cur, ios::cur);
           delete[] buf;
@@ -233,7 +243,7 @@ Zibstream& Zibstream::read(byte* dest, size_t n) {
       dataLen -= 16;
       unserialize6(dataUnc, in);
 #     if 0
-      cerr << "Zibstream::read: avail_out=" << z.avail_out
+      cerr << "Zibstream::read: avail_out=" << z->availOut()
            << " dataLen=" << dataLen
            << " dataUnc=" << dataUnc << " - new DATA part" << endl;
 #     endif
@@ -242,28 +252,28 @@ Zibstream& Zibstream::read(byte* dest, size_t n) {
         buf = 0;
         throw Zerror(0, string(_("Corrupted input data")));
       }
-      int status = inflateReset(&z);
-      if (status != Z_OK) throwZerror(status, z.msg);
+      z->reset();
+      if (!z->ok()) z->throwError();
     }
     //____________________
 
     // Read data from file into buffer?
-    size_t toRead = (dataLen < bufSize ? dataLen : bufSize);
+    unsigned toRead = (dataLen < bufSize ? dataLen : bufSize);
     byte* b = &buf[0];
-    z.next_in = b;
-    z.avail_in = toRead;
+    z->setNextIn(b);
+    z->setAvailIn(toRead);
     dataLen -= toRead;
     while (*stream && toRead > 0) {
       readBytes(*stream, b, toRead);
-      size_t n = stream->gcount();
+      unsigned n = stream->gcount();
       b += n;
       toRead -= n;
     }
 #   if 0
-    cerr << "Zibstream::read: avail_out=" << z.avail_out
+    cerr << "Zibstream::read: avail_out=" << z->availOut()
          << " dataLen=" << dataLen
          << " dataUnc=" << dataUnc << " - read "
-         << z.avail_in << " from file to buf" << endl;
+         << z->availIn() << " from file to buf" << endl;
 #   endif
     if (!*stream) {
       delete[] buf;
@@ -274,13 +284,13 @@ Zibstream& Zibstream::read(byte* dest, size_t n) {
     }
     //____________________
 
-  } // endwhile (n > 0)
+  } // endwhile (z->availOut() > 0)
 
 # if 0
-  cerr << "Zibstream::read: avail_out=" << z.avail_out
+  cerr << "Zibstream::read: avail_out=" << z->availOut()
        << " dataLen=" << dataLen
        << " dataUnc=" << dataUnc << " - returns, gcount=" << gcountVal
-       << " avail_in=" << z.avail_in
+       << " avail_in=" << z->availIn()
        << endl;
 # endif
 

@@ -31,7 +31,7 @@
 #include <scan.hh>
 #include <serialize.hh>
 #include <string.hh>
-#include <zstream.hh>
+#include <zstream-gz.hh>
 
 //______________________________________________________________________
 
@@ -445,7 +445,7 @@ namespace {
        unmatched image data is already compressed, which means that
        when it is compressed again by jigdo, it will get slightly
        larger. */
-    Zibstream data(*templ, readAmount + 8*1024);
+    auto_ptr<Zibstream> data(new Zibstream(*templ, readAmount + 8*1024));
 #   if HAVE_WORKING_FSTREAM
     if (img == 0) img = &cout; // EEEEEK!
 #   else
@@ -475,12 +475,12 @@ namespace {
             debug("mkimage writeAll(): %1 of unmatched data", toWrite);
             memClear(buf, readAmount);
             while (*img && toWrite > 0) {
-              if (!data) {
+              if (!*data) {
                 reporter.error(_("Premature end of template data"));
                 return 3;
               }
-              data.read(buf, (toWrite < readAmount ? toWrite : readAmount));
-              size_t n = data.gcount();
+              data->read(buf, (toWrite < readAmount ? toWrite : readAmount));
+              size_t n = data->gcount();
               writeBytes(*img, buf, n);
               reportBytesWritten(n, off, nextReport, totalBytes, reporter);
               toWrite -= n;

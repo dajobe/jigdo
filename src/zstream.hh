@@ -1,6 +1,6 @@
 /* $Id$ -*- C++ -*-
   __   _
-  |_) /|  Copyright (C) 2001-2002  |  richard@
+  |_) /|  Copyright (C) 2001-2004  |  richard@
   | \/¯|  Richard Atterer          |  atterer.net
   ¯ '` ¯
   This program is free software; you can redistribute it and/or modify
@@ -22,8 +22,6 @@
 
 #include <config.h>
 
-#warning "remove include <zlib.h>"
-#include <zlib.h>
 #include <iostream>
 
 #include <bstream.hh>
@@ -159,13 +157,49 @@ private:
 class Zibstream {
 public:
 
-  inline explicit Zibstream(size_t bufSz = 64*1024);
+  /** Interface for gzip and bzip2 implementors. */
+  class Impl {
+  public:
+    virtual unsigned totalOut() const = 0;
+    virtual unsigned totalIn() const = 0;
+    virtual unsigned availOut() const = 0;
+    virtual unsigned availIn() const = 0;
+    virtual byte* nextOut() const = 0;
+    virtual byte* nextIn() const = 0;
+    virtual void setTotalOut(unsigned n) = 0;
+    virtual void setTotalIn(unsigned n) = 0;
+    virtual void setAvailOut(unsigned n) = 0;
+    virtual void setAvailIn(unsigned n) = 0;
+    virtual void setNextOut(byte* n) = 0;
+    virtual void setNextIn(byte* n) = 0;
+
+    /** Initialize, i.e. inflateInit(). {next,avail}{in,out} must be set up
+        before calling this. Sets an internal status flag. */
+    virtual void init() = 0;
+    /** Finalize, i.e. inflateEnd() */
+    virtual void end() = 0;
+    /** Re-init, i.e. inflateReset() */
+    virtual void reset() = 0;
+
+    /** Sets an internal status flag. */
+    virtual void inflate() = 0;
+    /** Check status flag: At stream end? */
+    virtual bool streamEnd() const = 0;
+    /** Check status flag: OK? */
+    virtual bool ok() const = 0;
+
+    /** Depending on internal status flag, throw appropriate Zerror. Never
+        returns. */
+    virtual void throwError() const = 0; /* throws Zerror */
+  };
+  //________________________________________
+
+  inline explicit Zibstream(unsigned bufSz = 64*1024);
   /** Calls close(), which might throw a Zerror exception! Call
       close() before destroying the object to avoid this. */
-  ~Zibstream() { close(); delete buf; }
-  inline Zibstream(bistream& s, size_t bufSz = 64*1024);
+  virtual ~Zibstream() { close(); delete buf; if (z != 0) z->end(); delete z; }
+  inline Zibstream(bistream& s, unsigned bufSz = 64*1024);
   bool is_open() const { return stream != 0; }
-  void open(bistream& s);
   void close();
 
   /// Get reference to underlying istream
@@ -181,7 +215,7 @@ public:
 //   inline Zibstream& read(const signed char* x, size_t n);
 //   Zibstream& read(const unsigned char* x, size_t n);
 //   inline Zibstream& read(const void* x, size_t n);
-  Zibstream& read(byte* x, size_t n);
+  Zibstream& read(byte* x, unsigned n);
   typedef uint64 streamsize;
   /// Number of characters read by last read()
   inline streamsize gcount() const { return gcountVal; gcountVal = 0; }
@@ -193,14 +227,18 @@ public:
   operator void*() const { return fail() ? (void*)0 : (void*)(-1); }
   bool operator!() const { return fail(); }
 
+protected:
+  void open(bistream& s);
+
 private:
   // Throw a Zerror exception, or bad_alloc() for status==Z_MEM_ERROR
   //inline void throwZerror(int status, const char* zmsg);
 
-  z_stream z;
+//   z_stream z;
+  Impl* z;
   bistream* stream;
   mutable streamsize gcountVal;
-  size_t bufSize;
+  unsigned bufSize;
   byte* buf; // Contains compressed data
   uint64 dataLen; // bytes remaining to be read from current DATA part
   uint64 dataUnc; // bytes remaining in uncompressed DATA part
@@ -230,7 +268,7 @@ Zobstream::Zobstream(MD5Sum* md)
 // }
 //________________________________________
 
-void Zobstream::open(bostream& s, size_t chunkLimit, size_t todoBufSz) {
+void Zobstream::open(bostream& s, unsigned chunkLimit, unsigned todoBufSz) {
   Assert(!is_open());
   todoBufSize = (MIN_TODOBUF_SIZE > todoBufSz ? MIN_TODOBUF_SIZE :todoBufSz);
   chunkLimVal = chunkLimit;
@@ -239,6 +277,7 @@ void Zobstream::open(bostream& s, size_t chunkLimit, size_t todoBufSz) {
   todoBuf = new byte[todoBufSize];
 
   stream = &s; // Declare as open
+  Paranoid(stream != 0);
 }
 
 void Zobstream::zip(byte* start, unsigned len, bool finish) {
@@ -275,7 +314,7 @@ Zobstream& Zobstream::put(int x) {
   return *this;
 }
 
-Zobstream& Zobstream::write(const byte* x, size_t n) {
+Zobstream& Zobstream::write(const byte* x, unsigned n) {
   Assert(is_open());
   if (n > 0) {
     zip(todoBuf, todoCount); // Zip remaining data in todoBuf
@@ -285,19 +324,14 @@ Zobstream& Zobstream::write(const byte* x, size_t n) {
 }
 //________________________________________
 
-Zibstream::Zibstream(bistream& s, size_t bufSz)
-    : stream(0), bufSize(bufSz), buf(0) { // data* will be init'ed by open()
-  z.zalloc = (alloc_func)0;
-  z.zfree = (free_func)0;
-  z.opaque = 0;
-  open(s);
+Zibstream::Zibstream(unsigned bufSz)
+    : z(0), stream(0), bufSize(bufSz), buf(0) {
 }
 
-Zibstream::Zibstream(size_t bufSz)
-    : stream(0), bufSize(bufSz), buf(0) {
-  z.zalloc = (alloc_func)0;
-  z.zfree = (free_func)0;
-  z.opaque = 0;
+Zibstream::Zibstream(bistream& s, unsigned bufSz)
+    : z(0), stream(0), bufSize(bufSz), buf(0) {
+  // data* will be init'ed by open()
+  open(s);
 }
 
 #endif
