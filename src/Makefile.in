@@ -53,21 +53,21 @@ objects-jigdo =	compat.o gtk/gtk-makeimage.o gtk/gtk-single-url.o gtk/gui.o \
 		job/makeimage.o job/makeimagedl.o job/makeimagedl-info.o \
 		job/single-url.o \
 		net/download.o net/glibwww-callbacks.o net/glibwww-init.o \
-		net/proxyguess.o util/configfile.o util/glibc-getopt.o \
+		net/proxyguess.o util/bstream.o util/configfile.o util/glibc-getopt.o \
 		util/glibc-getopt1.o util/glibc-md5.o util/gunzip.o \
 		util/log.o util/md5sum.o util/progress.o util/string-utf.o \
 		$(libwww-hacks) $(windows-res) \
 		util/debug.o # this must come last!
 objects-jigdo-file = cachefile.o compat.o jigdo-file-cmd.o jigdo-file.o \
 		jigdoconfig.o mkimage.o mkjigdo.o mktemplate.o \
-		partialmatch.o recursedir.o scan.o util/configfile.o \
+		partialmatch.o recursedir.o scan.o util/bstream.o util/configfile.o \
 		util/glibc-getopt.o util/glibc-getopt1.o util/glibc-md5.o \
 		util/log.o util/md5sum.o util/rsyncsum.o util/string.o \
 		zstream.o \
 		util/debug.o # this must come last!
 objects-torture = cachefile.o compat.o jigdoconfig.o mkimage.o mkjigdo.o \
 		mktemplate.o partialmatch.o recursedir.o scan.o torture.o \
-		util/configfile.o util/glibc-md5.o util/log.o util/md5sum.o \
+		util/bstream.o util/configfile.o util/glibc-md5.o util/log.o util/md5sum.o \
 		util/rsyncsum.o util/string.o zstream.o \
 		util/debug.o # this must come last!
 #______________________________

@@ -33,6 +33,7 @@
 //____________________
 
 #if HAVE_WORKING_FSTREAM
+
 typedef istream bistream;
 typedef ostream bostream;
 typedef iostream biostream;
@@ -72,29 +73,32 @@ protected:
 class bostream : virtual public bios {
 public:
   inline int put(int c) { return putc(c, f); }
-  inline bostream& seekp(off_t off, ios::seekdir dir = ios::beg);
+  bostream& seekp(off_t off, ios::seekdir dir = ios::beg);
   inline bostream& write(const char* p, streamsize n);
+  bostream(FILE* stream) : bios(stream) { }
 protected:
   bostream() { }
-  bostream(FILE* stream) : bios(stream) { }
 };
 
 class bistream : virtual public bios {
 public:
   inline int get();
   inline int peek();
-  inline bistream& seekg(off_t off, ios::seekdir dir = ios::beg);
+  bistream& seekg(off_t off, ios::seekdir dir = ios::beg);
   inline uint64 tellg() const;
-  inline void getline(string& l);
+  void getline(string& l);
   inline bistream& read(char* p, streamsize n);
   inline uint64 gcount() { uint64 r = gcountVal; gcountVal = 0; return r; }
   inline void sync() const { } // NOP
+  bistream(FILE* stream) : bios(stream) { }
 protected:
   bistream() : gcountVal(0) { }
-  bistream(FILE* stream) : bios(stream) { }
 private:
   uint64 gcountVal;
 };
+
+extern bistream bcin;
+extern bostream bcout;
 
 class biostream : virtual public bistream, virtual public bostream {
 protected:
@@ -114,12 +118,12 @@ class bofstream : public bostream {
 public:
   bofstream(FILE* stream) : bostream(stream) { Paranoid(stream == stdout); }
   inline bofstream(const char* name, ios::openmode m = ios::out);
-  inline void open(const char* name, ios::openmode m = ios::out);
+  void open(const char* name, ios::openmode m = ios::out);
 };
 
 class bfstream : public biostream {
 public:
-  inline bfstream(const char* path, ios::openmode);
+  bfstream(const char* path, ios::openmode);
 };
 //____________________
 
@@ -136,47 +140,8 @@ int bistream::peek() {
   return r;
 }
 
-bistream& bistream::seekg(off_t off, ios::seekdir dir) {
-  if (fail()) return *this;
-  int whence;
-  if (dir == ios::beg)
-    whence = SEEK_SET;
-  else if (dir == ios::end)
-    whence = SEEK_END;
-  else
-    { Assert(false); whence = SEEK_SET; }
-  /*int r =*/ fseeko(f, off, whence);
-  // Fails: Assert((r == -1) == (ferror(f) != 0));
-  return *this;
-}
-
-bostream& bostream::seekp(off_t off, ios::seekdir dir) {
-  if (fail()) return *this;
-  int whence;
-  if (dir == ios::beg)
-    whence = SEEK_SET;
-  else if (dir == ios::end)
-    whence = SEEK_END;
-  else
-    { Assert(false); whence = SEEK_SET; }
-  /*int r =*/ fseeko(f, off, whence);
-  // Fails: Assert((r == -1) == (ferror(f) != 0));
-  return *this;
-}
-
 uint64 bistream::tellg() const {
   return ftello(f);
-}
-
-void bistream::getline(string& l) {
-  gcountVal = 0;
-  l.clear();
-  while (true) {
-    int c = fgetc(f);
-    if (c >= 0) ++gcountVal;
-    if (c == EOF || c == '\n') break;
-    l += static_cast<char>(c);
-  }
 }
 
 bostream& bostream::write(const char* p, streamsize n) {
@@ -206,26 +171,6 @@ bofstream::bofstream(const char* name, ios::openmode m) : bostream() {
   open(name, m);
 }
 
-void bofstream::open(const char* name, ios::openmode m) {
-  Paranoid((m & ios::binary) != 0 && f == 0);
-  Paranoid((m & ios::ate) == 0);
-  if ((m & ios::trunc) != 0)
-    f = fopen(name, "w+b");
-  else
-    f = fopen(name, "r+b");
-}
-
-bfstream::bfstream(const char* name, ios::openmode m) : biostream() {
-  Paranoid((m & ios::binary) != 0);
-  Paranoid((m & ios::ate) == 0);
-  if ((m & ios::out) == 0)
-    f = fopen(name, "rb");
-  else if ((m & ios::trunc) != 0)
-    f = fopen(name, "w+b");
-  else
-    f = fopen(name, "r+b");
-}
-
 #endif /* HAVE_WORKING_FSTREAM */
 //______________________________________________________________________
 
@@ -248,6 +193,5 @@ inline biostream& writeBytes(biostream& s, const byte* buf,
   s.write(reinterpret_cast<const char*>(buf), count);
   return s;
 }
-
 
 #endif /* BSTREAM_HH */

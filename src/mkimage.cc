@@ -449,8 +449,7 @@ namespace {
 #   if HAVE_WORKING_FSTREAM
     if (img == 0) img = &cout; // EEEEEK!
 #   else
-    static bofstream stdoutStream(stdout);
-    if (img == 0) img = &stdoutStream;
+    if (img == 0) img = &bcout;
 #   endif
 
     JigdoDesc::ImageInfo& imageInfo =
