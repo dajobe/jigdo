@@ -420,6 +420,8 @@ void MakeImageDl::jigdoFinished() {
     }
   }
 
+  if (finalState()) return; // I.e. there was an error
+
   Paranoid(stateVal == DOWNLOADING_JIGDO);
   stateVal = DOWNLOADING_TEMPLATE;
 

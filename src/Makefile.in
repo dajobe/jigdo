@@ -60,7 +60,7 @@ objects-jigdo =	compat.o glibcurl/glibcurl.o gtk/gtk-makeimage.o \
 		gtk/jobline.o gtk/joblist.o gtk/messagebox.o gtk/support.o \
 		gtk/treeiter.o jigdoconfig.o job/cached-url.o \
 		job/datasource.o job/jigdo-io.o job/makeimage.o \
-		job/makeimagedl-graph.o job/makeimagedl-info.o \
+		job/makeimagedl-info.o \
 		job/makeimagedl.o job/single-url.o \
 		job/url-mapping.o net/download.o net/uri.o net/proxyguess.o \
 		util/bstream.o util/configfile.o util/glibc-getopt.o \
