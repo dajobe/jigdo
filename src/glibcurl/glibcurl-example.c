@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
 
   /* Clean up */
   for (i = 0; i < HANDLES; ++i) {
-    curl_multi_remove_handle(glibcurl_handle(), h[i]);
+    glibcurl_remove(h[i]);
     curl_easy_cleanup(h[i]);
   }
   glibcurl_cleanup();

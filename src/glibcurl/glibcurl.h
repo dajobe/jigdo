@@ -68,9 +68,9 @@ typedef void (*GlibcurlCallback)(void*);
     argument. */
 void glibcurl_set_callback(GlibcurlCallback function, void* data);
 
-/** You must call curl_multi_remove_handle() and curl_easy_cleanup() for all
-    requests before calling this. This function makes calls to
-    curl_multi_cleanup() and curl_global_cleanup(). */
+/** You must call glibcurl_remove() and curl_easy_cleanup() for all requests
+    before calling this. This function makes calls to curl_multi_cleanup()
+    and curl_global_cleanup(). */
 void glibcurl_cleanup();
 
 #ifdef __cplusplus
