@@ -37,13 +37,13 @@
 /* Number of highest allowed fd */
 #define GLIBCURL_FDMAX 127
 
-/* Timeout for the fds passed to glib's poll() call, in millisecs. 
+/* Timeout for the fds passed to glib's poll() call, in millisecs.
    curl_multi_fdset(3) says we should call curl_multi_perform() at regular
    intervals. */
 #define GLIBCURL_TIMEOUT 1000
 
 /* #define D(_args) fprintf _args; */
-#define D(_args) 
+#define D(_args)
 
 /* GIOCondition event masks */
 #define GLIBCURL_READ  (G_IO_IN | G_IO_PRI | G_IO_ERR | G_IO_HUP)
@@ -101,7 +101,7 @@ void glibcurl_init() {
 
   /* Init libcurl */
   curl_global_init(CURL_GLOBAL_ALL);
-  curlSrc->multiHandle = curl_multi_init();  
+  curlSrc->multiHandle = curl_multi_init();
 
   D((stderr, "events: R=%x W=%x X=%x\n", GLIBCURL_READ, GLIBCURL_WRITE,
      GLIBCURL_EXC));
@@ -159,7 +159,7 @@ void glibcurl_cleanup() {
 
 static void registerUnregisterFds() {
   int fd, fdMax;
-  
+
   FD_ZERO(&curlSrc->fdRead);
   FD_ZERO(&curlSrc->fdWrite);
   FD_ZERO(&curlSrc->fdExc);
@@ -186,7 +186,7 @@ static void registerUnregisterFds() {
     D((stderr, "registerUnregisterFds: fd %d: old events %x, "
        "new events %x\n", fd, curlSrc->lastPollFd[fd].events, events));
 
-    /* fd is already a lastPollFd, but event type has changed => do nothing. 
+    /* fd is already a lastPollFd, but event type has changed => do nothing.
        Due to the implementation of g_main_context_query(), the new event
        flags will be picked up automatically. */
     if (events != 0 && curlSrc->lastPollFd[fd].events != 0) {
@@ -209,7 +209,7 @@ static void registerUnregisterFds() {
   curlSrc->lastPollFdMax = curlSrc->fdMax;
 }
 
-/* Called before all the file descriptors are polled by the glib main loop. 
+/* Called before all the file descriptors are polled by the glib main loop.
    We must have a look at all fds that libcurl wants polled. If any of them
    are new/no longer needed, we have to (de)register them with glib. */
 gboolean prepare(GSource* source, gint* timeout) {
@@ -226,7 +226,7 @@ gboolean prepare(GSource* source, gint* timeout) {
 }
 /*______________________________________________________________________*/
 
-/* Called after all the file descriptors are polled by glib. 
+/* Called after all the file descriptors are polled by glib.
    g_main_context_check() has copied back the revents fields (set by glib's
    poll() call) to our GPollFD objects. How inefficient all that copying
    is... let's add some more and copy the results of these revents into
@@ -260,7 +260,7 @@ gboolean check(GSource* source) {
 gboolean dispatch(GSource* source, GSourceFunc callback,
                   gpointer user_data) {
   CURLMcode x;
-  
+
   assert(source == &curlSrc->source);
   assert(curlSrc->multiHandle != 0);
   do {

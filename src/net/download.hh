@@ -129,7 +129,7 @@ private:
                            void* selfPtr);
   // Called by glibcurl after curl_multi_perform()
   static void Download::glibcurlCallback(void*);
-  
+
   // Unregister request from glibwww event loop
 //   void pauseNow();
   // Call output->error() with appropriate string taken from request object

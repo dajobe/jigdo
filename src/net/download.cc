@@ -154,7 +154,7 @@ void Download::run() {
   debug("run resumeOffset=%1", resumeOffset());
   Assert(outputVal != 0); // Must have set up output
 
-  if (handle == 0) {    
+  if (handle == 0) {
     handle = curl_easy_init();
     Assert(handle != 0);
 
@@ -176,7 +176,7 @@ void Download::run() {
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, curlWriter);
     curl_easy_setopt(handle, CURLOPT_WRITEDATA, this);
     curl_easy_setopt(handle, CURLOPT_PRIVATE, this);
-    
+
     //curl_easy_setopt(handle, CURLOPT_SHARE, shHandle);
 
     glibcurl_add(handle);
