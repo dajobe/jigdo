@@ -20,6 +20,7 @@
 #include <set>
 #include <vector>
 #include <time.h>
+#include <sys/stat.h>
 
 #include <cachefile.hh>
 #include <debug.hh>

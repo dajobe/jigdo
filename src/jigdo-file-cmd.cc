@@ -30,14 +30,32 @@
 
 namespace {
 
-/* Open named file or stdin if name is "-". Store pointer to stream
-   obj in dest and return it (except when it points to stdin; in this
-   case return null). */
+#if !HAVE_WORKING_FSTREAM /* ie istream and bistream are not the same */
+/* Open named file or stdin if name is "-". Store pointer to stream obj in
+   dest and return it (except when it points to an object which should not be
+   deleted by the caller; in this case return null). */
+bistream* openForInput(bistream*& dest, const string& name) throw(Cleanup) {
+  if (name == "-")
+    dest = new bifstream(stdin);
+  else
+    dest = new bifstream(name.c_str(), ios::binary);
+  if (!*dest) {
+    cerr << subst(_("%1: Could not open `%2' for input: %3"),
+                  binName(), name, strerror(errno)) << endl;
+    throw Cleanup(3);
+  }
+  return dest;
+}
+#endif
+
+/* Open named file or stdin if name is "-". Store pointer to stream obj in
+   dest and return it (except when it points to an object which should not be
+   deleted by the caller; in this case return null). */
 istream* openForInput(istream*& dest, const string& name) throw(Cleanup) {
   if (name == "-") {
-    /* EEEEK! There's no standard way to switch mode of cin to binary.
-       (There might be an implementation-dependent way? close()ing and
-       re-open()ing cin may have strange effects.) */
+    /* EEEEK! There's no standard way to switch mode of cin to binary. (There
+       might be an implementation-dependent way? close()ing and re-open()ing
+       cin may have strange effects.) */
     dest = reinterpret_cast<istream*>(&cin);
     return 0;
   } else {
@@ -66,6 +84,21 @@ int willOutputTo(const string& name, bool optForce,
   }
   return 1;
 }
+
+#if !HAVE_WORKING_FSTREAM /* ie istream and bistream are not the same */
+bostream* openForOutput(bostream*& dest, const string& name) throw(Cleanup) {
+  if (name == "-")
+    dest = new bofstream(stdout);
+  else
+    dest = new bofstream(name.c_str(), ios::binary);
+  if (!*dest) {
+    cerr << subst(_("%1: Could not open `%2' for output: %3"),
+                  binName(), name, strerror(errno)) << endl;
+    throw Cleanup(3);
+  }
+  return dest;
+}
+#endif
 
 ostream* openForOutput(ostream*& dest, const string& name) throw(Cleanup) {
   if (name == "-") {
@@ -187,9 +220,9 @@ int JigdoFileCmd::makeTemplate() {
   auto_ptr<ConfigFile> cfDel(new ConfigFile());
   ConfigFile* cf = cfDel.get();
   if (!jigdoMergeFile.empty()) { // Load file to add to jigdo output
-    bistream* jigdoMerge;
-    auto_ptr<bistream> jigdoMergeDel(openForInput(jigdoMerge,
-                                                  jigdoMergeFile));
+    istream* jigdoMerge;
+    auto_ptr<istream> jigdoMergeDel(openForInput(jigdoMerge,
+                                                 jigdoMergeFile));
     *jigdoMerge >> *cf;
     if (jigdoMerge->bad()) {
       string err = subst(_("%1 make-template: Could not read `%2' (%3)"),
