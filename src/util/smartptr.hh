@@ -1,6 +1,6 @@
 /* $Id$ -*- C++ -*-
   __   _
-  |_) /|  Copyright (C) 2000-2003  |  richard@
+  |_) /|  Copyright (C) 2000-2004  |  richard@
   | \/¯|  Richard Atterer          |  atterer.net
   ¯ '` ¯
   This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,8 @@ struct SmartPtr_lockStatic;
      class Base    : public SmartPtrBase { ... };
      class Derived : public Base { ... };
    in order to allow a Derived object's address to be assigned to a
-   SmartPtr<Base>. Its only fault is that its member must be public. */
+   SmartPtr<Base>. Its only fault is that its member must be public (or we
+   lose GCC 2.95 compatibility; friend templates only work as of 3.4). */
 struct SmartPtrBase {
   //friend template class<X> SmartPtr<X>;
   friend struct SmartPtr_lockStatic;

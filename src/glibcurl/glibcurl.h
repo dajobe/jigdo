@@ -45,7 +45,7 @@ CURLM* glibcurl_handle();
 CURLMcode glibcurl_add(CURL* easy_handle);
 
 /** Convenience function, just executes
-    curl_multi_remove_handle(glibcurl_handle(), h) */
+    curl_multi_remove_handle(glibcurl_handle(), easy_handle) */
 CURLMcode glibcurl_remove(CURL* easy_handle);
 
 /** Call this whenever you have added a request using
