@@ -76,13 +76,13 @@ objects-jigdo-file = cachefile.o compat.o jigdo-file-cmd.o jigdo-file.o \
 		partialmatch.o recursedir.o scan.o util/bstream.o \
 		util/configfile.o util/glibc-getopt.o util/glibc-getopt1.o \
 		util/glibc-md5.o util/log.o util/md5sum.o util/rsyncsum.o \
-		util/string.o zstream.o zstream-gz.o \
+		util/string.o zstream.o zstream-bz.o zstream-gz.o \
 		util/debug.o # this must come last!
 objects-torture = cachefile.o compat.o jigdoconfig.o mkimage.o mkjigdo.o \
 		mktemplate.o partialmatch.o recursedir.o scan.o torture.o \
 		util/bstream.o util/configfile.o util/glibc-md5.o \
 		util/log.o util/md5sum.o util/rsyncsum.o util/string.o \
-		zstream.o zstream-gz.o \
+		zstream.o zstream-bz.o zstream-gz.o \
 		util/debug.o # this must come last!
 #______________________________
 

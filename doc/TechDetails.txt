@@ -81,7 +81,8 @@ The image template files consist of three types of parts:
 
 After the header of a template file, one or more raw data parts and
 one description part follow. Each part consists of a 4-byte ID ("DATA"
-or "DESC"), followed by 6 bytes of length. The length values are
+or "BZIP" for the zlib/bzip2-compressed data parts, "DESC" for the
+description), followed by 6 bytes of length. The length values are
 little-endian (i.e. least-significant byte first) because that *is*
 the proper end to open an egg. The length includes the ID and length
 field itself, so for an empty part (containing just the ID and the
@@ -190,7 +191,8 @@ written to the image.
 Raw data
 --------
 
-Binary data, a stream compressed with zlib (see RFC1950).
+Binary data, a stream compressed with zlib (see RFC1950) for "DATA" or
+libbz2 for "BZIP".
 
 For each type==2 entry in the description data, the uncompressed
 stream contains skipLen bytes of data. This is data that did not match
@@ -205,7 +207,8 @@ contains no type==2 entries.
 
 #Bytes     Value   Description
 ----------------------------------------------------------------------
- 4         dataID  "ID for the part: 'DATA' = the hex bytes 44 41 54 41"
+ 4         dataID  "ID for the part: 'DATA' = the hex bytes 44 41 54 41
+                                  or 'BZIP' = the hex bytes 42 5a 49 50"
  6         dataLen "Length of part, i.e. length of compressed data + 16"
  6         dataUnc "Number of bytes of *uncompressed* data of this part"
 dataLen-16         "Compressed data"

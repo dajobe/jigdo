@@ -23,63 +23,65 @@
 #include <md5sum.hh>
 #include <serialize.hh>
 #include <string.hh>
-#include <zstream-gz.hh>
+#include <zstream-bz.hh>
 //______________________________________________________________________
 
-DEBUG_UNIT("zstream-gz")
+DEBUG_UNIT("zstream-bz")
 
 namespace {
 
   // Turn zlib error codes/messages into C++ exceptions
-  void throwZerrorGz(int status, const char* zmsg) {
-    string m;
-    if (zmsg != 0) m += zmsg;
-    Assert(status != Z_OK);
+  void throwZerrorBz(int status) {
+    Assert(status != BZ_OK);
     switch (status) {
-    case Z_OK:
+    case BZ_OK:
       break;
-    case Z_ERRNO:
-      if (!m.empty() && errno != 0) m += " - ";
-      if (errno != 0) m += strerror(errno);
-      throw Zerror(Z_ERRNO, m);
-      break;
-    case Z_MEM_ERROR:
+    case BZ_MEM_ERROR:
       throw bad_alloc();
       break;
-      // NB: fallthrough:
-    case Z_STREAM_ERROR:
-      if (m.empty()) m = "zlib Z_STREAM_ERROR";
-    case Z_DATA_ERROR:
-      if (m.empty()) m = "zlib Z_DATA_ERROR";
-    case Z_BUF_ERROR:
-      if (m.empty()) m = "zlib Z_BUF_ERROR";
-    case Z_VERSION_ERROR:
-      if (m.empty()) m = "zlib Z_VERSION_ERROR";
+    case -1: case -2: case -4: case -5:
+    case -6: case -7: case -8: case -9:
+      throw Zerror(status, ZibstreamBz::bzerrorstrings[-status]);
     default:
+      string m = "libbz error ";
+      m += status;
       throw Zerror(status, m);
     }
   }
 
-}
-//________________________________________
-
-// void Zobstream::throwZerror(int status, const char* zmsg) {
-//   ::throwZerror(status, zmsg);
-// }
-// void Zibstream::throwZerror(int status, const char* zmsg) {
-//   ::throwZerror(status, zmsg);
-// }
+} // namespace
 //______________________________________________________________________
 
-void ZobstreamGz::open(bostream& s, unsigned chunkLimit, int level,
-                       int windowBits, int memLevel, unsigned todoBufSz) {
+const char* ZibstreamBz::bzerrorstrings[] = {
+  "OK"
+  ,"SEQUENCE_ERROR"
+  ,"PARAM_ERROR"
+  ,"MEM_ERROR"
+  ,"DATA_ERROR"
+  ,"DATA_ERROR_MAGIC"
+  ,"IO_ERROR"
+  ,"UNEXPECTED_EOF"
+  ,"OUTBUFF_FULL"
+  ,"CONFIG_ERROR"
+  ,""
+  ,""
+  ,""
+};
+//______________________________________________________________________
+
+void ZobstreamBz::open(bostream& s, unsigned chunkLimit, int level,
+                       unsigned todoBufSz) {
+  // Unlike zlib, libbz2 does not support level==0
+  if (level == 0) level = 1;
+  compressLevel = level;
+
   z.next_in = z.next_out = 0;
   z.avail_out = (zipBuf == 0 ? 0 : ZIPDATA_SIZE);
-  z.total_in = 0;
-  debug("deflateInit2");
-  int status = deflateInit2(&z, level, Z_DEFLATED, windowBits, memLevel,
-                            Z_DEFAULT_STRATEGY);
-  if (status != Z_OK) throwZerrorGz(status, z.msg);
+  z.total_in_lo32 = z.total_in_hi32 = 0;
+  debug("ZobstreamBz::open deflateInit2");
+  int status = BZ2_bzCompressInit(&z, level, 0/*verbosity*/,
+                                  0/*default workFactor*/);
+  if (status != BZ_OK) throwZerrorBz(status);
 
   // Declare stream as open
   debug("opening");
@@ -88,33 +90,42 @@ void ZobstreamGz::open(bostream& s, unsigned chunkLimit, int level,
 }
 //______________________________________________________________________
 
-unsigned ZobstreamGz::partId() {
+unsigned ZobstreamBz::partId() {
   return 0x41544144u; // "DATA"
 }
 
-void ZobstreamGz::deflateEnd() {
-  int status = ::deflateEnd(&z);
-  if (status != Z_OK) throwZerrorGz(status, z.msg);
+void ZobstreamBz::deflateEnd() {
+  int status = BZ2_bzCompressEnd(&z);
+  if (status != BZ_OK) throwZerrorBz(status);
 }
 
-void ZobstreamGz::deflateReset() {
-  int status = ::deflateReset(&z);
-  if (status != Z_OK) throwZerrorGz(status, z.msg);
+void ZobstreamBz::deflateReset() {
+  int status = BZ2_bzCompressEnd(&z);
+  if (status != BZ_OK) throwZerrorBz(status);
+
+  z.next_in = z.next_out = 0;
+  z.avail_out = (zipBuf == 0 ? 0 : ZIPDATA_SIZE);
+  z.total_in_lo32 = z.total_in_hi32 = 0;
+  debug("ZobstreamBz::open deflateInit2");
+  status = BZ2_bzCompressInit(&z, compressLevel, 0/*verbosity*/,
+                              0/*default workFactor*/);
+  if (status != BZ_OK) throwZerrorBz(status);
 }
 //______________________________________________________________________
 
-void ZobstreamGz::zip2(byte* start, unsigned len, bool finish) {
+void ZobstreamBz::zip2(byte* start, unsigned len, bool finish) {
   debug("zip2 %1 bytes at %2", len, start);
-  int flush = (finish ? Z_FINISH : Z_NO_FLUSH);
+  int flush = (finish ? BZ_FINISH : BZ_RUN);
   Assert(is_open());
 
+#warning "TODO: Feed exactly x*100000 bytes before finishing"
   // If big enough, finish and write out this chunk
-  if (z.total_out > chunkLim()) flush = Z_FINISH;
+  if (z.total_out_lo32 > chunkLim()) flush = BZ_FINISH;
 
-  // true <=> must call deflate() at least once
-  bool callZlibOnce = (flush != Z_NO_FLUSH);
+  // true <=> must call BZ2_bzCompress() at least once
+  bool callZlibOnce = (flush != BZ_RUN);
 
-  z.next_in = start;
+  z.next_in = reinterpret_cast<char*>(start);
   z.avail_in = len;
   while (z.avail_in != 0 || z.avail_out == 0 || callZlibOnce) {
     callZlibOnce = false;
@@ -130,7 +141,7 @@ void ZobstreamGz::zip2(byte* start, unsigned len, bool finish) {
         zd = zipBufLast->next;
       }
       zipBufLast = zd;
-      z.next_out = zd->data;
+      z.next_out = reinterpret_cast<char*>(zd->data);
       z.avail_out = ZIPDATA_SIZE;
       //cerr << "Zob: new ZipData @ " << &zd->data << endl;
     }
@@ -139,19 +150,17 @@ void ZobstreamGz::zip2(byte* start, unsigned len, bool finish) {
           z.next_in, z.avail_in, z.next_out, z.avail_out);
     //memset(z.next_in, 0, z.avail_in);
     //memset(z.next_out, 0, z.avail_out);
-    int status = deflate(&z, flush); // Call zlib
+    int status = BZ2_bzCompress(&z, flush); // Call libbz2
     debug("deflated ni=%1 ai=%2 no=%3 ao=%4 status=%5",
           z.next_in, z.avail_in, z.next_out, z.avail_out, status);
     //cerr << "zip(" << (void*)start << ", " << len << ", " << flush
     //     << ") returned " << status << endl;
-    if (status == Z_STREAM_END
-//      || (status == Z_OK && z.total_out > chunkLim)
-        || (flush == Z_FULL_FLUSH && z.total_in != 0)) {
+    if (status == BZ_STREAM_END) {
       writeZipped();
-      flush = Z_NO_FLUSH;
+      flush = BZ_RUN;
     }
 
-    if (status == Z_STREAM_END) continue;
-    if (status != Z_OK) throwZerrorGz(status, z.msg);
+    if (status == BZ_STREAM_END) continue;
+    if (status != BZ_OK) throwZerrorBz(status);
   }
 }

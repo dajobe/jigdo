@@ -1,13 +1,13 @@
 /* $Id$ -*- C++ -*-
   __   _
-  |_) /|  Copyright (C) 2001-2002  |  richard@
+  |_) /|  Copyright (C) 2001-2005  |  richard@
   | \/¯|  Richard Atterer          |  atterer.net
   ¯ '` ¯
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  Zlib compression layer which integrates with C++ streams
+  Zlib/bzlib2 compression layer which integrates with C++ streams
 
 */
 
@@ -27,10 +27,13 @@
 #include <string.hh>
 #include <zstream.hh>
 #include <zstream-gz.hh>
+#include <zstream-bz.hh>
+// struct ZibstreamBz : Zibstream::Impl { };
 //______________________________________________________________________
 
 DEBUG_UNIT("zstream")
 //________________________________________
+
 namespace {
 
   // Turn zlib error codes/messages into C++ exceptions
@@ -108,7 +111,7 @@ void Zobstream::writeZipped() {
   // dataLen-16       "Compressed data"
   byte buf[16];
   byte* p = buf;
-  serialize4(0x41544144u, p); // DATA
+  serialize4(partId(), p); // DATA or BZIP
   uint64 l = totalOut() + 16;
   serialize6(l, p + 4);
   l = totalIn();
@@ -163,13 +166,13 @@ void Zibstream::open(bistream& s) {
   Paranoid(buf == 0);
   buf = new byte[bufSize];
 
-  z = new ZibstreamGz(); // TODO switch for each block
-  z->setNextIn(0);
-  z->setNextOut(0);
-  z->setAvailIn(0);
-  z->setAvailOut(0);
-  z->init();
-  if (!z->ok()) z->throwError();
+//   z = new ZibstreamGz(); // TODO switch for each block
+//   z->setNextIn(0);
+//   z->setNextOut(0);
+//   z->setAvailIn(0);
+//   z->setAvailOut(0);
+//   z->init();
+//   if (!z->ok()) z->throwError();
 
   dataLen = dataUnc = 0;
   stream = &s;
@@ -178,7 +181,7 @@ void Zibstream::open(bistream& s) {
 void Zibstream::close() {
   if (!is_open()) return;
 
-  z->end();
+  if (z != 0) z->end();
 
   // Deallocate memory
   delete[] buf;
@@ -195,24 +198,24 @@ void Zibstream::close() {
 Zibstream& Zibstream::read(byte* dest, unsigned n) {
   gcountVal = 0; // in case n == 0
   if (!good()) return *this;
-  z->setNextOut(dest);
-  z->setAvailOut(n);
+  nextOut = dest;
+  availOut = n;
 
   //cerr << "Zibstream::read: " << n << " to read, avail_in=" << z->availIn()
   //     << endl;
   SerialIstreamIterator in(*stream);
-  while (z->availOut() > 0) {
+  while (availOut > 0) {
     //____________________
 
     /* If possible, uncompress into destination buffer. Handling this
        case first for speed */
-    if (z->availIn() != 0) {
-      byte* oldNextOut = z->nextOut();
-      z->inflate();
-      gcountVal = z->nextOut() - dest;
-      dataUnc -= z->nextOut() - oldNextOut;
+    if (z != 0 && z->availIn() != 0) {
+      byte* oldNextOut = nextOut;
+      z->inflate(&nextOut, &availOut);
+      gcountVal = nextOut - dest;
+      dataUnc -= nextOut - oldNextOut;
       debug("read: avail_out=%1 dataLen=%2 dataUnc=%3 - inflated %4",
-            z->availOut(), dataLen, dataUnc, z->nextOut() - oldNextOut);
+            availOut, dataLen, dataUnc, nextOut - oldNextOut);
       Assert(dataUnc > 0 || z->streamEnd() || z->ok());
       if (z->availOut() == 0) break;
       if (!z->ok() && !z->streamEnd())
@@ -224,26 +227,38 @@ Zibstream& Zibstream::read(byte* dest, unsigned n) {
     // Need to read another DATA part?
     if (dataLen == 0) {
       Assert(dataUnc == 0);
-      const char* hdr = "DATA";
-      const char* cur = hdr;
-      byte x;
-      while (*cur != '\0' && *stream) {
-        x = stream->get(); // Any errors handled below, after end of while()
-        //debug("read: cur=%1, infile=%2 @%3", int(*cur), x,
-        //      implicit_cast<uint64>(stream->tellg()) - 1);
-        if (*cur != x) { // Reached end of file or non-DATA part
-          stream->seekg(hdr - cur, ios::cur);
-          delete[] buf;
-          buf = 0; // Causes fail() == true
-          throw Zerror(0, string(_("Corrupted input data")));
-        }
-        ++cur;
+      streamsize prevPos = stream->tellg();
+      unsigned id;
+      unserialize4(id, in);
+      if (!*stream || (id != DATA && id != BZIP)) {
+        // Reached end of file or a non-DATA/BZIP part
+        stream->seekg(prevPos, ios::beg);
+        delete[] buf;
+        buf = 0; // Causes fail() == true
+        throw Zerror(0, string(_("Corrupted input data")));
       }
+
+//       Assert(dataUnc == 0);
+//       const char* hdr = "DATA";
+//       const char* cur = hdr;
+//       byte x;
+//       while (*cur != '\0' && *stream) {
+//         x = stream->get(); // Any errors handled below, after end of while()
+//         //debug("read: cur=%1, infile=%2 @%3", int(*cur), x,
+//         //      implicit_cast<uint64>(stream->tellg()) - 1);
+//         if (*cur != x) { // Reached end of file or non-DATA part
+//           stream->seekg(hdr - cur, ios::cur);
+//           delete[] buf;
+//           buf = 0; // Causes fail() == true
+//           throw Zerror(0, string(_("Corrupted input data")));
+//         }
+//         ++cur;
+//       }
       unserialize6(dataLen, in);
       dataLen -= 16;
       unserialize6(dataUnc, in);
 #     if 0
-      cerr << "Zibstream::read: avail_out=" << z->availOut()
+      cerr << "Zibstream::read: avail_out=" << availOut
            << " dataLen=" << dataLen
            << " dataUnc=" << dataUnc << " - new DATA part" << endl;
 #     endif
@@ -252,9 +267,33 @@ Zibstream& Zibstream::read(byte* dest, unsigned n) {
         buf = 0;
         throw Zerror(0, string(_("Corrupted input data")));
       }
-      z->reset();
-      if (!z->ok()) z->throwError();
-    }
+
+      // Decide whether to (re)allocate inflater
+      // One or both out of gz/bz will be null
+//       ZibstreamGz* gz = dynamic_cast<ZibstreamGz*>(z);
+//       ZibstreamBz* bz = dynamic_cast<ZibstreamBz*>(z);
+//       if ((id == DATA && gz == 0)
+//           || (id == BZIP && bz == 0)) {
+#warning foo
+      if (true) {
+        // Delete old, unneeded inflater, if any
+        delete z;
+        // Allocate and init new one
+        if (id == DATA)
+          z = new ZibstreamGz();
+        else
+          z = new ZibstreamBz();
+        z->setNextIn(0);
+        z->setAvailIn(0);
+        z->init();
+        if (!z->ok()) z->throwError();
+      } else {
+        // Nothing changed - just recycle old inflater
+        z->reset();
+        if (!z->ok()) z->throwError();
+      }
+
+    } // endif (dataLen == 0) // Need to read another DATA part?
     //____________________
 
     // Read data from file into buffer?
@@ -284,7 +323,7 @@ Zibstream& Zibstream::read(byte* dest, unsigned n) {
     }
     //____________________
 
-  } // endwhile (z->availOut() > 0)
+  } // endwhile (availOut > 0)
 
 # if 0
   cerr << "Zibstream::read: avail_out=" << z->availOut()

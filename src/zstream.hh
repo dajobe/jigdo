@@ -1,19 +1,19 @@
 /* $Id$ -*- C++ -*-
   __   _
-  |_) /|  Copyright (C) 2001-2004  |  richard@
+  |_) /|  Copyright (C) 2001-2005  |  richard@
   | \/¯|  Richard Atterer          |  atterer.net
   ¯ '` ¯
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  Zlib compression layer which integrates with C++ streams. When
-  deflating, chops up data into DATA chunks of approximately
-  zippedBufSz (see ctor below and ../doc/TechDetails.txt).
+  Zlib/bzlib2 compression layer which integrates with C++ streams. When
+  deflating, chops up data into DATA chunks of approximately zippedBufSz (see
+  ctor below and ../doc/TechDetails.txt).
 
   Maybe this should use streambuf, but 1) I don't really understand
-  streambuf, and 2) the C++ library that comes with GCC 2.95 probably
-  doesn't fully support it (not sure tho).
+  streambuf, and 2) the C++ library that comes with GCC 2.95 probably doesn't
+  fully support it (not sure tho).
 
 */
 
@@ -100,6 +100,11 @@ protected:
   // Write data in zipBuf
   void writeZipped();
 
+  static const unsigned DATA = 0x41544144u;
+  static const unsigned BZIP = 0x50495a42u;
+  // Returns 0x41544144u ("DATA") or 0x50495a42u ("BZIP")
+  virtual unsigned partId() = 0;
+
   virtual void deflateEnd() = 0; // May throw Zerror
   virtual void deflateReset() = 0; // May throw Zerror
 
@@ -152,14 +157,17 @@ private:
 };
 //______________________________________________________________________
 
-/** Analogous to Zobstream, aware of jigdo file formats - expects a
-    number of DATA parts at current stream position. */
+/** Input stream which decompresses data. Analogous to Zobstream, aware of
+    jigdo file formats - expects a number of DATA or BZIP parts at current
+    stream position. */
 class Zibstream {
 public:
 
   /** Interface for gzip and bzip2 implementors. */
   class Impl {
   public:
+    virtual ~Impl() { }
+
     virtual unsigned totalOut() const = 0;
     virtual unsigned totalIn() const = 0;
     virtual unsigned availOut() const = 0;
@@ -168,9 +176,7 @@ public:
     virtual byte* nextIn() const = 0;
     virtual void setTotalOut(unsigned n) = 0;
     virtual void setTotalIn(unsigned n) = 0;
-    virtual void setAvailOut(unsigned n) = 0;
     virtual void setAvailIn(unsigned n) = 0;
-    virtual void setNextOut(byte* n) = 0;
     virtual void setNextIn(byte* n) = 0;
 
     /** Initialize, i.e. inflateInit(). {next,avail}{in,out} must be set up
@@ -181,8 +187,8 @@ public:
     /** Re-init, i.e. inflateReset() */
     virtual void reset() = 0;
 
-    /** Sets an internal status flag. */
-    virtual void inflate() = 0;
+    /** Sets an internal status flag. Updates nextOut and availOut. */
+    virtual void inflate(byte** nextOut, unsigned* availOut) = 0;
     /** Check status flag: At stream end? */
     virtual bool streamEnd() const = 0;
     /** Check status flag: OK? */
@@ -227,12 +233,15 @@ public:
   operator void*() const { return fail() ? (void*)0 : (void*)(-1); }
   bool operator!() const { return fail(); }
 
-protected:
-  void open(bistream& s);
 
 private:
   // Throw a Zerror exception, or bad_alloc() for status==Z_MEM_ERROR
   //inline void throwZerror(int status, const char* zmsg);
+
+  static const unsigned DATA = 0x41544144u;
+  static const unsigned BZIP = 0x50495a42u;
+
+  void open(bistream& s);
 
 //   z_stream z;
   Impl* z;
@@ -242,6 +251,8 @@ private:
   byte* buf; // Contains compressed data
   uint64 dataLen; // bytes remaining to be read from current DATA part
   uint64 dataUnc; // bytes remaining in uncompressed DATA part
+  byte* nextOut; // Pointer into output buffer
+  unsigned availOut; // Bytes remaining in output buffer
 };
 //______________________________________________________________________
 
@@ -281,7 +292,8 @@ void Zobstream::open(bostream& s, unsigned chunkLimit, unsigned todoBufSz) {
 }
 
 void Zobstream::zip(byte* start, unsigned len, bool finish) {
-  zip2(start, len, finish);
+  if (len != 0 || finish)
+    zip2(start, len, finish);
   todoCount = 0;
 }
 //________________________________________

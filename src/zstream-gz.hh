@@ -1,6 +1,6 @@
 /* $Id$ -*- C++ -*-
   __   _
-  |_) /|  Copyright (C) 2001-2002  |  richard@
+  |_) /|  Copyright (C) 2004-2005  |  richard@
   | \/¯|  Richard Atterer          |  atterer.net
   ¯ '` ¯
   This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,7 @@ public:
             int windowBits = 15, int memLevel = 8, unsigned todoBufSz = 256U);
 
 protected:
+  virtual unsigned partId();
   virtual void deflateEnd();
   virtual void deflateReset();
   virtual unsigned totalOut() const { return z.total_out; }
@@ -85,12 +86,11 @@ public:
   virtual byte* nextIn() const { return z.next_in; }
   virtual void setTotalOut(unsigned n) { z.total_out = n; }
   virtual void setTotalIn(unsigned n) { z.total_in = n; }
-  virtual void setAvailOut(unsigned n) { z.avail_out = n; }
   virtual void setAvailIn(unsigned n) { z.avail_in = n; }
-  virtual void setNextOut(byte* n) { z.next_out = n; }
   virtual void setNextIn(byte* n) { z.next_in = n; }
 
   virtual void init() {
+    //memset(&z, 0, sizeof(z));
     z.zalloc = (alloc_func)0;
     z.zfree = (free_func)0;
     z.opaque = 0;
@@ -99,7 +99,11 @@ public:
   virtual void end() { status = inflateEnd(&z); }
   virtual void reset() { status = inflateReset(&z); }
 
-  virtual void inflate() { status = ::inflate(&z, Z_NO_FLUSH); }
+  virtual void inflate(byte** nextOut, unsigned* availOut) {
+    z.next_out = *nextOut; z.avail_out = *availOut;
+    status = ::inflate(&z, Z_NO_FLUSH);
+    *nextOut = z.next_out; *availOut = z.avail_out;
+  }
   virtual bool streamEnd() const { return status == Z_STREAM_END; }
   virtual bool ok() const { return status == Z_OK; }
 

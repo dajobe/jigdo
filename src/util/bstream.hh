@@ -169,8 +169,7 @@ void bifstream::open(const char* name, ios::openmode DEBUG_ONLY_PARAM(m)) {
 }
 
 bofstream::bofstream(const char* name, ios::openmode m) : bostream() {
-  /* Without the trunc, bofstream("foo", ios::binary) will fail if "foo" does
-     not yet exist. The trunc causes it to be created. */
+  // When opened this way, any existing file is truncated
   open(name, m | ios::trunc);
 }
 
