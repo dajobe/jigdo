@@ -43,6 +43,8 @@ public:
                 ConfigFile::iterator destPos);
   virtual ~JigdoDownload();
 
+  void run();
+
   /** Access the correct io member, i.e. for the derived class. */
   virtual IOPtr<SingleUrl::IO>& io();
   virtual const IOPtr<SingleUrl::IO>& io() const;

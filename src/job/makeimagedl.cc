@@ -45,7 +45,10 @@ MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
   md.update(reinterpret_cast<const byte*>(dest.c_str()),
             dest.length()).finish();
   Base64String dirname;
-  dirname.write(md.digest(), 16).flush();
+  // Halve number of bits by XORing bytes. (Would a real CRC64 be better??)
+  byte cksum[8];
+  for (int i = 0; i < 8; ++i) cksum[i] = md.digest()[i] ^ md.digest()[i + 8];
+  dirname.write(cksum, 8).flush();
   tmpDirVal = dest;
   tmpDirVal += DIRSEPS "jigdo-";
   tmpDirVal += dirname.result();
@@ -75,6 +78,7 @@ void MakeImageDl::run() {
 
   writeReadMe();
   jigdo = new JigdoDownload(this, 0, jigdoUrl, mi.configFile().end());
+  jigdo->run();
 }
 
 void MakeImageDl::error(const string& message) {

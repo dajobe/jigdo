@@ -43,16 +43,17 @@ MakeImageDl::JigdoDownload::JigdoDownload(MakeImageDl* m, JigdoDownload* p,
                                           ConfigFile::iterator destPos)
     : SingleUrl(this, jigdoUrl), master(m), parent(p), ioVal(0),
       gunzipBuf(), gunzip(this), insertPos(destPos) {
-  //SingleUrl::io().set(this);
   ioVal.set(master->io->makeImageDl_new(this));
-  SingleUrl::run(0, 0, 0, 0, false);
-# warning "fixme introduce JigdoDownload::run() + separate base class?"
 }
 
 MakeImageDl::JigdoDownload::~JigdoDownload() {
   master->io->makeImageDl_finished(this);
   if (master->jigdo == this) master->jigdo = 0;
   SingleUrl::io().set(0);
+}
+
+void MakeImageDl::JigdoDownload::run() {
+  SingleUrl::run(0, 0, 0, 0, false);
 }
 //______________________________________________________________________
 
