@@ -101,7 +101,7 @@ all-msg:
 		    echo 'export cxx="$$cpp $(CXXFLAGS)"'; \
 		    echo 'export c="$$cpp $(CFLAGS)"'; \
 		fi
-check:		$(programs) torture
+check:		$(programs) torture@exe@
 		@echo 
 		@echo '*** Warning - this will take a few minutes and ~100MB'
 		@echo '*** disk space, and will bash the disc quite a bit...'
@@ -152,11 +152,8 @@ dep depend:	gtk/interface.cc
 		    cd .. && sh config.status; \
 		fi
 strip:
-		for p in $(programs); do \
-		    if test -f "$$p"; then \
-		        strip -R .comment -R .note "$$p"; \
-		    fi; \
-		done
+		for p in $(programs); do if test -f "$$p"; then \
+		    strip -R .comment -R .note "$$p"; fi; done
 
 TEST-DEFAULTOBJS = util/log.o util/string-utf.o util/debug.o
 TEST-LDFLAGS =	$(LDFLAGS) $(GTKLIBS)
@@ -197,11 +194,12 @@ jigdo.res:	jigdo.rc jigdo32.ico
 
 jigdo@exe@:	$(objects-jigdo)
 		$(LD) -o $@ $(objects-jigdo) $(LDFLAGS) $(GTKLIBS) \
-		    $(CURLLIBS) @IF_WINDOWS@ @IF_NODEBUG@ -mwindows
+		    $(CURLLIBS) @IF_WINDOWS@ -lws2_32 @IF_NODEBUG@ -mwindows
 glibcurl/glibcurl-example@exe@:	glibcurl/glibcurl-example.o \
 		    glibcurl/glibcurl.o
 		$(LD_C) -o $@ glibcurl/glibcurl-example.o \
-		    glibcurl/glibcurl.o $(LDFLAGS) $(GTKLIBS) $(CURLLIBS)
+		    glibcurl/glibcurl.o $(LDFLAGS) $(GTKLIBS) $(CURLLIBS) \
+		    @IF_WINDOWS@ -lws2_32
 jigdo-file@exe@: $(objects-jigdo-file)
 		$(LD) -o $@ $(objects-jigdo-file) $(LDFLAGS)
 torture@exe@:	$(objects-torture)
