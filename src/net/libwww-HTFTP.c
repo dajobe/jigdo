@@ -1637,12 +1637,7 @@ PRIVATE int FTPEvent (SOCKET soc, void * pVoid, HTEventType type)
 		ctrl->state = FTP_SUCCESS;
 	    else if (status == HT_OK)
 		ctrl->state = FTP_NEED_DCON;
-	    else if (HTRequest_method(request) == METHOD_PUT)
-		ctrl->state = FTP_ERROR;
-	    else if (!FTP_DIR(data) && !data->stream_error) {
-		FTPListType(data, ctrl->server);
-		ctrl->state = FTP_NEED_SERVER;         /* Try a dir instead? */
-	    } else
+	    else
 		ctrl->state = FTP_ERROR;
 	    break;
 
