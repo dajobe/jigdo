@@ -34,16 +34,16 @@ public:
   AutoNullPtr() : IListBase(), p(0) { }
   AutoNullPtr(T* ptr) : IListBase(), p(ptr) { addSelf(); }
   AutoNullPtr(const AutoNullPtr<T>& b) : IListBase(), p(b.get()) { addSelf(); }
-  ~AutoNullPtr() { iListBase_remove(); }
+  ~AutoNullPtr() { iList_remove(); }
 
   AutoNullPtr<T>& operator=(const AutoNullPtr<T>& b) {
-    iListBase_remove(); p = b.get(); addSelf(); return *this;
+    iList_remove(); p = b.get(); addSelf(); return *this;
   }
   AutoNullPtr<T>& operator=(T* ptr) {
-    iListBase_remove(); p = ptr; addSelf(); return *this;
+    iList_remove(); p = ptr; addSelf(); return *this;
   }
 
-  T* get() const { return p; }
+  T* get()        const { return p; }
   T& operator*()  const { return *p; }
   T* operator->() const { return p; }
   operator bool() const { return p != 0; }
