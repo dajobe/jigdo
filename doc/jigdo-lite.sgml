@@ -53,7 +53,43 @@
 
     <para>If <option>URL</option> is not given on the command line,
     the script prompts for a location to download the
-    `<filename>.jigdo</filename>' file from.</para>
+    `<filename>.jigdo</filename>' file from. The following command
+    line options are recognized:</para>
+
+    <variablelist>
+
+      <varlistentry>
+        <term><option>-h</option> <option>--help</option></term>
+        <listitem>
+          <para>Output short summary of command syntax.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-v</option> <option>--version</option></term>
+        <listitem>
+          <para>Output version number.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--scan</option> <replaceable>FILES</replaceable></term>
+        <listitem>
+          <para>Do not ask for "Files to scan", use this path.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--noask</option></term>
+        <listitem>
+          <para>Do not ask any questions, instead behave as if the
+          user had pressed Return at all prompts. This can be useful
+          when running <command>jigdo-lite</command> from cron jobs or
+          in other non-interactive environments.</para>
+        </listitem>
+      </varlistentry>
+
+    </variablelist>
 
   </refsect1>
   <!-- ============================================================= -->
