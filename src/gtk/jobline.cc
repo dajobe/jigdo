@@ -47,8 +47,8 @@ void JobLine::create(const char* uri, const char* dest) {
   if (*uri == '\0') {
     MessageBox* m = new MessageBox(MessageBox::INFO, MessageBox::OK,
       _("Field for source URL/filename is empty"),
-      _("Please enter an \"http\" or \"ftp\" URL to download, or the name "
-        "of a <tt>.jigdo</tt> file to process."));
+      _("Please enter an \"http\" or \"ftp\" URL to download, or the "
+        "name/URL of a <tt>.jigdo</tt> file to process."));
     m->show();
     return;
   }

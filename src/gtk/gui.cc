@@ -196,7 +196,7 @@ namespace {
     gtk_text_buffer_insert_with_tags(textBuf, &iter,
       _("\nJigsaw Download License\n"), -1, large, center, NULL);
     string copy = subst(_("\n"
-    "\tCopyright © 2001-2003 Richard Atterer <richard%1atterer.net>\n"
+    "\tCopyright © 2001-2004 Richard Atterer <richard%1atterer.net>\n"
     "\tJigsaw Download homepage: http://atterer.net/jigdo\n"
     "\n"), '@');
     gtk_text_buffer_insert_with_tags(textBuf, &iter, copy.c_str(), -1,
