@@ -16,8 +16,9 @@
 #include <config.h>
 
 #include <iostream>
-
 #include <glib.h>
+
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #if HAVE_UNAME
@@ -122,12 +123,17 @@ Download::Download(const string& uri, Output* o)
      using c_str() seems unwise/unportable. Add terminator to data()
      instead. */
   uriVal += '\0';
+
+  curlError = new char[CURL_ERROR_SIZE];
 }
 //________________________________________
 
 Download::~Download() {
   debug("~Download %1", uriVal.data());
   Assert(!insideNewData);
+
+  delete[] curlError;
+
   //   stop();
   if (handle != 0) {
     glibcurl_remove(handle);
@@ -157,30 +163,34 @@ void Download::run() {
   if (handle == 0) {
     handle = curl_easy_init();
     Assert(handle != 0);
-
-    // Set URL
-    curl_easy_setopt(handle, CURLOPT_URL, uriVal.data());
-
-    if (curlDebug) {
-      // Enable debug output
-      curl_easy_setopt(handle, CURLOPT_VERBOSE, 1);
-    }
-    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 1);
-    // Follow redirects
-    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1);
-    // Enable referer for HTTP redirs (CURLOPT_REFERER to be set by creator)
-    curl_easy_setopt(handle, CURLOPT_AUTOREFERER, 1);
-    // Set user agent
-    curl_easy_setopt(handle, CURLOPT_USERAGENT, userAgent.data());
-
-    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, curlWriter);
-    curl_easy_setopt(handle, CURLOPT_WRITEDATA, this);
-    curl_easy_setopt(handle, CURLOPT_PRIVATE, this);
-
-    //curl_easy_setopt(handle, CURLOPT_SHARE, shHandle);
-
-    glibcurl_add(handle);
   }
+
+  if (curlDebug) {
+    // Enable debug output
+    curl_easy_setopt(handle, CURLOPT_VERBOSE, 1);
+  }
+  // Supply error string buffer
+  curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, curlError);
+  curlError[0] = '\0';
+  curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1);
+
+  curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 1);
+  // Follow redirects
+  curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1);
+  // Enable referer for HTTP redirs (CURLOPT_REFERER to be set by creator)
+  curl_easy_setopt(handle, CURLOPT_AUTOREFERER, 1);
+  // Set user agent
+  curl_easy_setopt(handle, CURLOPT_USERAGENT, userAgent.data());
+
+  curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, curlWriter);
+  curl_easy_setopt(handle, CURLOPT_WRITEDATA, this);
+  curl_easy_setopt(handle, CURLOPT_PRIVATE, this);
+
+  //curl_easy_setopt(handle, CURLOPT_SHARE, shHandle);
+  glibcurl_add(handle);
+
+  // Set URL
+  curl_easy_setopt(handle, CURLOPT_URL, uriVal.data());
 
   //Paranoid(handle != 0); // Don't call this after stop()
   state = RUNNING;
@@ -202,6 +212,15 @@ size_t Download::curlWriter(void* data, size_t size, size_t nmemb,
 
   if (self->stopLaterId != 0) return len;
   self->insideNewData = true;
+
+  double contentLen;
+  if (curl_easy_getinfo(self->handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD,
+                        &contentLen) == CURLE_OK
+      && contentLen > 0.5) {
+    self->outputVal->download_dataSize(
+      static_cast<uint64>(contentLen + self->resumeOffset()));
+  }
+
   //if (self->state == PAUSE_SCHEDULED) self->pauseNow();
   self->currentSize += len;
   self->outputVal->download_data(reinterpret_cast<const byte*>(data),
@@ -209,59 +228,6 @@ size_t Download::curlWriter(void* data, size_t size, size_t nmemb,
   self->insideNewData = false;
   return len;
 }
-//______________________________________________________________________
-
-#if 0
-// Function which is called by libwww whenever anything happens for a request
-BOOL Download::alertCallback(HTRequest* request, HTAlertOpcode op,
-                             int /*msgnum*/, const char* /*dfault*/,
-                             void* input, HTAlertPar* /*reply*/) {
-  if (request == 0) return NO;
-  // A Download object hides behind the output stream registered with libwww
-  Download* self = getDownload(request);
-
-  /* If state==ERROR, then output->error() has already been called - don't
-     send further info. */
-  if (self->state == ERROR) return YES;
-
-  char* host = "host";
-  if (input != 0) host = static_cast<char*>(input);
-
-  if (op != HT_PROG_READ)
-    debug("Alert %1 for %2 obj %3", op, self->uri(), self);
-
-  string info;
-  switch (op) {
-  case HT_PROG_DNS:
-    info = subst(_("Looking up %L1"), host);
-    self->outputVal->download_message(&info);
-    break;
-  case HT_PROG_CONNECT:
-    info = subst(_("Contacting %L1"), host);
-    self->outputVal->download_message(&info);
-    break;
-  case HT_PROG_LOGIN:
-    info = _("Logging in");
-    self->outputVal->download_message(&info);
-    break;
-  case HT_PROG_READ: {
-    // This used to be here. It doesn't work with 206 Partial Content
-    //long len = HTAnchor_length(HTRequest_anchor(request));
-    // This one is better
-    HTResponse* response = HTRequest_response(request);
-    long len = -1;
-    if (response != 0) len = HTResponse_length(response);
-    if (len != -1 && static_cast<uint64>(len) != self->currentSize)
-      self->outputVal->download_dataSize(self->resumeOffset() + len);
-    break;
-  }
-  default:
-    break;
-  }
-
-  return YES; // Value only relevant for op == HT_A_CONFIRM
-}
-#endif
 //______________________________________________________________________
 
 void Download::glibcurlCallback(void*) {
@@ -272,71 +238,20 @@ void Download::glibcurlCallback(void*) {
     char* privatePtr;
     curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &privatePtr);
     Download* download = reinterpret_cast<Download*>(privatePtr);
+
     if (msg->msg == CURLMSG_DONE) {
-      debug("glibcurlCallback: Download %1 done, code %2", download,
-            msg->data.result);
-      download->state = SUCCEEDED;
-      download->outputVal->download_succeeded();
-    } else {
-      debug("glibcurlCallback: Download %1 not done, code %2", download,
-            msg->data.result);
+      debug("glibcurlCallback: Download %1 done, code %2 (%3)", download,
+            msg->data.result, download->curlError);
+      if (msg->data.result == CURLE_OK) {
+        download->state = SUCCEEDED;
+        download->outputVal->download_succeeded();
+      } else {
+        download->generateError(ERROR, msg->data.result);
+      }
+      //glibcurl_remove(download->handle);
     }
   }
 }
-
-#if 0
-namespace {
-  struct libwwwError { int code; const char* msg; const char* type; };
-  libwwwError libwwwErrors[] = { HTERR_ENGLISH_INITIALIZER };
-}
-
-int Download::afterFilter(HTRequest* request, HTResponse* /*response*/,
-                          void* /*param*/, int status) {
-  Download* self = getDownload(request);
-
-#if DEBUG
-  const char* msg = "";
-  switch (status) {
-  case HT_ERROR: msg = " (HT_ERROR)"; break;
-  case HT_LOADED: msg = " (HT_LOADED)"; break;
-  case HT_PARTIAL_CONTENT: msg = " (HT_PARTIAL_CONTENT)"; break;
-  case HT_NO_DATA: msg = " (HT_NO_DATA)"; break;
-  case HT_NO_ACCESS: msg = " (HT_NO_ACCESS)"; break;
-  case HT_NO_PROXY_ACCESS: msg = " (HT_NO_PROXY_ACCESS)"; break;
-  case HT_RETRY: msg = " (HT_RETRY)"; break;
-  case HT_PERM_REDIRECT: msg = " (HT_PERM_REDIRECT)"; break;
-  case HT_TEMP_REDIRECT: msg = " (HT_TEMP_REDIRECT)"; break;
-  }
-  debug("Status %1%2 for %L3 obj %4", status, msg, self->uri(), self);
-#endif
-
-  // Download finished, or server dropped connection on us
-  if (status >= 0) {
-    HTResponse* response = HTRequest_response(request);
-    long len = -1;
-    if (response != 0) len = HTResponse_length(response);
-    if (len == -1 || (len + self->resumeOffset()) == self->currentSize) {
-      // Download finished
-      self->state = SUCCEEDED;
-      self->outputVal->download_succeeded();
-      return HT_OK;
-    }
-  }
-
-  // The connection dropped or there was a timeout
-  /* libwww returns just -1 (HT_ERROR) if I tear down the HTTP connection
-     very early, at a guess before the headers are transmitted completely.
-     Might want to add -1 in the if() below, but that's a very generic error
-     code... :-/ */
-  if (status >= 0 || status == HT_INTERRUPTED || status == HT_TIMEOUT) {
-    self->generateError(INTERRUPTED);
-    return HT_OK;
-  }
-
-  self->generateError();
-  return HT_OK;
-}
-#endif
 //______________________________________________________________________
 
 /* Pause download by removing the request's socket from the list of sockets
@@ -405,6 +320,7 @@ void Download::stop() {
 
 namespace {
 
+#if 0
   const char* curlStrErr(CURLcode cc) {
     switch (cc) {
     CURLE_OK: return _("No error");
@@ -474,6 +390,7 @@ namespace {
     default: return _("Unknown network error");
     }
   }
+#endif
 
 }
 
@@ -492,39 +409,61 @@ gboolean Download::stopLater_callback(gpointer data) {
 }
 //______________________________________________________________________
 
-#if 0
 // Call output->error() with appropriate string taken from request object
 /* If this is called, the Download is assumed to have failed in a
-   non-recoverable way. */
-void Download::generateError(State newState) {
+   non-recoverable way. cc is a CURLcode */
+void Download::generateError(State newState, int cc) {
   if (state == ERROR || state == INTERRUPTED || state == SUCCEEDED) return;
-
-  Assert(request != 0);
-  HTList* errList = HTRequest_error(request);
-  HTError* err;
-  int errIndex = 0;
-  while ((err = static_cast<HTError*>(HTList_removeFirstObject(errList)))) {
-    errIndex = HTError_index(err);
-    debug("  %L1 %L2",
-          libwwwErrors[errIndex].code, libwwwErrors[errIndex].msg);
-  }
-
   string s;
-  if (strcmp("client_error", libwwwErrors[errIndex].type) == 0
-      || strcmp("server_error", libwwwErrors[errIndex].type) == 0) {
-    // Include error code with HTTP errors
-    append(s, libwwwErrors[errIndex].code);
-    s += ' ';
-  }
-  s += libwwwErrors[errIndex].msg;
-
+//   if (strcmp("client_error", libwwwErrors[errIndex].type) == 0
+//       || strcmp("server_error", libwwwErrors[errIndex].type) == 0) {
+//     // Include error code with HTTP errors
+//     append(s, libwwwErrors[errIndex].code);
+//     s += ' ';
+//   }
   state = newState;
-  /* libwww is not internationalized, so the string always ought to be UTF-8.
-     Oh well, check just to be sure. */
-  bool validUtf8 = g_utf8_validate(s.c_str(), s.length(), NULL);
+  /* libcurl is not internationalized, so the string always ought to be
+     UTF-8. Oh well, check just to be sure. */
+  bool validUtf8 = g_utf8_validate(curlError, -1, NULL);
   Assert(validUtf8);
-  if (!validUtf8)
+  if (!validUtf8) {
     s = _("Error");
+    outputVal->download_failed(&s);
+    return;
+  }
+
+  switch (cc) {
+  case CURLE_PARTIAL_FILE:
+    s = _("Transfer interrupted");
+    break;
+  case CURLE_HTTP_RETURNED_ERROR:
+    int httpCode = 0;
+    for (const char* p = curlError; *p != 0; ++p) {
+      if (*p >= '0' && *p <= '9')
+        httpCode = 10 * httpCode + *p - '0';
+      else
+        httpCode = 0;
+    }
+    debug("genErr: `%1' => %2", curlError, httpCode);
+    if (httpCode == 0) break;
+    switch (httpCode) {
+      case 305: s = _("305 Use Proxy"); break;
+      case 400: s = _("400 Bad Request"); break;
+      case 401: s = _("401 Unauthorized"); break;
+      case 403: s = _("403 Forbidden"); break;
+      case 404: s = _("404 Not Found"); break;
+      case 407: s = _("407 Proxy Authentication Required"); break;
+      case 408: s = _("408 Request Timeout"); break;
+      case 500: s = _("500 Internal Server Error"); break;
+      case 501: s = _("501 Not Implemented"); break;
+      case 503: s = _("503 Service Unavailable"); break;
+    }
+    break;
+  }
+  if (s.empty() && curlError[0] != '\0') {
+    s = toupper(curlError[0]);
+    s += (curlError + 1);
+  }
   outputVal->download_failed(&s);
+  curlError[0] = '\0';
 }
-#endif

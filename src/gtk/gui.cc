@@ -68,6 +68,7 @@ namespace {
    glade-generated data structures, connecting button press events to
    the corresponding function etc. */
 void GUI::create() {
+  debug("create");
   window.create();
   filesel.create();
   GUI::jobList.postGtkInit();
@@ -152,6 +153,7 @@ void GUI::create() {
 #                    endif
                      );
 # endif
+  debug("create end");
 }
 //______________________________________________________________________
 
@@ -211,28 +213,6 @@ namespace {
     "to link the jigdo code with the OpenSSL project's \"OpenSSL\" library "
     "(or with modified versions of it that use the same license as the "
     "\"OpenSSL\" library), and to distribute the linked executables.\n"),
-     -1);
-    gtk_text_buffer_insert_with_tags(textBuf, &iter,
-                                     "______________________________\n\n",
-                                     -1, center, NULL);
-    gtk_text_buffer_insert(textBuf, &iter, _(
-    "Jigsaw Download uses the World Wide Web Consortium's \"libwww\" "
-    "library (see <http://www.w3.org/Library/>), to which the "
-    "following license applies:\n"
-    "\n"
-    "Copyright © 1995-1998 World Wide Web Consortium, (Massachusetts "
-    "Institute of Technology, Institut National de Recherche en "
-    "Informatique et en Automatique, Keio University). All Rights Reserved. "
-    "This program is distributed under the W3C's Intellectual Property "
-    "License. This program is distributed in the hope that it will be "
-    "useful, but WITHOUT ANY WARRANTY; without even the implied warranty of "
-    "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See W3C License "
-    "<http://www.w3.org/Consortium/Legal/> for more details.\n"
-    "\n"
-    "Copyright © 1995 CERN. \"This product includes computer software "
-    "created and made available by CERN. This acknowledgment shall be "
-    "mentioned in full in any product which includes the CERN computer "
-    "software included herein or parts thereof.\"\n"),
      -1);
     gtk_text_buffer_insert_with_tags(textBuf, &iter,
                                      "______________________________\n\n",

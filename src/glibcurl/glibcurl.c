@@ -151,7 +151,7 @@ void glibcurl_cleanup() {
   curlSrc->multiHandle = 0;
   curl_global_cleanup();
 
-  g_source_destroy(&curlSrc->source);
+/*   g_source_destroy(&curlSrc->source); */
   g_source_unref(&curlSrc->source);
   curlSrc = 0;
 }

@@ -47,6 +47,7 @@
 		  <property name="visible">True</property>
 		  <property name="sensitive">False</property>
 		  <property name="tooltip" translatable="yes">Open new .jigdo file or URL</property>
+		  <property name="can_focus">True</property>
 		  <property name="stock_id">gtk-new</property>
 		  <property name="visible_horizontal">True</property>
 		  <property name="visible_vertical">True</property>
@@ -64,6 +65,7 @@
 		  <property name="border_width">1</property>
 		  <property name="sensitive">False</property>
 		  <property name="tooltip" translatable="yes">Scan local filesystems for data needed by jigsaw downloads - useful when &quot;upgrading&quot; e.g. a CD image to a newer version</property>
+		  <property name="can_focus">True</property>
 		  <property name="label" translatable="yes">Reuse files</property>
 		  <property name="use_underline">True</property>
 		  <property name="visible_horizontal">True</property>
@@ -95,6 +97,7 @@
 		  <property name="border_width">1</property>
 		  <property name="sensitive">False</property>
 		  <property name="tooltip" translatable="yes">Change preferences</property>
+		  <property name="can_focus">True</property>
 		  <property name="stock_id">gtk-properties</property>
 		  <property name="visible_horizontal">True</property>
 		  <property name="visible_vertical">True</property>
@@ -111,12 +114,12 @@
 		  <property name="border_width">1</property>
 		  <property name="visible">True</property>
 		  <property name="tooltip" translatable="yes">Exit from Jigsaw Download</property>
+		  <property name="can_focus">True</property>
 		  <property name="stock_id">gtk-quit</property>
 		  <property name="visible_horizontal">True</property>
 		  <property name="visible_vertical">True</property>
 		  <property name="is_important">False</property>
 		  <signal name="clicked" handler="on_toolbarExit_clicked"/>
-		  <accelerator key="Q" modifiers="GDK_MOD1_MASK" signal="clicked"/>
 		</widget>
 		<packing>
 		  <property name="expand">False</property>
@@ -2439,9 +2442,9 @@ just click Next...</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
-				      <signal name="enter" handler="on_download_closeButton_enter" last_modification_time="Tue, 25 Feb 2003 22:09:53 GMT"/>
-				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:10:02 GMT"/>
-				      <signal name="clicked" handler="on_download_closeButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:45 GMT"/>
+				      <signal name="enter" handler="on_jigdo_closeButton_enter" last_modification_time="Sat, 17 Jul 2004 15:51:37 GMT"/>
+				      <signal name="leave" handler="on_jigdo_button_leave" last_modification_time="Sat, 17 Jul 2004 15:51:48 GMT"/>
+				      <signal name="clicked" handler="on_jigdo_closeButton_clicked" last_modification_time="Sat, 17 Jul 2004 15:52:01 GMT"/>
 
 				      <child>
 					<widget class="GtkImage" id="image28">
@@ -2468,9 +2471,9 @@ just click Next...</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
-				      <signal name="enter" handler="on_download_restartButton_enter" last_modification_time="Mon, 03 Mar 2003 16:05:10 GMT"/>
-				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:46 GMT"/>
-				      <signal name="clicked" handler="on_download_restartButton_clicked" last_modification_time="Mon, 03 Mar 2003 16:05:21 GMT"/>
+				      <signal name="enter" handler="on_jigdo_restartButton_enter" last_modification_time="Sat, 17 Jul 2004 15:56:18 GMT"/>
+				      <signal name="leave" handler="on_jigdo_button_leave" last_modification_time="Sat, 17 Jul 2004 15:56:28 GMT"/>
+				      <signal name="clicked" handler="on_jigdo_restartButton_clicked" last_modification_time="Sat, 17 Jul 2004 15:56:35 GMT"/>
 
 				      <child>
 					<widget class="GtkImage" id="image29">
@@ -2519,9 +2522,9 @@ just click Next...</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
-				      <signal name="enter" handler="on_download_stopButton_enter" last_modification_time="Tue, 25 Feb 2003 22:09:15 GMT"/>
-				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:26 GMT"/>
-				      <signal name="clicked" handler="on_download_stopButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:33 GMT"/>
+				      <signal name="enter" handler="on_jigdo_stopButton_enter" last_modification_time="Sat, 17 Jul 2004 15:59:33 GMT"/>
+				      <signal name="leave" handler="on_jigdo_button_leave" last_modification_time="Sat, 17 Jul 2004 15:59:43 GMT"/>
+				      <signal name="clicked" handler="on_jigdo_stopButton_clicked" last_modification_time="Sat, 17 Jul 2004 15:59:50 GMT"/>
 
 				      <child>
 					<widget class="GtkImage" id="image30">
@@ -2548,9 +2551,9 @@ just click Next...</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
-				      <signal name="enter" handler="on_download_pauseButton_enter" last_modification_time="Tue, 25 Feb 2003 18:23:27 GMT"/>
-				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 18:23:57 GMT"/>
-				      <signal name="clicked" handler="on_download_pauseButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:22 GMT"/>
+				      <signal name="enter" handler="on_jigdo_pauseButton_enter" last_modification_time="Sat, 17 Jul 2004 16:00:06 GMT"/>
+				      <signal name="leave" handler="on_jigdo_button_leave" last_modification_time="Sat, 17 Jul 2004 16:00:12 GMT"/>
+				      <signal name="clicked" handler="on_jigdo_pauseButton_clicked" last_modification_time="Sat, 17 Jul 2004 16:00:18 GMT"/>
 
 				      <child>
 					<widget class="GtkImage" id="image31">
@@ -2577,9 +2580,9 @@ just click Next...</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
-				      <signal name="enter" handler="on_download_startButton_enter" last_modification_time="Tue, 25 Feb 2003 22:08:55 GMT"/>
-				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:06 GMT"/>
-				      <signal name="clicked" handler="on_download_startButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:10:43 GMT"/>
+				      <signal name="enter" handler="on_jigdo_startButton_enter" last_modification_time="Sat, 17 Jul 2004 16:00:30 GMT"/>
+				      <signal name="leave" handler="on_jigdo_button_leave" last_modification_time="Sat, 17 Jul 2004 16:00:36 GMT"/>
+				      <signal name="clicked" handler="on_jigdo_startButton_clicked" last_modification_time="Sat, 17 Jul 2004 16:00:42 GMT"/>
 
 				      <child>
 					<widget class="GtkImage" id="image32">

@@ -133,15 +133,17 @@ private:
   // Unregister request from glibwww event loop
 //   void pauseNow();
   // Call output->error() with appropriate string taken from request object
-  void generateError(State newState = ERROR);
+  void generateError(State newState = ERROR, int cc = -1);
   /* A callback function which is registered if the download needs to be
      stopped. It'll get executed the next time the main glib loop is
      executed. This delayed execution is necessary because libwww doesn't
      like Download::stop() being called from download_newData(). */
   static gboolean stopLater_callback(gpointer data);
-  //   static CURLSH* shHandle; // Handle of curl_shared object
 
+  //   static CURLSH* shHandle; // Handle of curl_shared object
   CURL* handle; // Handle of curl_easy object
+  char* curlError; // Curl error string buffer
+
   string uriVal; // Careful: Includes a trailing null byte!
   uint64 resumeOffsetVal;
   uint64 currentSize;
