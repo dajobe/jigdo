@@ -1,6 +1,37 @@
 Changelog for Jigsaw Download                               -*- Text -*-
 ------------------------------------------------------------------------
 
+jigdo 0.7.1 -- Richard Atterer, 
+
+  - .jigdo file format: Semantics of multiple [Image] sections have
+    changed: Formerly, the idea was that one .jigdo could provide
+    multiple images, but the idea never caught on and the idea "one
+    .jigdo => one image" is firmly planted in people's minds now. The
+    original incentive of allowing multiple [Image] sections was to
+    make it possible to avoid duplication of .jigdo data, by providing
+    all 7 CDs and the single DVD in one .jigdo. This duplication can
+    now be avoided by [Include]ing the CDs' files from the DVD's.
+  - Fixed minor bug in jigdo-lite; it would sometimes abort even if no
+    error code was returned by jigdo-file
+  - GUI: Added code for processing of .jigdo files and [Include]
+  - GUI: Added simple caching of downloaded data during .jigdo
+    downloads
+  - Bugfix for "jigdo-file make-template": Sometimes *incorrectly*
+    reports: "You have found a bug". (Maxim Reznik)
+  - Bugfix for "jigdo-file make-image": Handle I/O errors more
+    gracefully (Brian Bennett)
+  - Bugfix for "jigdo-file make-image" (Andreas Krüger): Do not
+    allocate on the stack an array whose size is the number of matched
+    files in the image. This gave, er, "funny" results with tens of
+    thousands of matches... <slap>
+  - Added comfortable debugging aids ("debug(fmt,...)", --debug=...)
+  - Various documentation updates (manpages, Hacking.txt, changelog;-P)
+  - Fix for build problems if size_t is 64 bits wide
+  - Added unit tests for many parts of the code, with support in
+    depend.awk
+  - Fixed bug in html-beautify.awk
+  - Vanity meter reports 25000 lines of code in 120 files
+
 jigdo 0.7.0 -- Richard Atterer, 05 May 2003
 
   - GUI: Code for guessing the user's proxy settings. On Unix, reads

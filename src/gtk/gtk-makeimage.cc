@@ -56,12 +56,14 @@ GtkMakeImage::~GtkMakeImage() {
 bool GtkMakeImage::run() {
 
   // Show URL as object name
-  //progress.erase();
-  //status = _("Waiting...");
+  unsigned lastSlash = mid.jigdoUri().rfind('/');
+  const char* object = "";
+  if (lastSlash != string::npos)
+    object = mid.jigdoUri().c_str() + lastSlash + 1;
   treeViewStatus = _("Waiting");
   gtk_tree_store_set(jobList()->store(), row(),
                      JobList::COLUMN_STATUS, treeViewStatus.c_str(),
-                     JobList::COLUMN_OBJECT, "",
+                     JobList::COLUMN_OBJECT, object,
                      -1);
   mid.run();
 

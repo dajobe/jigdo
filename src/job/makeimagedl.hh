@@ -32,6 +32,7 @@
 #include <md5sum.hh>
 #include <nocopy.hh>
 #include <single-url.hh>
+#include <status.hh>
 //______________________________________________________________________
 
 /**
@@ -70,12 +71,9 @@ public:
       includes. Once exceeded, io->job_failed() is called. */
   static const int MAX_INCLUDES = 100;
 
-  /** Maximum depth of [Include] directives, mainly to detect include loops.
-      Once exceeded, io->job_failed() is called. */
-  static const int MAX_INCLUDE_DEPTH = 10;
-
   enum State {
     DOWNLOADING_JIGDO,
+    DOWNLOADING_JIGDO_TEMPLATE,
     DOWNLOADING_TEMPLATE,
     FINAL_STATE, // Value isn't actually used; all below are final states:
     ERROR
@@ -129,8 +127,8 @@ public:
 
   /** Is called by a child JigdoIO once the [Image] section has been seen.
       The arguments are modified!
-      @return SUCCESS or FAILURE (latter if ImageInfo parsing failed) */
-  bool setImageSection(string* imageName, string* imageInfo,
+      @return OK or FAILED (latter if ImageInfo parsing failed) */
+  void setImageSection(string* imageName, string* imageInfo,
                        string* imageShortInfo, string* templateUrl,
                        MD5** templateMd5);
   /** Has setImageSection() already been called? (=>is imageName
@@ -197,6 +195,11 @@ public:
   /** Return ImageInfo as it appears in the .jigdo file. The value has *not*
       been checked for validity (correct tag nesting etc). */
   inline const string& imageInfoOrig() const { return imageInfoVal; }
+
+  /** To be called by JigdoIO only. Called to notify the MakeImageDl that the
+      last JigdoIO has successfully finished. Called just after
+      childSucceeded() for that JigdoIO. */
+  void jigdoFinished();
 
 private: // Really private
   /** Methods from JigdoConfig::ProgressReporter */

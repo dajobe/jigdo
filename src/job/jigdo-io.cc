@@ -75,7 +75,7 @@ JigdoIO::~JigdoIO() {
   }
 
   /* Bug: Don't delete children; master will do this! If we deleted them
-     here, Child::childIoVal would be left dangling. */
+     here, MakeImageDl::Child::childIoVal would be left dangling. */
 //   // Delete all our children
 //   JigdoIO* x = firstChild;
 //   while (x != 0) {
@@ -128,11 +128,13 @@ void JigdoIO::job_succeeded() {
     if (failed()) return;
   }
 
-  if (sectionEnd() == FAILURE) return;
+  if (sectionEnd().failed()) return;
   setFinished();
-  if (imgSect_eof() == FAILURE) return;
+  XStatus st = imgSect_eof();
+  if (st.xfailed()) return;
   if (frontend != 0) frontend->job_succeeded();
   master()->childSucceeded(childDl, this, frontend);
+  if (st.returned(1)) master()->jigdoFinished(); // Causes "delete this"
 }
 
 void JigdoIO::job_failed(string* message) {
@@ -295,7 +297,7 @@ gboolean JigdoIO::childFailed_callback(gpointer data) {
         (self->source() != 0 ? self->source()->location().c_str() : "?") );
   self->childFailedId = 0;
   self->master()->childFailed(self->childDl, self, self->frontend);
-  // Careful - self was probably deleted by above call
+  self->master()->jigdoFinished(); // "delete self"
   return FALSE; // "Don't call me again"
 }
 //______________________________________________________________________
@@ -325,34 +327,48 @@ gboolean JigdoIO::childFailed_callback(gpointer data) {
    number of [Include]s and /maybe/ an [Image] somewhere inbetween the
    [Include]s could have been downloaded. To find out whether this was the
    case, a quick depth-first scan of the tree is now necessary, up to the
-   next point where we will "hang" again because some .jigdo file has not
-   been downloaded completely. */
+   next point where we "hang" again because some .jigdo file has not been
+   downloaded completely.
+
+   The whole code is also used to find out when all JigdoIOs have finished -
+   this could be done in simpler ways just by counting the active ones, but
+   it comes "for free" with this code. */
 
 // New child created due to [Include] in current .jigdo data
 void JigdoIO::imgSect_newChild(JigdoIO* child) {
-  if (master()->finalState() || master()->haveImageSection()
-      || imgSectCandidate() != this) return;
-  debug("imgSect_newChild: From %1:%2 to child %3",
+  if (master()->finalState() || imgSectCandidate() != this) return;
+  debug("imgSect_newChild%1: From %2:%3 to child %4",
+        (master()->haveImageSection() ? "(haveImageSection)" : ""),
         urlVal, line, child->urlVal);
   setImgSectCandidate(child);
 }
 
 // An [Image] section just ended - maybe it was the first one?
-bool JigdoIO::imgSect_parsed() {
+void JigdoIO::imgSect_parsed() {
   //debug("imgSect_parsed: %1 %2 %3", imgSectCandidate(), this, master()->finalState());
-  if (master()->finalState() || master()->haveImageSection()
-      || imgSectCandidate() != this) return SUCCESS;
-  debug("imgSect_parsed: %1:%2", urlVal, line - 1);
-  return master()->setImageSection(&imageName, &imageInfo, &imageShortInfo,
-                                &templateUrl, &templateMd5);
+  if (master()->finalState() || imgSectCandidate() != this) return;
+  debug("imgSect_parsed%1: %2:%3", (master()->haveImageSection()
+        ? "(haveImageSection)" : ""), urlVal, line - 1);
+  if (master()->haveImageSection()) return;
+  master()->setImageSection(&imageName, &imageInfo, &imageShortInfo,
+                            &templateUrl, &templateMd5);
 }
 
-// The end of the file was hit without any [Image] section being found
-bool JigdoIO::imgSect_eof() {
-  if (master()->finalState() || master()->haveImageSection()
-      || imgSectCandidate() != this) return SUCCESS;
+#if DEBUG
+namespace {
+  inline const char* have(MakeImageDl* master) {
+    if (master->haveImageSection())
+      return "I";
+    else
+      return " ";
+  }
+}
+#endif
 
-  Paranoid(imageSectionLine == 0); // "No [Image] found"
+// The end of the file was hit
+XStatus JigdoIO::imgSect_eof() {
+  MakeImageDl* m = master();
+  if (m->finalState() || imgSectCandidate() != this) return OK;
 
   JigdoIO* x = parent; // Current position in tree
   int l = includeLine; // Line number in x, 0 if at start
@@ -365,7 +381,7 @@ bool JigdoIO::imgSect_eof() {
     JigdoIO* ii = x;
     while (ii != 0) { indent -= 2; ii = ii->parent; }
     if (indent < indentStr) indent = indentStr;
-    debug("imgSect_eof: %1Now at %2:%3", indent, x->urlVal, l);
+    debug("imgSect_eof:%1%2Now at %3:%4", have(m), indent, x->urlVal, l);
 #   endif
     JigdoIO* nextChild;
     if (l == 0) nextChild = x->firstChild; else nextChild = child->next;
@@ -375,13 +391,14 @@ bool JigdoIO::imgSect_eof() {
          area of the file that l moves over contains an [Image] */
       if (l < x->imageSectionLine
           && x->imageSectionLine < nextChild->includeLine) {
-        debug("imgSect_eof: %1Found before [Include]", indent);
-        return master()->setImageSection(&x->imageName, &x->imageInfo,
-            &x->imageShortInfo, &x->templateUrl, &x->templateMd5);
+        debug("imgSect_eof:%1%2Found before [Include]", have(m), indent);
+        if (!m->haveImageSection())
+          m->setImageSection(&x->imageName, &x->imageInfo,
+              &x->imageShortInfo, &x->templateUrl, &x->templateMd5);
       }
       // No [Image] inbetween - move on, descend into [Include]
-      debug("imgSect_eof: %1Now at %2:%3, descending",
-            indent, x->urlVal, nextChild->includeLine);
+      debug("imgSect_eof:%1%2Now at %3:%4, descending",
+            have(m), indent, x->urlVal, nextChild->includeLine);
       x = nextChild;
       l = 0;
       child = 0;
@@ -389,30 +406,36 @@ bool JigdoIO::imgSect_eof() {
     }
 
     // x has no more children - but maybe an [Image] at the end?
-    if (x->imageSectionLine != 0) {
-      debug("imgSect_eof: %1Found after last [Include], if any", indent);
-      Paranoid(l < x->imageSectionLine);
-      return master()->setImageSection(&x->imageName, &x->imageInfo,
-          &x->imageShortInfo, &x->templateUrl, &x->templateMd5);
+    if (l < x->imageSectionLine) {
+      debug("imgSect_eof:%1%2Found after last [Include], if any",
+            have(m), indent);
+      if (!m->haveImageSection())
+        m->setImageSection(&x->imageName, &x->imageInfo,
+                       &x->imageShortInfo, &x->templateUrl, &x->templateMd5);
     }
 
     // Nothing found. If x not yet fully downloaded, stop here
     if (!x->finished()) {
-      debug("imgSect_eof: %1Not found yet, waiting for %2 to download",
-            indent, x->urlVal);
+      debug("imgSect_eof:%1%2Waiting for %3 to download",
+            have(m), indent, x->urlVal);
       setImgSectCandidate(x);
-      return SUCCESS;
+      return OK;
     }
 
     // Nothing found and finished - go back up in tree
-    debug("imgSect_eof: %1Now at end of %2, ascending",
-          indent, x->urlVal);
+    debug("imgSect_eof:%1%2Now at end of %3, ascending",
+          have(m), indent, x->urlVal);
     l = x->includeLine;
     child = x;
     x = x->parent;
   }
-  generateError(_("No `[Image]' section found in .jigdo data"));
-  return FAILURE;
+  if (m->haveImageSection()) {
+    debug("imgSect_eof: Finished");
+    return XStatus(1);
+  } else {
+    generateError(_("No `[Image]' section found in .jigdo data"));
+    return FAILED;
+  }
 }
 //______________________________________________________________________
 
@@ -448,7 +471,7 @@ void JigdoIO::jigdoLine(string* l) {
   //____________________
 
   // This is a "[Section]" line
-  if (sectionEnd() == FAILURE) return;
+  if (sectionEnd().failed()) return;
   ++x; // Advance beyond the '['
   if (advanceWhitespace(x, end)) // Skip space after '['
     return generateError(_("No closing `]' for section name"));
@@ -485,20 +508,22 @@ void JigdoIO::jigdoLine(string* l) {
 }
 //______________________________________________________________________
 
-bool JigdoIO::sectionEnd() {
-  if (section != "Image") return SUCCESS;
+Status JigdoIO::sectionEnd() {
+  if (section != "Image") return OK;
   // Section that just ended was [Image]
   const char* valueName = 0;
   if (templateMd5 == 0) valueName = "Template-MD5Sum";
   if (templateUrl.empty()) valueName = "Template";
   if (imageName.empty()) valueName = "Filename";
-  if (valueName == 0)
-    return imgSect_parsed();
+  if (valueName == 0) {
+    imgSect_parsed();
+    return OK;
+  }
   // Error: Not all required fields found
   --line;
   string s = subst(_("`%1=...' line missing in [Image] section"), valueName);
   generateError(s);
-  return FAILURE;
+  return FAILED;
 }
 //______________________________________________________________________
 
@@ -605,8 +630,8 @@ void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
       if (!imageName.empty()) return generateError(_("Value redefined"));
       if (value.empty()) return generateError(_("Missing argument"));
       // Only use leaf name, ignore dirname delimiters, max 100 chars
-      string::size_type lastSlash = value.front().find_last_of('/');
-      string::size_type lastSep = value.front().find_last_of(DIRSEP);
+      string::size_type lastSlash = value.front().rfind('/');
+      string::size_type lastSep = value.front().rfind(DIRSEP);
       if (lastSlash > lastSep) lastSep = lastSlash;
       imageName.assign(value.front(), lastSep + 1, 100);
       if (imageName.empty()) return generateError(_("Invalid image name"));

@@ -217,10 +217,10 @@ int JigdoFileCmd::makeTemplate() {
     op(new MkTemplate(&cache, image, &jc, templ, *optReporter,
                      optZipQuality, readAmount, optAddImage, optAddServers));
   op->setMatchExec(optMatchExec);
-  size_t lastDirSep = imageFile.find_last_of(DIRSEP);
+  size_t lastDirSep = imageFile.rfind(DIRSEP);
   if (lastDirSep == string::npos) lastDirSep = 0; else ++lastDirSep;
   string imageFileLeaf(imageFile, lastDirSep);
-  lastDirSep = templFile.find_last_of(DIRSEP);
+  lastDirSep = templFile.rfind(DIRSEP);
   if (lastDirSep == string::npos) lastDirSep = 0; else ++lastDirSep;
   string templFileLeaf(templFile, lastDirSep);
   if (op->run(imageFileLeaf, templFileLeaf)) return 3;

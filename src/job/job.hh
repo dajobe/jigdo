@@ -11,9 +11,6 @@
   All interaction with the rest of the system (input/output, user
   interaction) happens via an IO object.
 
-  ATM there's no need for a common base class for all jobs, so they're only
-  grouped together in the Job namespace.
-
 */
 
 #ifndef JOB_HH

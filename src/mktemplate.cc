@@ -390,7 +390,7 @@ bool MkTemplate::matchExecCommands(PartialMatch* x) {
 
   string matchPath, leaf;
   const string& leafName = x->file()->leafName();
-  string::size_type lastSlash = leafName.find_last_of(DIRSEP);
+  string::size_type lastSlash = leafName.rfind(DIRSEP);
   if (lastSlash == string::npos) {
     leaf = leafName;
   } else {

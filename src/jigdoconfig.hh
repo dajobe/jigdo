@@ -41,12 +41,19 @@ public:
   };
   //________________________________________
 
-  // Open file for input and create a ConfigFile object
+  /** Helper function: Given a string, return 0 if the string has no "Label:"
+      prefix, otherwise return the offset of the ':'. The "Label" portion of
+      the string can contain *any* character except '/' and
+      whitespace/control characters */
+  static inline unsigned findLabelColon(const string& s);
+  //________________________________________
+
+  /** Open file for input and create a ConfigFile object */
   JigdoConfig(const char* jigdoFile, ProgressReporter& pr);
   JigdoConfig(const string& jigdoFile, ProgressReporter& pr);
-  /* Take over possession of existing ConfigFile - configFile will be
-     deleted in ~JigdoConfig()! jigdoFile argument is not used except
-     for error messages. */
+  /** Take over possession of existing ConfigFile - configFile will be
+      deleted in ~JigdoConfig()! jigdoFile argument is not used except for
+      error messages. */
   JigdoConfig(const char* jigdoFile, ConfigFile* configFile,
               ProgressReporter& pr);
   JigdoConfig(const string& jigdoFile, ConfigFile* configFile,
@@ -121,6 +128,17 @@ private:
   Map serverMap;
   ForwardReporter freporter;
 };
+//______________________________________________________________________
+
+unsigned JigdoConfig::findLabelColon(const string& s) {
+  string::const_iterator i = s.begin(), e = s.end();
+  while (i != e) {
+    if (*i == '/' || static_cast<unsigned char>(*i) <= ' ') return 0;
+    if (*i == ':') return i - s.begin();
+    ++i;
+  }
+  return 0;
+}
 //______________________________________________________________________
 
 JigdoConfig::ForwardReporter::ForwardReporter(

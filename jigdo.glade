@@ -1265,7 +1265,7 @@ need to complete step 2 before the actual file download can start!&lt;/b&gt;</pr
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
-				      <property name="expand">True</property>
+				      <property name="expand">False</property>
 				      <property name="fill">True</property>
 				    </packing>
 				  </child>
@@ -1299,12 +1299,7 @@ need to complete step 2 before the actual file download can start!&lt;/b&gt;</pr
 				      <property name="label" translatable="yes">#Info
 x
 x
-x
-x
-x
-x
-x
-</property>
+x</property>
 				      <property name="use_underline">False</property>
 				      <property name="use_markup">True</property>
 				      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -1317,7 +1312,7 @@ x
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
-				      <property name="expand">True</property>
+				      <property name="expand">False</property>
 				      <property name="fill">True</property>
 				    </packing>
 				  </child>

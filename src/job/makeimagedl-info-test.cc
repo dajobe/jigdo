@@ -35,6 +35,12 @@ Job::MakeImageDl::~MakeImageDl() { }
 
 //======================================================================
 
+void Download::uriJoin(string* dest, const string&, const string& rel) {
+  *dest = rel;
+}
+
+//======================================================================
+
 namespace {
 
   const char* const hexDigits = "0123456789abcdef";

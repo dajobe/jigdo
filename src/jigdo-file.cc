@@ -442,9 +442,9 @@ size_t scanTimespan(const char* str) {
    Only deduceName() should call deduceName2(). */
 void deduceName2(string& dest, const char* ext, const string& src) {
   Paranoid(dest.empty());
-  string::size_type lastDot = src.find_last_of(EXTSEP);
+  string::size_type lastDot = src.rfind(EXTSEP);
   if (lastDot != string::npos) {
-    if (src.find_first_of(DIRSEP, lastDot + 1) != string::npos)
+    if (src.rfind(DIRSEP, lastDot + 1) != string::npos)
       lastDot = string::npos;
   }
   dest.assign(src, 0U, lastDot);

@@ -13,6 +13,7 @@
 
 #include <config.h>
 
+#include <jigdoconfig.hh>
 #include <makeimagedl.hh>
 //______________________________________________________________________
 
@@ -20,9 +21,9 @@ using namespace Job;
 
 DEBUG_UNIT("makeimagedl-info")
 
-bool MakeImageDl::setImageSection(string* imageName, string* imageInfo,
+void MakeImageDl::setImageSection(string* imageName, string* imageInfo,
     string* imageShortInfo, string* templateUrl, MD5** templateMd5) {
-  debug("setImageSection");
+  debug("setImageSection templateUrl=%1", templateUrl);
   Paranoid(!haveImageSection());
   imageNameVal.swap(*imageName);
   imageInfoVal.swap(*imageInfo);
@@ -31,7 +32,17 @@ bool MakeImageDl::setImageSection(string* imageName, string* imageInfo,
   templateMd5Val = *templateMd5; *templateMd5 = 0;
 
   if (io) io->makeImageDl_haveImageSection();
-  return SUCCESS;
+
+  /* If the template URL is a regular URL (not a "Label:path/x" string), we
+     can immediately start the .template download. */
+  unsigned labelLen = JigdoConfig::findLabelColon(templateUrlVal);
+  if (labelLen == 0 // relative URL, methinks
+      || templateUrlVal.compare(0, 6, "http:/", 6) == 0
+      || templateUrlVal.compare(0, 5, "ftp:/", 5) == 0) {
+    string templ;
+    Download::uriJoin(&templ, jigdoUri(), templateUrlVal);
+    debug("Template: %1", templ);
+  }
 }
 //______________________________________________________________________
 

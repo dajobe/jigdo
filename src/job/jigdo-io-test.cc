@@ -106,8 +106,8 @@ namespace {
   MemData* memData(MakeImageDl& m, const char* url) {
     Assert(!m.children().empty());
     MemData* result = 0;
-    typedef MakeImageDl::ChildList::iterator iter;
-    for (iter i = m.children().begin(), e = m.children().end(); i != e; ++i){
+    typedef MakeImageDl::ChildList::iterator Iter;
+    for (Iter i = m.children().begin(), e = m.children().end(); i != e; ++i){
       if (i->source()->location() == url) {
         result = dynamic_cast<MemData*>(i->source());
         break;
@@ -241,11 +241,14 @@ void MakeImageDl::childSucceeded(Child* childDl, DataSource::IO* /*childIo*/,
   // No: delete childDl;
 }
 
-bool MakeImageDl::setImageSection(string* imageName, string*, string*,
+void MakeImageDl::setImageSection(string* imageName, string*, string*,
                                   string*, MD5**) {
   Paranoid(!haveImageSection());
   imageNameVal.swap(*imageName);
-  return SUCCESS;
+}
+
+void MakeImageDl::jigdoFinished() {
+  debug("jigdoFinished");
 }
 //======================================================================
 
@@ -288,7 +291,8 @@ void testSimple() {
     idle();
   }
   msg("logged: \"%1\"", escapedString(imgSectLogged));
-  Assert(imgSectLogged == "imgSect_parsed: http://simple:17\n");
+  Assert(imgSectLogged == "imgSect_parsed: http://simple:17\n"
+                          "imgSect_eof: Finished\n");
 }
 
 // Error message: No image section found
@@ -323,7 +327,8 @@ void testMinimal() {
   memData(a)->output();
   idle();
   msg("logged: \"%1\"", escapedString(imgSectLogged));
-  Assert(imgSectLogged == "imgSect_parsed: http://minimal:4\n");
+  Assert(imgSectLogged == "imgSect_parsed: http://minimal:4\n"
+                          "imgSect_eof: Finished\n");
 }
 
 // Error: recursive include
@@ -346,6 +351,8 @@ void testLoop() {
   Assert(imgSectLogged ==
     "imgSect_newChild: From http://loop:1 to child http://simple\n"
     "imgSect_parsed: http://simple:17\n"
+    "imgSect_eof:I  Now at http://loop:1\n"
+    "imgSect_eof:I  Waiting for http://loop to download\n"
     "generateError: Loop of [Include] directives (line 2 in http://loop)\n");
 }
 
@@ -403,7 +410,9 @@ void testFork() {
       "imgSect_eof:     Now at http://fork2:5\n"
       "imgSect_eof:     Now at end of http://fork2, ascending\n"
       "imgSect_eof:   Now at http://fork:2\n"
-      "imgSect_eof:   Found after last [Include], if any\n");
+      "imgSect_eof:   Found after last [Include], if any\n"
+      "imgSect_eof:I  Now at end of http://fork, ascending\n"
+      "imgSect_eof: Finished\n");
   }
 
   {
@@ -421,18 +430,19 @@ void testFork() {
     Assert(imgSectLogged ==
       "imgSect_newChild: From http://fork:1 to child http://fork1\n"
       "imgSect_eof:   Now at http://fork:1\n"
-      "imgSect_eof:   Not found yet, waiting for http://fork to download\n"
+      "imgSect_eof:   Waiting for http://fork to download\n"
       "imgSect_newChild: From http://fork:2 to child http://fork2\n"
       "imgSect_newChild: From http://fork2:4 to child http://fork21\n"
       "imgSect_eof:     Now at http://fork2:4\n"
       "imgSect_eof:     Now at http://fork2:5, descending\n"
       "imgSect_eof:       Now at http://fork22:0\n"
-      "imgSect_eof:       Not found yet, waiting for http://fork22 to download\n"
+      "imgSect_eof:       Waiting for http://fork22 to download\n"
       "imgSect_eof:     Now at http://fork2:5\n"
       "imgSect_eof:     Now at end of http://fork2, ascending\n"
       "imgSect_eof:   Now at http://fork:2\n"
-      "imgSect_eof:   Not found yet, waiting for http://fork to download\n"
-      "imgSect_parsed: http://fork:7\n");
+      "imgSect_eof:   Waiting for http://fork to download\n"
+      "imgSect_parsed: http://fork:7\n"
+      "imgSect_eof: Finished\n");
   }
 }
 
@@ -465,7 +475,13 @@ void testBetween() {
     "imgSect_eof:     Now at http://fork2:5\n"
     "imgSect_eof:     Now at end of http://fork2, ascending\n"
     "imgSect_eof:   Now at http://between:1\n"
-    "imgSect_eof:   Found before [Include]\n");
+    "imgSect_eof:   Found before [Include]\n"
+    "imgSect_eof:I  Now at http://between:6, descending\n"
+    "imgSect_eof:I    Now at http://fork1:0\n"
+    "imgSect_eof:I    Now at end of http://fork1, ascending\n"
+    "imgSect_eof:I  Now at http://between:6\n"
+    "imgSect_eof:I  Now at end of http://between, ascending\n"
+    "imgSect_eof: Finished\n");
 }
 //______________________________________________________________________
 
