@@ -7,8 +7,7 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  #test-deps job/datasource.o util/gunzip.o util/configfile.o util/md5sum.o util/glibc-md5.o
-  job/jigdo-io.o
+  #test-deps job/datasource.o util/gunzip.o util/configfile.o util/md5sum.o util/glibc-md5.o net/uri.o
 */
 
 #define DEBUG 1
@@ -187,11 +186,6 @@ namespace {
 
 //======================================================================
 
-void Download::uriJoin(string* dest, const string&, const string& rel) {
-  *dest = rel;
-}
-//======================================================================
-
 MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md,
                                           string* leafnameOut) {
   Assert(md == 0);
@@ -249,10 +243,11 @@ void MakeImageDl::setImageSection(string* imageName, string*, string*,
   imageNameVal.swap(*imageName);
 }
 
-void MakeImageDl::addPart(const MD5&, vector<string>&) {
+void MakeImageDl::addPart(const string&, const MD5&, vector<string>&) {
   //debug("addPart %1 -> %2", md.toString(), value.front());
 }
-Status MakeImageDl::addServer(const string&, vector<string>&) {
+Status MakeImageDl::addServer(const string&, const string&,
+                              vector<string>&) {
   return OK;
 }
 

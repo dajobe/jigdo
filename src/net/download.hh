@@ -49,10 +49,6 @@ public:
   // Clean up libwww - call this after all requests are finished
   static void cleanup();
 
-  /** Create a new URI from an absolute base URI and a relative URI. (rel can
-      also be absolute, in this case, the result in dest equals rel.) */
-  static void uriJoin(string* dest, const string& base, const string& rel);
-
   Download(const string& uri, Output* o /*= 0*/);
   ~Download();
 

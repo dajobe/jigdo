@@ -22,7 +22,7 @@
 #include <makeimagedl.hh>
 #include <md5sum.hh>
 #include <mimestream.hh>
-//#include <url-part.hh>
+#include <uri.hh>
 //______________________________________________________________________
 
 DEBUG_UNIT("jigdo-io")
@@ -531,7 +531,7 @@ Status JigdoIO::sectionEnd() {
 // "[Include url]" found - add
 void JigdoIO::include(string* url) {
   string includeUrl;
-  Download::uriJoin(&includeUrl, urlVal, *url);
+  uriJoin(&includeUrl, urlVal, *url);
   debug("%1:[Include %2]", line, includeUrl);
 
   JigdoIO* p = this;
@@ -639,7 +639,8 @@ void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
     } else if (*label == "Template") {
       if (!templateUrl.empty()) return generateError(_("Value redefined"));
       if (value.empty()) return generateError(_("Missing argument"));
-      templateUrl = value.front();
+      // Immediately turn template URL into absolute URL if necessary
+      uriJoin(&templateUrl, urlVal, value.front());
     } else if (*label == "Template-MD5Sum") {
       if (templateMd5 != 0) return generateError(_("Value redefined"));
       if (value.empty()) return generateError(_("Missing argument"));
@@ -690,12 +691,12 @@ void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
         return generateError(_("Invalid MD5Sum in Parts section"));
       }
       //debug("PART %1 -> %2", md5.toString(), value.front());
-      master()->addPart(md5, value);
+      master()->addPart(urlVal, md5, value);
 
   } else if (section == "Servers") {
 
     if (value.empty()) return generateError(_("Missing argument"));
-    if (master()->addServer(*label, value).failed())
+    if (master()->addServer(urlVal, *label, value).failed())
       return generateError(_("Recursive label definition"));
 
   } // endif (section == "Something")

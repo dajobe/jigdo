@@ -37,6 +37,10 @@ private:
 
 static const Status OK = Status(Status::OK);
 static const Status FAILED = Status(Status::FAILED);
+
+inline bool operator==(const Status& a, const Status& b) {
+  return a.code == b.code;
+}
 //______________________________________________________________________
 
 /** Version of Status which can contain more than 2 values. Explicitly making
@@ -65,5 +69,9 @@ public:
      explicitly in if() conditions! */
   int code;
 };
+
+inline bool operator==(const XStatus& a, const XStatus& b) {
+  return a.code == b.code;
+}
 
 #endif

@@ -136,10 +136,10 @@ public:
   inline bool haveImageSection() const;
 
   /** Add info about a mapping line inside one of the [Parts] sections in the
-      .jigdo sections. The first entry of "value" is the URL (absolute or in
-      "Label:some/path form). The remaining "value" entries are assumed to be
-      options, and ignored ATM. */
-  void addPart(const MD5& md, vector<string>& value);
+      .jigdo sections. The first entry of "value" is the URL (absolute,
+      relative to baseUrl or in "Label:some/path form). The remaining "value"
+      entries are assumed to be options, and ignored ATM. */
+  void addPart(const string& baseUrl, const MD5& md, vector<string>& value);
 
   /** Add info about a [Servers] line, cf addPart(). For a line
       "Foobar=Label:some/path" in the [Servers] section:
@@ -147,12 +147,11 @@ public:
       @param value arguments; value.front()=="Label:some/path"
       @return failed() iff the line results in a recursive server
       definition. */
-  Status addServer(const string& label, vector<string>& value);
+  Status addServer(const string& baseUrl, const string& label,
+                   vector<string>& value);
 
-# if DEBUG
-  /** Output the graph built up by addPart()/addServer(). */
+  /** Output the graph built up by addPart()/addServer() to the log. */
   void dumpJigdoInfo();
-# endif
 
   /** Return child download object which contains a DataSource which produces
       the data of the requested URL. That returned object is usually a newly

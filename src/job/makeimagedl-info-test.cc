@@ -7,7 +7,7 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  #test-deps job/makeimagedl-info.o
+  #test-deps job/makeimagedl-info.o net/uri.o
 
 */
 
@@ -46,12 +46,6 @@ void MakeImageDl::setImageSection(string* imageName, string* imageInfo,
 
   if (io) io->makeImageDl_haveImageSection();
 }
-//======================================================================
-
-void Download::uriJoin(string* dest, const string&, const string& rel) {
-  *dest = rel;
-}
-
 //======================================================================
 
 namespace {

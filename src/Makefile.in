@@ -47,7 +47,8 @@ debug-programs = @IF_DEBUG@ torture@exe@ \
 		@IF_GUI@ glibcurl/glibcurl-example@exe@
 #libwww-hacks =	@IF_LIBWWW_HACKS@ net/libwww-HTFTP.o net/libwww-HTHost.o
 windows-res =	@IF_WINDOWS@ jigdo.res
-test-programs =	job/jigdo-io-test@exe@ job/makeimagedl-info-test@exe@ \
+test-programs =	job/jigdo-io-test@exe@ job/makeimagedl-graph-test@exe@ \
+		job/makeimagedl-info-test@exe@ \
 		net/download-test@exe@ net/proxyguess-test@exe@ \
 		util/rsyncsum-test@exe@ util/gunzip-test@exe@ \
 		util/log-test@exe@ util/md5sum-test@exe@ \
@@ -59,8 +60,9 @@ objects-jigdo =	compat.o glibcurl/glibcurl.o gtk/gtk-makeimage.o \
 		gtk/jobline.o gtk/joblist.o gtk/messagebox.o gtk/support.o \
 		gtk/treeiter.o jigdoconfig.o job/cached-url.o \
 		job/datasource.o job/jigdo-io.o job/makeimage.o \
-		job/makeimagedl-info.o job/makeimagedl.o job/single-url.o \
-		job/url-mapping.o net/download.o net/proxyguess.o \
+		job/makeimagedl-graph.o job/makeimagedl-info.o \
+		job/makeimagedl.o job/single-url.o \
+		job/url-mapping.o net/download.o net/uri.o net/proxyguess.o \
 		util/bstream.o util/configfile.o util/glibc-getopt.o \
 		util/glibc-getopt1.o util/glibc-md5.o util/gunzip.o \
 		util/log.o util/md5sum.o util/progress.o util/string-utf.o \

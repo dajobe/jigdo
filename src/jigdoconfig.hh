@@ -41,11 +41,13 @@ public:
   };
   //________________________________________
 
+#if 0 /* Use same function from net/uri.hh */
   /** Helper function: Given a string, return 0 if the string has no "Label:"
       prefix, otherwise return the offset of the ':'. The "Label" portion of
       the string can contain *any* character except '/' and
       whitespace/control characters */
   static inline unsigned findLabelColon(const string& s);
+#endif
   //________________________________________
 
   /** Open file for input and create a ConfigFile object */
@@ -128,17 +130,6 @@ private:
   Map serverMap;
   ForwardReporter freporter;
 };
-//______________________________________________________________________
-
-unsigned JigdoConfig::findLabelColon(const string& s) {
-  string::const_iterator i = s.begin(), e = s.end();
-  while (i != e) {
-    if (*i == '/' || static_cast<unsigned char>(*i) <= ' ') return 0;
-    if (*i == ':') return i - s.begin();
-    ++i;
-  }
-  return 0;
-}
 //______________________________________________________________________
 
 JigdoConfig::ForwardReporter::ForwardReporter(

@@ -123,7 +123,7 @@ private:
   virtual void gunzip_failed(string* message);
 
   MakeImageDl::Child* childDl;
-  string urlVal;
+  string urlVal; // Absolute URL of this .jigdo file
   DataSource::IO* frontend; // Object provided by frontend for this download
 
   /* Representation of the tree of [Include] directives. Most of the time,

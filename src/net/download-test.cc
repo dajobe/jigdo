@@ -7,21 +7,21 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  #test-deps net/download.o glibcurl/glibcurl.o
+  #test-deps net/download.o glibcurl/glibcurl.o net/uri.o
 
 */
 
 #define DEBUG 1
 #include <config.h>
 
-#include <download.hh>
 #include <log.hh>
+#include <uri.hh>
 
 namespace {
 
   void testUriJoin(const char* base, const char* rel, const char* expected) {
     string s = "anything", b = base, r = rel;
-    Download::uriJoin(&s, b, r);
+    uriJoin(&s, b, r);
     msg("base=%1, rel=%2, result=%3, expected=%4", b, r, s, expected);
     Assert(s == expected);
   }

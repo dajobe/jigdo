@@ -29,6 +29,7 @@
 #include <debug.hh>
 #include <download.hh>
 #include <glibcurl.h>
+#include <jigdoconfig.hh>
 #include <log.hh>
 #include <string-utf.hh>
 //______________________________________________________________________
@@ -97,25 +98,6 @@ void Download::cleanup() {
   // Dumps core when called - wish I knew why:
   //curl_share_cleanup(shHandle);
   glibcurl_cleanup();
-}
-//______________________________________________________________________
-
-/** Create a new URI from an absolute base URI and a relative URI. (rel can
-    also be absolute, in this case, the result in dest equals rel.) */
-void Download::uriJoin(string* dest, const string& base, const string& rel) {
-  string::const_iterator i = rel.begin(), e = rel.end();
-  while (i != e && isalpha(*i)) ++i;
-
-  if (i != e && *i == ':') {
-    *dest = rel; // Absolute: rel starts with alphabetic chars followed by :
-  } else {
-    string::size_type n = base.find_last_of('/');
-    if (n == string::npos)
-      *dest = base;
-    else
-      dest->assign(base, 0, n + 1);
-    *dest += rel;
-  }
 }
 //______________________________________________________________________
 
