@@ -299,7 +299,8 @@ void GtkSingleUrl::updateWindow() {
   }
   gtk_widget_set_sensitive(GUI::window.download_startButton, canStart);
   gtk_widget_set_sensitive(GUI::window.download_pauseButton,
-    (job != 0 && state == RUNNING ? TRUE : FALSE));
+                           FALSE);
+  // once libcurl allows pausing: (job != 0 && state == RUNNING ? TRUE : FALSE));
   gtk_widget_set_sensitive(GUI::window.download_stopButton,
     (job != 0 && !childMode && (state == RUNNING || state == PAUSED)
      ? TRUE : FALSE));
