@@ -52,6 +52,7 @@ size_t JigdoFileCmd::blockLength    =   1*1024U;
 size_t JigdoFileCmd::md5BlockLength = 128*1024U - 55;
 size_t JigdoFileCmd::readAmount     = 128*1024U;
 int JigdoFileCmd::optZipQuality = Z_BEST_COMPRESSION;
+bool JigdoFileCmd::optBzip2 = false;
 bool JigdoFileCmd::optForce = false;
 bool JigdoFileCmd::optMkImageCheck = true;
 bool JigdoFileCmd::optAddImage = true;
@@ -332,6 +333,7 @@ inline void printUsage(bool detailed, size_t blockLength,
     "                   URI instead of default `file:' URI\n"
     "                   [print-missing] Override mapping in input jigdo\n"
     "  -0 to -9         Set amount of compression in output template\n"
+    "      --bzip2      Use bzip2 compression instead of default --gzip\n"
     "      --cache=FILE Store/reload information about any files scanned\n"),
     (WINDOWS ? "C:" : ""), DIRSEPS, SPLITSEP, EXTSEPS);
   if (detailed) {
@@ -381,8 +383,9 @@ inline void printUsage(bool detailed, size_t blockLength,
     "                   LABEL, LABELPATH, MATCHPATH, LEAF, MD5SUM, FILE\n"
     "                   e.g. 'mkdir -p \"${LABEL:-.}/$MATCHPATH\" && ln -f \"$FILE\" \"${LABEL:-.}/$MATCHPATH$LEAF\"'\n"
     "  --no-hex [default]\n"
-    "  --hex            [md5sum, list-template] Output checksums in \n"
-    "                   hexadecimal, not Base64\n"),
+    "  --hex            [md5sum, list-template] Output checksums in\n"
+    "                   hexadecimal, not Base64\n"
+    "  --gzip           [default] Use gzip compression, not --bzip2\n"),
     blockLength, md5BlockLength, readAmount / 1024) << endl;
   }
   return;
@@ -466,7 +469,7 @@ enum {
   LONGOPT_LABEL, LONGOPT_URI, LONGOPT_ADDSERVERS, LONGOPT_NOADDSERVERS,
   LONGOPT_ADDIMAGE, LONGOPT_NOADDIMAGE, LONGOPT_NOCACHE, LONGOPT_CACHEEXPIRY,
   LONGOPT_MERGE, LONGOPT_HEX, LONGOPT_NOHEX, LONGOPT_DEBUG, LONGOPT_NODEBUG,
-  LONGOPT_MATCHEXEC
+  LONGOPT_MATCHEXEC, LONGOPT_BZIP2, LONGOPT_GZIP
 };
 
 // Deal with command line switches
@@ -479,12 +482,14 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
 
   while (true) {
     static const struct option longopts[] = {
+      { "bzip2",              no_argument,       0, LONGOPT_BZIP2 },
       { "cache",              required_argument, 0, 'c' },
       { "cache-expiry",       required_argument, 0, LONGOPT_CACHEEXPIRY },
       { "check-files",        no_argument,       0, LONGOPT_MKIMAGECHECK },
       { "debug",              optional_argument, 0, LONGOPT_DEBUG },
       { "files-from",         required_argument, 0, 'T' }, // "-T" like tar's
       { "force",              no_argument,       0, 'f' },
+      { "gzip",               no_argument,       0, LONGOPT_GZIP },
       { "help",               no_argument,       0, 'h' },
       { "help-all",           no_argument,       0, 'H' },
       { "hex",                no_argument,       0, LONGOPT_HEX },
@@ -520,6 +525,8 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
       optZipQuality = c - '0'; break;
+    case LONGOPT_BZIP2: optBzip2 = true; break;
+    case LONGOPT_GZIP:  optBzip2 = false; break;
     case 'h': case 'H': optHelp = c; break;
     case 'v': optVersion = true; break;
     case 'T': fileNames.addFilesFrom(

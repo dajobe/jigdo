@@ -7,9 +7,9 @@
       <firstname>Richard</firstname><surname>Atterer</surname>
     </author>
     <copyright>
-      <year>2001-2003</year><holder>Richard Atterer</holder>
+      <year>2001-2005</year><holder>Richard Atterer</holder>
     </copyright>
-    <date>Sep 13, 2003</date>
+    <date>Apr 4, 2005</date>
   </refentryinfo>
   <refmeta>
     <refentrytitle>jigdo-file</refentrytitle>
@@ -490,10 +490,20 @@
             file, from <option>-0</option> (no compression) to
             <option>-9</option> (maximum compression). The default is
             <option>-9</option>, which can make the template
-            generation quite slow. The compression algorithm used is
-            the same as for <citerefentry>
+            generation quite slow. By default, the compression
+            algorithm used is the same as for <citerefentry>
             <refentrytitle>gzip</refentrytitle><manvolnum>1</manvolnum>
             </citerefentry>.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><option>--gzip</option> and <option>--bzip2</option></term>
+          <listitem>
+            <para>Choose between the gzip and bzip2 compression
+            algorithms. The default is gzip. Bzip2 usually gives
+            a better compression ratio, but compression is
+            significantly slower than with gzip.</para>
           </listitem>
         </varlistentry>
 

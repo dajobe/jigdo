@@ -16,6 +16,7 @@
 
 #include <bzlib.h>
 
+#include <log.hh>
 #include <zstream.hh>
 //______________________________________________________________________
 
@@ -27,18 +28,15 @@ struct ZerrorBz : public Zerror {
 
 class ZobstreamBz : public Zobstream {
 public:
-  inline ZobstreamBz(bostream& s, unsigned chunkLimit, int level /*= 6*/,
+  inline ZobstreamBz(bostream& s, int level /*= 6*/,
                      unsigned todoBufSz /*= 256U*/, MD5Sum* md /*= 0*/);
+  ~ZobstreamBz() { Assert(memReleased); }
 
   /** @param s Output stream
-      @param chunkLimit Size limit for output data, will buffer this much
-      @param level 0 to 9
-      @param windowBits zlib param
-      @param memLevel zlib param
+      @param level 1 to 9 (0 is allowed but interpreted as 1)
       @param todoBufSz Size of mini buffer, which holds data sent to
       the stream with single put() calls or << statements */
-  void open(bostream& s, unsigned chunkLimit, int level /*= 6*/,
-            unsigned todoBufSz/* = 256U*/);
+  void open(bostream& s, int level /*= 6*/, unsigned todoBufSz/* = 256U*/);
 
 protected:
   virtual unsigned partId();
@@ -65,6 +63,7 @@ protected:
 private:
   bz_stream z;
   int compressLevel;
+  bool memReleased;
 };
 //______________________________________________________________________
 
@@ -76,7 +75,8 @@ public:
     ZibstreamBzError(int s, const string& m) : Zerror(s, m) { }
   };
 
-  ZibstreamBz() : status(0) { }
+  ZibstreamBz() : status(0), memReleased(true) { }
+  ~ZibstreamBz() { Assert(memReleased); }
 
   virtual unsigned totalOut() const { return z.total_out_lo32; }
   virtual unsigned totalIn() const { return z.total_in_lo32; }
@@ -97,8 +97,9 @@ public:
     z.bzfree = 0;
     z.opaque = 0;
     status = BZ2_bzDecompressInit(&z, 0/*silent*/, 0/*fast*/);
+    if (ok()) memReleased = false;
   }
-  virtual void end() { status = BZ2_bzDecompressEnd(&z); }
+  virtual void end() { status = BZ2_bzDecompressEnd(&z); memReleased = true; }
   virtual void reset() {
     end();
     if (status == BZ_OK) init();
@@ -121,16 +122,17 @@ public:
 private:
   int status;
   bz_stream z;
+  bool memReleased;
 };
 //======================================================================
 
-ZobstreamBz::ZobstreamBz(bostream& s, unsigned chunkLimit, int level,
-                         unsigned todoBufSz, MD5Sum* md)
-    : Zobstream(md) {
+ZobstreamBz::ZobstreamBz(bostream& s, int level, unsigned todoBufSz,
+                         MD5Sum* md)
+    : Zobstream(md), memReleased(true) {
   z.bzalloc = 0;
   z.bzfree = 0;
   z.opaque = 0;
-  open(s, chunkLimit, level, todoBufSz);
+  open(s, level, todoBufSz);
 }
 
 #endif

@@ -43,8 +43,7 @@ namespace {
     case -6: case -7: case -8: case -9:
       throw Zerror(status, ZibstreamBz::bzerrorstrings[-status]);
     default:
-      string m = "libbz error ";
-      m += status;
+      string m = subst("libbz error %1", status);
       throw Zerror(status, m);
     }
   }
@@ -69,24 +68,38 @@ const char* ZibstreamBz::bzerrorstrings[] = {
 };
 //______________________________________________________________________
 
-void ZobstreamBz::open(bostream& s, unsigned chunkLimit, int level,
-                       unsigned todoBufSz) {
+/* libbz2 subdivides input data into chunks of 100000 to 900000 bytes,
+   depending on compression level. For best compression results, BZIP input
+   data chunks should be exactly as large as the block size. The bzip2
+   sources use n*100000-19 as the actual block size in one place, we'll use
+   n*100000-50 just to be safe. NB: chunkLim() is the OUTPUT size limit for
+   gzip, but the INPUT size limit for bzip2. */
+void ZobstreamBz::open(bostream& s, int level, unsigned todoBufSz) {
+
   // Unlike zlib, libbz2 does not support level==0
   if (level == 0) level = 1;
   compressLevel = level;
 
-  z.next_in = z.next_out = 0;
+  z.next_in = 0;
+  z.next_out = reinterpret_cast<char*>(zipBuf->data);
   z.avail_out = (zipBuf == 0 ? 0 : ZIPDATA_SIZE);
   z.total_in_lo32 = z.total_in_hi32 = 0;
-  debug("ZobstreamBz::open deflateInit2");
-  int status = BZ2_bzCompressInit(&z, level, 0/*verbosity*/,
+  debug("BZ2_bzCompressInit");
+  int verbosity = 0;
+# if DEBUG
+  if (debug.enabled()) verbosity = 2;
+# endif
+  int status = BZ2_bzCompressInit(&z, level, verbosity,
                                   0/*default workFactor*/);
-  if (status != BZ_OK) throwZerrorBz(status);
+  if (status == BZ_OK)
+    memReleased = false;
+  else
+    throwZerrorBz(status);
 
   // Declare stream as open
   debug("opening");
-  Zobstream::open(s, chunkLimit, todoBufSz);
-  debug("opened");
+  Zobstream::open(s, 100000 * level - 50, todoBufSz);
+  debug("opened, chunkLim=%1", chunkLim());
 }
 //______________________________________________________________________
 
@@ -96,20 +109,30 @@ unsigned ZobstreamBz::partId() {
 
 void ZobstreamBz::deflateEnd() {
   int status = BZ2_bzCompressEnd(&z);
+  memReleased = true;
   if (status != BZ_OK) throwZerrorBz(status);
 }
 
 void ZobstreamBz::deflateReset() {
   int status = BZ2_bzCompressEnd(&z);
+  memReleased = true;
   if (status != BZ_OK) throwZerrorBz(status);
 
-  z.next_in = z.next_out = 0;
+  z.next_in = 0;
+  z.next_out = reinterpret_cast<char*>(zipBuf->data);
   z.avail_out = (zipBuf == 0 ? 0 : ZIPDATA_SIZE);
   z.total_in_lo32 = z.total_in_hi32 = 0;
-  debug("ZobstreamBz::open deflateInit2");
-  status = BZ2_bzCompressInit(&z, compressLevel, 0/*verbosity*/,
+  debug("BZ2_bzCompressInit deflateReset");
+  int verbosity = 0;
+# if DEBUG
+  if (debug.enabled()) verbosity = 2;
+# endif
+  status = BZ2_bzCompressInit(&z, compressLevel, verbosity,
                               0/*default workFactor*/);
-  if (status != BZ_OK) throwZerrorBz(status);
+  if (status == BZ_OK)
+    memReleased = false;
+  else
+    throwZerrorBz(status);
 }
 //______________________________________________________________________
 
@@ -118,17 +141,25 @@ void ZobstreamBz::zip2(byte* start, unsigned len, bool finish) {
   int flush = (finish ? BZ_FINISH : BZ_RUN);
   Assert(is_open());
 
-#warning "TODO: Feed exactly x*100000 bytes before finishing"
-  // If big enough, finish and write out this chunk
-  if (z.total_out_lo32 > chunkLim()) flush = BZ_FINISH;
+  if (z.total_in_lo32 <= chunkLim() && chunkLim() <= z.total_in_lo32 + len)
+    flush = BZ_FINISH;
 
   // true <=> must call BZ2_bzCompress() at least once
-  bool callZlibOnce = (flush != BZ_RUN);
+  bool callLibBzOnce = (flush != BZ_RUN);
 
   z.next_in = reinterpret_cast<char*>(start);
   z.avail_in = len;
-  while (z.avail_in != 0 || z.avail_out == 0 || callZlibOnce) {
-    callZlibOnce = false;
+  while (z.avail_in != 0 || z.avail_out == 0 || callLibBzOnce) {
+    callLibBzOnce = false;
+
+    // If big enough, finish and write out this chunk
+    int availInDifference = 0;
+    if (z.total_in_lo32 <= chunkLim()
+        && chunkLim() <= z.total_in_lo32 + z.avail_in) {
+      // Adjust avail_in to hit the bzip2 block size exactly
+      availInDifference = chunkLim() - z.total_in_lo32 - z.avail_in; // <0
+      flush = BZ_FINISH;
+    }
 
     if (z.avail_out == 0) {
       // Get another output buffer object
@@ -147,20 +178,26 @@ void ZobstreamBz::zip2(byte* start, unsigned len, bool finish) {
     }
 
     debug("deflate ni=%1 ai=%2 no=%3 ao=%4",
-          z.next_in, z.avail_in, z.next_out, z.avail_out);
+          (void*)(z.next_in), z.avail_in, (void*)(z.next_out), z.avail_out);
     //memset(z.next_in, 0, z.avail_in);
     //memset(z.next_out, 0, z.avail_out);
+    z.avail_in += availInDifference;
+    debug("deflate ai=%1 availInDifference=%2 ti=%3",
+          z.avail_in, availInDifference, z.total_in_lo32);
     int status = BZ2_bzCompress(&z, flush); // Call libbz2
-    debug("deflated ni=%1 ai=%2 no=%3 ao=%4 status=%5",
-          z.next_in, z.avail_in, z.next_out, z.avail_out, status);
-    //cerr << "zip(" << (void*)start << ", " << len << ", " << flush
-    //     << ") returned " << status << endl;
+    z.avail_in -= availInDifference;
+    debug("deflated ni=%1 ai=%2 no=%3 ao=%4 status=%5", (void*)(z.next_in),
+          z.avail_in, (void*)(z.next_out), z.avail_out, status);
     if (status == BZ_STREAM_END) {
-      writeZipped();
+      unsigned ai = z.avail_in;
+      char* ni = z.next_in;
+      writeZipped(0x50495a42u); // BZIP
       flush = BZ_RUN;
+      z.avail_in = ai;
+      z.next_in = ni;
     }
 
     if (status == BZ_STREAM_END) continue;
-    if (status != BZ_OK) throwZerrorBz(status);
+    if (status != BZ_RUN_OK && status != BZ_FINISH_OK) throwZerrorBz(status);
   }
 }

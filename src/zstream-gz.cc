@@ -73,13 +73,17 @@ namespace {
 
 void ZobstreamGz::open(bostream& s, unsigned chunkLimit, int level,
                        int windowBits, int memLevel, unsigned todoBufSz) {
-  z.next_in = z.next_out = 0;
+  z.next_in = 0;
+  z.next_out = zipBuf->data;
   z.avail_out = (zipBuf == 0 ? 0 : ZIPDATA_SIZE);
   z.total_in = 0;
   debug("deflateInit2");
   int status = deflateInit2(&z, level, Z_DEFLATED, windowBits, memLevel,
                             Z_DEFAULT_STRATEGY);
-  if (status != Z_OK) throwZerrorGz(status, z.msg);
+  if (status == Z_OK)
+    memReleased = false;
+  else
+    throwZerrorGz(status, z.msg);
 
   // Declare stream as open
   debug("opening");
@@ -94,6 +98,7 @@ unsigned ZobstreamGz::partId() {
 
 void ZobstreamGz::deflateEnd() {
   int status = ::deflateEnd(&z);
+  memReleased = true;
   if (status != Z_OK) throwZerrorGz(status, z.msg);
 }
 
@@ -147,7 +152,7 @@ void ZobstreamGz::zip2(byte* start, unsigned len, bool finish) {
     if (status == Z_STREAM_END
 //      || (status == Z_OK && z.total_out > chunkLim)
         || (flush == Z_FULL_FLUSH && z.total_in != 0)) {
-      writeZipped();
+      writeZipped(0x41544144u); // DATA
       flush = Z_NO_FLUSH;
     }
 

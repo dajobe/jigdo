@@ -222,7 +222,7 @@ namespace {
 
   /** Version of file format */
   const unsigned FILEFORMAT_MAJOR = 1;
-  const unsigned FILEFORMAT_MINOR = 1;
+  const unsigned FILEFORMAT_MINOR = 2;
   /** String at start of .template files */
   const char TEMPLATE_HDR[] = "JigsawDownload template ";
 
@@ -230,7 +230,8 @@ namespace {
   const char* const URL = "http://atterer.net/jigdo/";
 
   /** Approximate size of chunks into which unmatched data is chopped up when
-      included in template file. Measured in bytes of *uncompressed* data. */
+      included in template file. Measured in bytes of *uncompressed*
+      data. Only applicable to gzip; when using bzip2, it is ignored. */
   const size_t ZIPCHUNK_SIZE = 256*1024;
 
   /** Number of bytes to write at a time before outputting a progress

@@ -69,12 +69,13 @@ public:
       bits of I/O are interleaved with small bits of CPU work. In
       practice, the default seems to work well.
       @param addImage Add a [Image] section to the output .jigdo.
-      @param addServers Add a [Servers] section to the output .jigdo. */
+      @param addServers Add a [Servers] section to the output .jigdo.
+      @param useBzip2 false=>gzip, true=>bzip2 */
   MkTemplate(JigdoCache* jcache, bistream* imageStream,
              JigdoConfig* jigdoInfo, bostream* templateStream,
              ProgressReporter& pr = noReport, int zipQuality = 9,
              size_t readAmnt = 128U*1024, bool addImage = true,
-             bool addServers = true);
+             bool addServers = true, bool useBzip2 = false);
   inline ~MkTemplate();
 
   /** Set command(s) to be executed when a file matches. */
@@ -198,6 +199,7 @@ private:
   // true => add a [Image/Servers] section to the output .jigdo file
   bool addImageSection;
   bool addServersSection;
+  bool useBzLib;
   string matchExec;
   //____________________
 

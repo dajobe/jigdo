@@ -214,11 +214,16 @@ contains no type==2 entries.
 dataLen-16         "Compressed data"
 ----------------------------------------------------------------------
 
-jigdo-file always takes care to subdivide the complete raw data into
-parts which are not larger than about 256kB each compressed. This is
-done to support certain applications of jigdo where seeking in the
+gzip: jigdo-file always takes care to subdivide the complete raw data
+into parts which are not larger than about 256kB each compressed. This
+is done to support certain applications of jigdo where seeking in the
 image is necessary. (Additionally, this allows jigdo-file to write the
 final template file to a non-seekable output, e.g. to stdout.)
+
+bzip2: The data is subdivided into chunks whose uncompressed size is
+almost exactly the size of the bzip2 chunk for that compression
+setting. For example, with the -9 switch, each chunk is about 900000
+bytes long uncompressed. (More accurately, it is 899950 bytes long.)
 
 Example for an application which needs to seek: A CGI program which
 creates an image on the fly as it is being sent to a browser will need
@@ -235,3 +240,6 @@ File format version history
 1.0 (jigdo-file/0.5.0): Initial format
 1.1 (jigdo-file/0.6.3): Format change in template files: New type 5
     obsoletes type 1. New type 6 obsoletes type 3.
+1.2 (jigdo-file/0.7.2): Format change in template files: In addition
+    to raw data that is gzipped ("DATA"), allow bzip2 ("BZIP") raw
+    data.

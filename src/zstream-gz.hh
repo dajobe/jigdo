@@ -16,6 +16,7 @@
 
 #include <zlib.h>
 
+#include <log.hh>
 #include <zstream.hh>
 //______________________________________________________________________
 
@@ -31,6 +32,7 @@ public:
                      int level = Z_DEFAULT_COMPRESSION, int windowBits = 15,
                      int memLevel = 8, unsigned todoBufSz = 256U,
                      MD5Sum* md = 0);
+  ~ZobstreamGz() { Assert(memReleased); }
 
   /** @param s Output stream
       @param chunkLimit Size limit for output data, will buffer this much
@@ -65,6 +67,8 @@ private:
 //   inline void throwZerror(int status, const char* zmsg);
 
   z_stream z;
+  // To keep track in the dtor whether deflateEnd() has been called
+  bool memReleased;
 };
 //______________________________________________________________________
 
@@ -76,7 +80,8 @@ public:
     ZibstreamGzError(int s, const string& m) : Zerror(s, m) { }
   };
 
-  ZibstreamGz() : status(0) { }
+  ZibstreamGz() : status(0), memReleased(true) { }
+  ~ZibstreamGz() { Assert(memReleased); }
 
   virtual unsigned totalOut() const { return z.total_out; }
   virtual unsigned totalIn() const { return z.total_in; }
@@ -95,8 +100,9 @@ public:
     z.zfree = (free_func)0;
     z.opaque = 0;
     status = inflateInit(&z);
+    if (ok()) memReleased = false;
   }
-  virtual void end() { status = inflateEnd(&z); }
+  virtual void end() { status = inflateEnd(&z); memReleased = true; }
   virtual void reset() { status = inflateReset(&z); }
 
   virtual void inflate(byte** nextOut, unsigned* availOut) {
@@ -111,12 +117,14 @@ public:
 private:
   int status;
   z_stream z;
+  // To keep track in the dtor whether deflateEnd() has been called
+  bool memReleased;
 };
 //======================================================================
 
 ZobstreamGz::ZobstreamGz(bostream& s, unsigned chunkLimit, int level,
                          int windowBits, int memLevel, unsigned todoBufSz,
-                         MD5Sum* md) : Zobstream(md) {
+                         MD5Sum* md) : Zobstream(md), memReleased(true) {
   z.zalloc = (alloc_func)0;
   z.zfree = (free_func)0;
   z.opaque = 0;

@@ -82,6 +82,7 @@ class JigdoFileCmd {
   static size_t md5BlockLength;
   static size_t readAmount;
   static int optZipQuality;
+  static bool optBzip2;
   static bool optForce; // true => Silently delete existent output
   static bool optMkImageCheck; // true => check MD5sums
   static bool optAddImage; // true => Add [Image] section to output .jigdo

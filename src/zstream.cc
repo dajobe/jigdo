@@ -34,46 +34,10 @@
 DEBUG_UNIT("zstream")
 //________________________________________
 
-namespace {
-
-  // Turn zlib error codes/messages into C++ exceptions
-  void throwZerror(int status, const char* zmsg) {
-    string m;
-    if (zmsg != 0) m += zmsg;
-    Assert(status != Z_OK);
-    switch (status) {
-    case Z_OK:
-      break;
-    case Z_ERRNO:
-      if (!m.empty() && errno != 0) m += " - ";
-      if (errno != 0) m += strerror(errno);
-      throw Zerror(Z_ERRNO, m);
-      break;
-    case Z_MEM_ERROR:
-      throw bad_alloc();
-      break;
-      // NB: fallthrough:
-    case Z_STREAM_ERROR:
-      if (m.empty()) m = "zlib Z_STREAM_ERROR";
-    case Z_DATA_ERROR:
-      if (m.empty()) m = "zlib Z_DATA_ERROR";
-    case Z_BUF_ERROR:
-      if (m.empty()) m = "zlib Z_BUF_ERROR";
-    case Z_VERSION_ERROR:
-      if (m.empty()) m = "zlib Z_VERSION_ERROR";
-    default:
-      throw Zerror(status, m);
-    }
-  }
-
-}
-//________________________________________
-
 void Zobstream::close() {
   if (!is_open()) return;
-  zip(todoBuf, todoCount, Z_FINISH); // Flush out remain. buffer contents
-
   try {
+    zip(todoBuf, todoCount, Z_FINISH); // Flush out remain. buffer contents
     deflateEnd();
   } catch (Zerror) {
     zipBufLast = zipBuf;
@@ -99,7 +63,7 @@ void Zobstream::close() {
 //______________________________________________________________________
 
 // Write compressed, flushed data to output stream
-void Zobstream::writeZipped() {
+void Zobstream::writeZipped(unsigned partId) {
   debug("Writing %1 bytes compressed, was %2 uncompressed",
         totalOut(), totalIn());
 
@@ -111,7 +75,7 @@ void Zobstream::writeZipped() {
   // dataLen-16       "Compressed data"
   byte buf[16];
   byte* p = buf;
-  serialize4(partId(), p); // DATA or BZIP
+  serialize4(partId, p); // DATA or BZIP
   uint64 l = totalOut() + 16;
   serialize6(l, p + 4);
   l = totalIn();
@@ -270,14 +234,16 @@ Zibstream& Zibstream::read(byte* dest, unsigned n) {
 
       // Decide whether to (re)allocate inflater
       // One or both out of gz/bz will be null
-//       ZibstreamGz* gz = dynamic_cast<ZibstreamGz*>(z);
-//       ZibstreamBz* bz = dynamic_cast<ZibstreamBz*>(z);
-//       if ((id == DATA && gz == 0)
-//           || (id == BZIP && bz == 0)) {
-#warning foo
-      if (true) {
-        // Delete old, unneeded inflater, if any
-        delete z;
+      ZibstreamGz* gz = dynamic_cast<ZibstreamGz*>(z);
+      ZibstreamBz* bz = dynamic_cast<ZibstreamBz*>(z);
+      if ((id == DATA && gz == 0)
+          || (id == BZIP && bz == 0)) {
+        if (z != 0) {
+          // Delete old, unneeded inflater
+          z->end();
+          if (!z->ok()) z->throwError();
+          delete z;
+        }
         // Allocate and init new one
         if (id == DATA)
           z = new ZibstreamGz();

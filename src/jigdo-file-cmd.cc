@@ -249,7 +249,8 @@ int JigdoFileCmd::makeTemplate() {
   // Create and run MkTemplate operation
   auto_ptr<MkTemplate>
     op(new MkTemplate(&cache, image, &jc, templ, *optReporter,
-                     optZipQuality, readAmount, optAddImage, optAddServers));
+                      optZipQuality, readAmount, optAddImage, optAddServers,
+                      optBzip2));
   op->setMatchExec(optMatchExec);
   size_t lastDirSep = imageFile.rfind(DIRSEP);
   if (lastDirSep == string::npos) lastDirSep = 0; else ++lastDirSep;

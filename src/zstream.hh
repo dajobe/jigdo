@@ -98,12 +98,7 @@ protected:
   inline void open(bostream& s, unsigned chunkLimit, unsigned todoBufSz);
   unsigned chunkLim() const { return chunkLimVal; }
   // Write data in zipBuf
-  void writeZipped();
-
-  static const unsigned DATA = 0x41544144u;
-  static const unsigned BZIP = 0x50495a42u;
-  // Returns 0x41544144u ("DATA") or 0x50495a42u ("BZIP")
-  virtual unsigned partId() = 0;
+  void writeZipped(unsigned partId);
 
   virtual void deflateEnd() = 0; // May throw Zerror
   virtual void deflateReset() = 0; // May throw Zerror
@@ -180,9 +175,9 @@ public:
     virtual void setNextIn(byte* n) = 0;
 
     /** Initialize, i.e. inflateInit(). {next,avail}{in,out} must be set up
-        before calling this. Sets an internal status flag. */
+        before calling this. Does not throw, sets an internal status flag. */
     virtual void init() = 0;
-    /** Finalize, i.e. inflateEnd() */
+    /** Finalize, i.e. inflateEnd(). Does not throw. */
     virtual void end() = 0;
     /** Re-init, i.e. inflateReset() */
     virtual void reset() = 0;

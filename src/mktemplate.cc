@@ -44,6 +44,7 @@
 #include <scan.hh>
 #include <string.hh>
 #include <zstream-gz.hh>
+#include <zstream-bz.hh>
 //______________________________________________________________________
 
 void MkTemplate::ProgressReporter::error(const string& message) {
@@ -58,7 +59,8 @@ MkTemplate::ProgressReporter MkTemplate::noReport;
 
 MkTemplate::MkTemplate(JigdoCache* jcache, bistream* imageStream,
     JigdoConfig* jigdoInfo, bostream* templateStream, ProgressReporter& pr,
-    int zipQuality, size_t readAmnt, bool addImage, bool addServers)
+    int zipQuality, size_t readAmnt, bool addImage, bool addServers,
+    bool useBzip2)
   : fileSizeTotal(0U), fileCount(0U), block(), readAmount(readAmnt),
     off(), unmatchedStart(),
     cache(jcache),
@@ -66,7 +68,7 @@ MkTemplate::MkTemplate(JigdoCache* jcache, bistream* imageStream,
     zipQual(zipQuality), reporter(pr), matches(new PartialMatchQueue()),
     sectorLength(),
     jigdo(jigdoInfo), addImageSection(addImage),
-    addServersSection(addServers),
+    addServersSection(addServers), useBzLib(useBzip2),
     matchExec() { }
 //______________________________________________________________________
 
@@ -721,9 +723,14 @@ inline bool MkTemplate::scanImage(byte* buf, size_t bufferLength,
   rsum.addBackNtimes(0x7f, blockLength);
 
   // Compression pipe for templ data
-  auto_ptr<Zobstream> zipDel(implicit_cast<Zobstream*>(
-    new ZobstreamGz(*templ, ZIPCHUNK_SIZE, zipQual, 15, 8, 256U,
-                    &templMd5Sum)));
+  auto_ptr<Zobstream> zipDel;
+  if (useBzLib)
+    zipDel.reset(implicit_cast<Zobstream*>(
+      new ZobstreamBz(*templ, zipQual, 256U, &templMd5Sum) ));
+  else
+    zipDel.reset(implicit_cast<Zobstream*>(
+      new ZobstreamGz(*templ, ZIPCHUNK_SIZE, zipQual, 15, 8, 256U,
+                      &templMd5Sum) ));
   zip = zipDel.get();
   Desc desc; // Buffer for DESC data, will be appended to templ at end
   size_t data = 0; // Offset into buf of byte currently being processed
@@ -903,6 +910,7 @@ inline bool MkTemplate::scanImage(byte* buf, size_t bufferLength,
   catch (Zerror ze) {
     string err = subst(_("Error during compression: %1"), ze.message);
     reporter.error(err);
+    try { zip->close(); } catch (Zerror zze) { }
     return FAILURE;
   }
 
