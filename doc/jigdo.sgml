@@ -1,0 +1,90 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry lang="en">
+  <refentryinfo>
+    <address>jigdo atterer.net</address>
+    <author>
+      <firstname>Richard</firstname><surname>Atterer</surname>
+    </author>
+    <copyright>
+      <year>2001-2003</year><holder>Richard Atterer</holder>
+    </copyright>
+    <date>May 05, 2003</date>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>jigdo</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+  <refnamediv>
+    <refname>jigdo</refname>
+    <refpurpose>GTK+ download manager.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>jigdo</command>
+      <arg>OPTIONS</arg>
+      <arg>URLS</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  <!-- ============================================================= -->
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>BETA version of the jigdo download manager.</para>
+
+    <para>This version is not yet capable of processing
+    `<filename>.jigdo</filename>' files - use <citerefentry>
+        <refentrytitle>jigdo-lite</refentrytitle><manvolnum>1</manvolnum>
+    </citerefentry> for that.</para>
+
+    <para><command>jigdo</command> is a GTK+ download manager with FTP
+    and HTTP 1.1 pipelining support, pausing, continuing and resuming
+    of downloads, and automatic guessing of your proxy
+    configuration.</para>
+
+  </refsect1>
+  <!-- ============================================================= -->
+  <refsect1 id="seealso">
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>jigdo-lite</refentrytitle><manvolnum>1</manvolnum>
+      </citerefentry>,
+      <citerefentry>
+        <refentrytitle>jigdo-file</refentrytitle><manvolnum>1</manvolnum>
+      </citerefentry>,
+      <citerefentry>
+        <refentrytitle>jigdo-mirror</refentrytitle><manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+  <!-- ============================================================= -->
+  <refsect1 id="author">
+    <title>AUTHOR</title>
+
+    <para><ulink url="http://atterer.net/jigdo/">Jigsaw
+    Download</ulink> was written by Richard Atterer
+    <email>jigdo atterer.net</email>, to make downloading of CD ROM
+    images for the Debian Linux distribution more convenient.</para>
+
+  </refsect1>
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

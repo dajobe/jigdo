@@ -1,0 +1,782 @@
+#! /bin/sh
+# Poor man's jigdo - download and assemble Jigsaw Download files
+# Copyright 2001-2003 Richard Atterer
+# Portability improvements by J.A. Bezemer, Jan 2002
+# License: GPL version 2
+
+# These 4 variables can be overridden in ~/.jigdo-lite if necessary:
+jigdoOpts="--cache jigdo-file-cache.db"
+wgetOpts="--passive-ftp --dot-style=mega --continue --timeout=30"
+mirrors="mirrors.jigdo"
+tmpDir="."
+
+filesPerFetch=10
+maxMissing=30 # Don't try fallback servers if x% or more of files missing
+rcFile="$HOME/.jigdo-lite"
+
+if test "x$OSTYPE" = "xmsys"; then
+  windows=true
+  OSTYPE=Windows
+  mirrors="jigdo-bin/mirrors.jigdo"
+  rcFile="jigdo-lite-settings.txt"
+  egrep() { grep -E "$@"; }
+  expr() { echo "$(($@))"; }
+  filesPerFetch=5 # What's the command line length limit?
+  nl='\r\n'
+else
+  windows=false
+  nl='\n'
+fi
+#______________________________________________________________________
+
+# read with readline, only if running bash >=2.03 (-e gives error on POSIX)
+readLine="read"
+if test "x$BASH_VERSION" != "x"; then
+  if test "x${BASH_VERSION#[2-9].}" != "x$BASH_VERSION"; then
+    if test "x${BASH_VERSION#2.0[012]}" = "x$BASH_VERSION"; then
+      readLine="read -e -r"
+    fi
+  fi
+else
+  # Non-bash: Check whether "read -r" supported
+  if (echo | read -r REPLY 2>/dev/null); then
+    readLine="read -r"
+  fi
+fi
+#______________________________________________________________________
+
+# isURI <string>
+# Returns 0 (true) if the supplied string is a HTTP/FTP URL, otherwise 1
+isURI() {
+  case "$1" in
+    http:*|ftp:*|HTTP:*|FTP:*|file:*|FILE:*) return 0;;
+    *) return 1;
+  esac
+}
+#______________________________________________________________________
+
+strEqual() { test "x$1" = "x$2"; }
+strNotEqual() { test "x$1" != "x$2"; }
+strEmpty() { test "x$1" = "x"; }
+strNotEmpty() { test "x$1" != "x"; }
+#______________________________________________________________________
+
+# fetch <URL>...
+# Download a file, storing it in the current dir
+fetch() {
+  if test "$#" -eq 0; then return 0; fi
+  wget --user-agent="$userAgent" $wgetOpts "$@" || return 1
+}
+#______________________________________________________________________
+
+# Given URLs, fetch them into $imageTmp, then merge them into image
+fetchAndMerge() {
+  if test "$#" -eq 0; then return 0; fi
+  fetch --force-directories --directory-prefix="$imageTmp" -- "$@"
+  # Merge into the image
+  $jigdoFile $jigdoOpts --no-cache make-image --image="$image" \
+    --jigdo="$jigdoF" --template="$template" "$imageTmp"
+  jigdoErr="$?"
+  if test "$jigdoErr" -ge 2; then
+    echo "jigdo-file failed with code $jigdoErr - aborting."
+    $error 1
+  fi
+  # Delete imageTmp, to avoid taking up more space than necessary
+  rm -rf "$imageTmp"
+  return 0
+}
+#______________________________________________________________________
+
+# Prompt user to input value, assign result to $REPLY. If user just
+# presses Return, assign supplied default value instead.
+# input <prompt string> <default value>
+input() {
+  prompt=""
+  if strNotEmpty "$2"; then prompt=" [$2]"; fi
+  printf "%s%s: " "$1" "$prompt"
+  $readLine REPLY
+  if strEmpty "$REPLY"; then REPLY="$2"; fi
+}
+#______________________________________________________________________
+
+# Read from $jigdoF and create a menu of images contained in the file.
+# If invoked just as "imageMenu", print out the menu. If invoked as
+# "imageMenu 5", set $image and $templateURI to the filename/URI of
+# the 5th menu entry.
+# The scan for [Image] sections stops when at least one such section
+# has been read and a non-[Image] section follows. This is not
+# correct, but speeds things up a lot because in many cases the large
+# [Parts] section does not have to be scanned.
+imageMenu() {
+  imageSel="$1"
+  curImageCount=0
+  section=""
+  exec 3<"$jigdoF"
+  l=""
+  while true; do
+    case "$l" in
+      "[Image]"*)
+        # Read image section contents
+        unset image templateURI templateMD5 shortInfo info
+        while $readLine l <&3; do
+          case "$l" in
+            "["*"]"*) break;;
+            Filename=*) image="`echo $l | sed -e 's/^Filename= *//; s%['\\''\"$\\\`|&/[]%%g'`";;
+            Template=*) templateURI="`echo $l | sed -e 's/^Template= *//; s%['\\''\"$\\\`|&[]%%g'`";;
+            Template-MD5Sum=*) templateMD5="`echo $l | sed -e 's/^Template-MD5Sum= *//; s%['\\''\"$\\\`|&/[]%%g'`";;
+            Template-MD5Sum=*) templateMD5="`echo $l | sed -e 's/^Template-MD5Sum= *//; s%[^a-zA-Z0-9_-]%%g'`";;
+            ShortInfo=*) shortInfo="`echo $l | sed -e 's/^ShortInfo= *//; s%[$\\\`|[]%%g'`";;
+            Info=*) info="`echo $l | sed -e 's/^Info= *//; s%['\\''\"$\\\`|[]%%g'`";;
+          esac
+        done
+        # Image section read, check for validity
+        if strNotEmpty "$image" && strNotEmpty "$templateURI"; then
+          curImageCount="`expr $curImageCount + 1`"
+          if strNotEmpty "$imageSel"; then
+            # Return info for image selected via $imageSel
+            if test "$imageSel" -eq "$curImageCount"; then exec 3<&-; return 0; fi
+          else
+            # Print image menu
+            if strEmpty "$shortInfo"; then
+              printf "%3d: %s\n" "$curImageCount" "$image"
+            else
+              printf "%3d: %s (%s)\n" "$curImageCount" "$shortInfo" "$image"
+            fi
+          fi
+        fi
+        case "$l" in "[Image]"*) continue;; esac
+        # Abort early, avoid reading [Parts]
+        imageCount="$curImageCount"; exec 3<&-; return 0;;
+      *)
+        # Skip other parts of the file
+        while $readLine l <&3; do
+            case "$l" in "["*"]"*) break;; esac
+        done
+        case "$l" in "["*"]"*) continue;; esac
+        imageCount="$curImageCount"; exec 3<&-; return 0;;
+    esac
+  done
+  imageCount="$curImageCount"
+  exec 3<&-
+  return 0
+}
+#______________________________________________________________________
+
+# Output a horizontal rule
+hrule() {
+  echo
+  echo "-----------------------------------------------------------------"
+}
+#______________________________________________________________________
+
+# Download template, unless already present in current dir
+fetchTemplate() {
+  if $fetchedTemplate; then return 0; fi
+  echo
+
+  template=`basename "$templateURI"`
+
+  if strEmpty "$templateMD5"; then
+    echo "[WARNING - \`Template-MD5Sum' missing from image section]"
+    echo
+  fi
+  if test -r "$template" && strNotEmpty "$templateMD5"; then
+    set -- `$jigdoFile md5sum --report=quiet "$template"`
+    if test "$1" = "$templateMD5"; then
+      echo "Not downloading .template file - \`$template' already present"
+      fetchedTemplate=true
+      return 0
+    fi
+#  elif test -r "$template"; then
+#    echo "Not downloading .template file - \`$template' already present"
+#    fetchedTemplate=true
+#    return 0
+  fi
+  if isURI "$templateURI"; then
+    # Absolute template URL
+    echo 'Downloading .template file'
+#    rm -f "$template"
+    fetch --continue -- "$templateURI"
+  elif isURI "$url"; then
+    # Template URI is relative to absolute jigdo URL
+    echo 'Downloading .template file'
+#    rm -f "$template"
+    fetch --continue -- `echo "$url" | sed 's%[^/]*$%%'`"$templateURI"
+  else
+    # Template URI is relative to local jigdo filename
+    if $windows; then
+      # This is a bit broken - we ought to replace / with \ in templateURI too
+      template=`echo "$url" | sed 's%[^\]*$%%'`"$templateURI"
+    else
+      template=`echo "$url" | sed 's%[^/]*$%%'`"$templateURI"
+    fi
+  fi
+  fetchedTemplate=true
+  # Does template exist now?
+  if test ! -r "$template"; then
+    echo "File \`$template' does not exist!"
+    $error 1
+  fi
+  if strEmpty "$templateMD5"; then return 0; fi
+  set -- `$jigdoFile md5sum --report=quiet "$template"`
+  if strEqual "$1" "$templateMD5"; then return 0; fi
+  echo "Error - template checksum mismatch!"
+  echo "The .template file does not belong to the .jigdo file - the"
+  echo "chances are high that the image generation process will break."
+  echo "I will abort now. If you know better than me and want this error"
+  echo "to be ignored, enter the string \"42\" to proceed."
+  echo
+  echo "Note that you might get this error if you resumed the download of a"
+  echo ".template file, and that .template file has changed on the server in"
+  echo "the meantime. In this case, you may be able to fix the problem by"
+  echo "deleting the .template file and restarting jigdo-lite."
+  $readLine REPLY
+  case $REPLY in *42*) return 0;; esac
+  $error 1
+}
+#______________________________________________________________________
+
+# Write $rcFile
+saveOptions() {
+  printf "jigdo='%s'${nl}debianMirror='%s'${nl}nonusMirror='%s'${nl}" \
+    "$jigdo" "$debianMirror" "$nonusMirror" >"$rcFile"
+  printf "tmpDir='%s'${nl}jigdoOpts='%s'${nl}" \
+    "$tmpDir" "$jigdoOpts" >>"$rcFile"
+  printf "wgetOpts='%s'${nl}scanMenu='%s'${nl}" \
+    "$wgetOpts" "$scanMenu" >>"$rcFile"
+}
+#______________________________________________________________________
+
+finished() {
+  hrule
+echo "Finished!"
+if $batch; then true; else
+echo "The fact that you got this far is a strong indication that \`$image'"
+echo "was generated correctly. I will perform an additional, final check,"
+echo "which you can interrupt safely with Ctrl-C if you do not want to wait."
+fi
+echo
+  $jigdoFile verify --image="$image" --jigdo="$jigdoF" --template="$template" \
+    $jigdoOpts
+  return 0
+}
+#______________________________________________________________________
+
+# $0 is an URL or filename. Download/process it.
+selectImage() {
+  url="$1"
+
+  # Arg can be either URL or filename. Maybe download file
+  if isURI "$url"; then
+    jigdoF=`basename "$url"`
+    echo
+    if test -r "$jigdoF"; then
+      echo "Not downloading .jigdo file - \`$jigdoF' already present"
+    else
+      echo "Downloading .jigdo file"
+      fetch -- "$url"
+    fi
+  else
+    jigdoF="$url"
+  fi
+  # Does jigdo exist now?
+  if test ! -r "$jigdoF"; then
+    echo "File \`$jigdoF' does not exist!"
+    $error 1
+  fi
+  # Try to gunzip it. In case of error, assume that it wasn't gzipped
+  if gzip -cd "$jigdoF" >"$jigdoF.unpacked" 2>/dev/null; then
+    jigdoF="$jigdoF.unpacked"
+  else
+    rm -f "$jigdoF.unpacked"
+  fi
+  #________________________________________
+
+  if $batch; then
+    # Batch - download all images
+    hrule
+    echo "Images offered by \`$url':"
+    imageMenu # print out menu, set $imageCount
+    imageNr=1
+    while test "$imageNr" -le "$imageCount"; do
+      imageMenu "$imageNr" # set $image and $templateURI
+      hrule
+      if test "$imageCount" -eq 1; then
+        echo "Batch mode: Will download \`$image'"
+      else
+        echo "Batch mode: Will download \`$image' (image $imageNr out of $imageCount)"
+      fi
+      imageDownload
+      imageNr="`expr $imageNr + 1`"
+      askQuestions=false
+    done
+
+  else
+
+    # Interactive - ask
+    while true; do
+      hrule
+      echo "Images offered by \`$url':"
+      imageMenu # print out menu, set imageCount
+      if test "$imageCount" -eq 1; then
+        imageMenu "1" # set $image and $templateURI
+        imageDownload
+        break # Only 1 image - don't loop asking for images to download
+      else
+        input "Number of image to download" ""
+        if strEmpty "$REPLY"; then continue; fi
+        if test "$REPLY" -ge 1 -a "$REPLY" -le "$imageCount"; then
+          imageMenu "$REPLY" # set $image and $templateURI
+          imageDownload || return 1
+        fi
+      fi
+    done
+
+  fi
+  case "$jigdoF" in *.unpacked) rm -f "$jigdoF";; esac
+}
+#______________________________________________________________________
+
+scanFiles() {
+  # If --scan on command line, never ask, just scan that path
+  if strNotEmpty "$opt_filesToScan"; then
+    echo "Path to scan: $opt_filesToScan"
+    if $batch; then return 0; fi
+    # Retrieve template if necessary, then supply files
+    fetchTemplate || return 1
+    $jigdoFile make-image --image="$image" --jigdo="$jigdoF" \
+      --template="$template" $jigdoOpts "$opt_filesToScan"
+    jigdoErr="$?"
+    if test "$jigdoErr" -eq 0 -a -r "$image"; then
+      finished
+      $error 0 # All files were present on local filesystem
+    elif test "$jigdoErr" -ge 2; then
+      echo "jigdo-file failed with code $jigdoErr - aborting."
+      $error 1
+    fi
+    return 0
+  fi
+
+  # Ask user for any parts on local filesystems
+  while true; do
+    hrule
+    echo "If you already have a previous version of the CD you are"
+    echo "downloading, jigdo can re-use files on the old CD that are also"
+    echo "present in the new image, and you do not need to download them"
+    if $windows; then
+    echo "again. Enter the path to the old CD ROM's contents (e.g. \`d:\\')."
+    else
+    echo "again. Mount the old CD ROM and enter the path it is mounted under"
+    echo "(e.g. \`/mnt/cdrom')."
+    fi
+    echo "Alternatively, just press enter if you want to start downloading"
+    echo "the remaining files."
+    shift "$#" # Solaris /bin/sh doesn't understand "set --"
+    set -- $scanMenu
+    if strNotEmpty "$1"; then
+      echo
+      echo "You can also enter a single digit from the list below to"
+      echo "select the respective entry for scanning:"
+      echo "  1: $1"
+      if strNotEmpty "$2"; then echo "  2: $2"; fi
+      if strNotEmpty "$3"; then echo "  3: $3"; fi
+      if strNotEmpty "$4"; then echo "  4: $4"; fi
+      if strNotEmpty "$5"; then echo "  5: $5"; fi
+    fi
+    printf "Files to scan: "
+    $readLine filesToScan
+    if strEmpty "$filesToScan"; then return 0; fi
+    # Do not add supplied string to menu if...
+    case "$filesToScan" in
+      *" "*|*"'"*|*'`'*|*'"'*|*'$'*) ;; # ...it has bad chars
+      1) filesToScan="$1";;
+      2) filesToScan="$2";;
+      3) filesToScan="$3";;
+      4) filesToScan="$4";;
+      5) filesToScan="$5";;
+      *) case " $1 $2 $3 $4 $5 " in
+        *" $filesToScan "*) ;; # ...it is already in the menu
+        *)  set -- "$filesToScan" $scanMenu
+          scanMenu="$1 $2 $3 $4 $5"
+          saveOptions;;
+      esac;;
+    esac
+    if strEmpty "$filesToScan"; then continue; fi
+
+    # In batch mode, postpone template download, scan later
+    if $batch; then return 0; fi
+
+    # Retrieve template if necessary, then supply files
+    fetchTemplate || return 1
+    $jigdoFile make-image --image="$image" --jigdo="$jigdoF" \
+      --template="$template" $jigdoOpts "$filesToScan"
+    jigdoErr="$?"
+    if test "$jigdoErr" -eq 0 -a -r "$image"; then
+      finished
+      $error 0 # All files were present on local filesystem
+    elif test "$jigdoErr" -ge 2; then
+      echo "jigdo-file failed with code $jigdoErr - aborting."
+      $error 1
+    fi
+  done
+}
+#______________________________________________________________________
+
+selectServers() {
+  if $askQuestions; then true; else return; fi
+
+  # Crude check for whether any entry in the [Parts] section uses a
+  # "Debian" or "Non-US" label. If yes, start Debian mirror selection
+  # below.
+  if $batch; then
+    # If in batch mode, always ask the server questions; even though
+    # the current .jigdo file might not use Debian servers, a later
+    # one might, but we can't ask then.
+    usesDebian=true
+    usesNonus=true
+  else
+    usesDebian=false
+    if egrep '^[^=]+= *["'\'']?Debian:' <"$jigdoF" >/dev/null; then
+      usesDebian=true
+    fi
+    usesNonus=false
+    if egrep '^[^=]+= *["'\'']?Non-US:' <"$jigdoF" >/dev/null; then
+      usesNonus=true
+    fi
+  fi
+
+  # Extra options to pass to jigdo-file for server selection
+  uriOpts=""
+
+  while $usesDebian; do
+    hrule
+    echo "The jigdo file refers to files stored on Debian mirrors. Please"
+    echo "choose a Debian mirror as follows: Either enter a complete URL"
+    echo "pointing to a mirror (in the form"
+    echo "\`ftp://ftp.debian.org/debian/'), or enter any regular expression"
+    echo "for searching through the list of mirrors: Try a two-letter"
+    echo "country code such as \`de', or a country name like \`United"
+    echo "States', or a server name like \`sunsite'."
+    input "Debian mirror" "$debianMirror"
+    # Special-case two-letter country codes
+    case "$REPLY" in [a-z][a-z]) REPLY="[. ]$REPLY[/. ]";; esac
+    if isURI "$REPLY"; then
+      # Turn any "file:/opt/mirror" into "file:/opt/mirror/"
+      debianMirror=`echo $REPLY | sed -e 's%^ *\([^ ]*[^/ ]\)/*\( .*\)*$%\1/%'`
+      saveOptions
+      uriOpts="--uri Debian='$debianMirror'"
+      break;
+    fi
+    egrep -i "$REPLY" "$mirrors" | sed -n -e 's/^Debian=//p'
+    echo
+    echo "An up-to-date copy of the above list is available at"
+    echo "ftp://ftp.debian.org/debian/README.mirrors.txt"
+  done
+
+  while $usesNonus; do
+    hrule
+    echo "The jigdo file also refers to the Non-US section of the Debian"
+    echo "archive. Please repeat the mirror selection for Non-US. Do not"
+    echo "simply copy the URL you entered above; this does not work because"
+    echo "the path on the servers differs!"
+    input "Debian non-US mirror" "$nonusMirror"
+    case "$REPLY" in [a-z][a-z]) REPLY="[. ]$REPLY[/. ]";; esac
+    if isURI "$REPLY"; then
+      # Turn any "file:/opt/mirror" into "file:/opt/mirror/"
+      nonusMirror=`echo $REPLY | sed -e 's%^ *\([^ ]*[^/ ]\)/*\( .*\)*$%\1/%'`
+      saveOptions
+      uriOpts="$uriOpts --uri Non-US='$nonusMirror'";
+      break;
+    fi
+    egrep -i "$REPLY" "$mirrors" | sed -n -e 's/^Non-US=//p'
+    echo
+    echo "An up-to-date copy of the above list is available at"
+    echo "ftp://ftp.debian.org/debian/README.non-US"
+  done
+}
+#______________________________________________________________________
+
+# $image: image filename
+# $templateURI: Absolute/relative URI from .jigdo file
+# $info: Info=... entry from .jigdo file
+imageDownload() {
+
+  fetchedTemplate=false
+
+  if strNotEmpty "$info"; then
+    printf "\nFurther information about \`%s':\n" "$image"
+    echo "$info"
+  fi
+  list="$image.list"
+
+  # Create name of temporary dir, by stripping extension from $image
+  imageTmp="`echo $image | sed 's%\.\(tmp|iso|raw\)%%'`"
+  if test -f "$imageTmp" -o "x$imageTmp" = "x$image"; then
+    imageTmp="$imageTmp.tmpdir"
+  fi
+
+  # Deal with leftover tmpdir from previous, interrupted download
+  if $askQuestions && test -d "$imageTmp"; then
+    hrule
+    echo "The temporary directory \`$imageTmp' already exists. Its contents"
+    echo "ARE GOING TO BE DELETED (possibly after having been copied to the"
+    echo "image, if they are of interest for it). If you do not want this"
+    echo "to happen, press Ctrl-C now. Otherwise, press Return to proceed."
+    $readLine REPLY
+  fi
+
+  if $askQuestions; then
+    # Ask questions and scan dirs, set up $filesToScan
+    scanFiles || return 1
+    if $batch; then selectServers; fi
+  fi
+
+  if $batch && strNotEmpty "$filesToScan$opt_filesToScan"; then
+    # Retrieve template if necessary, then supply files. One of the
+    # two variables $filesToScan and $opt_filesToScan is always empty
+    fetchTemplate || return 1
+    $jigdoFile make-image --image="$image" --jigdo="$jigdoF" \
+      --template="$template" $jigdoOpts "$filesToScan$opt_filesToScan"
+    jigdoErr="$?"
+    if test "$jigdoErr" -eq 0 -a -r "$image"; then
+      finished
+      return 0 # All files were present on local filesystem
+    elif test "$jigdoErr" -ge 2; then
+      echo "jigdo-file failed with code $jigdoErr - aborting."
+      return 1
+    fi
+  fi
+
+  # Read any files from non-empty tmpDir. Don't delete tmpDir yet, as
+  # wget may resume some half-finished files
+  if test -d "$imageTmp"; then
+    fetchTemplate || return 1
+    # Merge into the image
+    $jigdoFile $jigdoOpts --no-cache make-image --image="$image" \
+      --jigdo="$jigdoF" --template="$template" "$imageTmp"
+  fi
+
+  # Download files and merge them into the image. We instruct wget to
+  # download 10 files at a time and then merge them. This way, compared
+  # to downloading everything, the peak disc space usage is not twice
+  # the size of the final image.
+  while true; do
+
+    if $batch; then true; else selectServers; fi
+    fetchTemplate || return 1
+    hrule
+
+    # If a "file:" URI was given instead of a server URL, try to merge
+    # any files into the image.
+    echo "Merging parts from \`file:' URIs, if any..."
+    $jigdoFile print-missing-all --image="$image" --jigdo="$jigdoF" \
+        --template="$template" $jigdoOpts $uriOpts \
+    | egrep -v '^([a-zA-Z0-9.+_-]+:|$)' \
+    | $jigdoFile make-image --image="$image" --jigdo="$jigdoF" \
+        --template="$template" $jigdoOpts --files-from=-
+    jigdoErr="$?"
+    if test "$jigdoErr" -ge 2; then
+      echo "jigdo-file failed with code $jigdoErr - aborting."
+      $error 1
+    fi
+
+    # First try to download all files using the first URL in the
+    # print-missing-all list. If any files remain missing, add another
+    # pass, this time try to download the missing files using the 2nd
+    # URL, and so on.
+    noMorePasses=false
+    for pass in x xx xxx xxxx xxxxx xxxxxx xxxxxxx xxxxxxxx; do
+      $jigdoFile print-missing-all --image="$image" --jigdo="$jigdoF" \
+        --template="$template" $jigdoOpts $uriOpts \
+      | egrep -i '^(http:|ftp:|$)' >"$list"
+      missingCount=`egrep '^$' <"$list" | wc -l | sed -e 's/ *//g'`
+      if test "$pass" = "x"; then
+        totalCount="$missingCount"
+      elif test "$missingCount" -ge 25 -a \
+        "`expr 100 \* $missingCount / $totalCount`" -ge "$maxMissing"; then
+        echo
+        echo "Too many files ($missingCount out of $totalCount) are missing"
+        echo "- I will not try to retrieve the remaining files from any"
+        echo "alternative download locations"
+        break;
+      fi
+      # Accumulate URLs in $@, pass them to fetchAndMerge in batches
+      shift "$#" # Solaris /bin/sh doesn't understand "set --"
+      count=""
+      exec 3<"$list"
+      while $readLine url <&3; do
+        count="x$count"
+        if strEmpty "$url"; then count=""; continue; fi
+        if test "$count" != "$pass"; then continue; fi
+        if $noMorePasses; then
+          hrule
+          echo "$missingCount files not found in previous pass, trying"
+          echo "alternative download locations:"
+          echo
+        fi
+        noMorePasses=false
+        set -- "$@" "$url"
+        if test "$#" -ge "$filesPerFetch"; then
+          if fetchAndMerge "$@"; then true; else exec 3<&-; return 1; fi
+          shift "$#" # Solaris /bin/sh doesn't understand "set --"
+        fi
+      done
+      exec 3<&-
+      if test "$#" -ge 1; then fetchAndMerge "$@" || return 1; fi
+      if $noMorePasses; then break; fi
+      if test -r "$image"; then break; fi
+      noMorePasses=true
+    done
+
+    rm -f "$list"
+    if test -r "$image"; then break; fi
+
+    hrule
+    echo "Aaargh - $missingCount files could not be downloaded. This should not"
+    echo "happen! Depending on the problem, it may help to retry downloading"
+    echo "the missing files."
+    if $batch; then return 1; fi
+    if $usesDebian || $usesNonus; then
+    echo "Also, you could try changing to another Debian or Non-US server,"
+    echo "in case the one you used is out of sync."
+    fi
+    echo
+    echo "However, if all the files downloaded without errors and you"
+    echo "still get this message, it means that the files changed on the"
+    echo "server, so the image cannot be generated."
+    if $usesDebian || $usesNonus; then
+    echo "As a last resort, you could try to complete the CD image download"
+    echo "by fetching the remaining data with rsync."
+    fi
+    echo
+    echo "Press Return to retry downloading the missing files."
+    echo "Press Ctrl-C to abort. (If you re-run jigdo-lite later, it will"
+    echo "resume from here, the downloaded data is not lost if you press"
+    echo "Ctrl-C now.)"
+    $readLine REPLY
+
+  done
+  finished
+}
+#======================================================================
+
+echo
+echo 'Jigsaw Download "lite"'
+echo "Copyright (C) 2001-2003  |  jigdo@"
+echo "Richard Atterer          |  atterer.net"
+
+jigdoFile="jigdo-file"
+jigdo-file --version >/dev/null 2>/dev/null
+if test "$?" -ne 0; then
+    # Using ./jigdo-file is possibly a security risk, so only use if
+    # nothing else is there
+    if test -x "./jigdo-file"; then jigdoFile="./jigdo-file"; fi
+fi
+jigdoFileSameDir="`dirname $0`/jigdo-file"
+if test -x "$jigdoFileSameDir"; then jigdoFile="$jigdoFileSameDir"; fi
+
+mirrorsSameDir="`dirname $0`/$mirrors"
+if test -r "$mirrorsSameDir"; then mirrors="$mirrorsSameDir"; fi
+
+# Check for programs
+if $windows; then
+    jigdoFile=jigdo-file
+else
+    for prog in wget egrep sed gzip wc expr; do
+        which "$prog" >/dev/null \
+            || echo "Could not find program \`$prog' - please install it!"
+    done
+fi
+
+userAgent="jigdo-lite/`$jigdoFile --version 2>/dev/null | ($readLine jf v ver; echo $ver)` (`wget --version 2>/dev/null | ($readLine ver; echo $ver)`; $OSTYPE)"
+
+# Load preferences file, if present
+if test -f "$rcFile"; then
+    echo "Loading settings from \`$rcFile'"
+    mirrorsX="$mirrors"
+    . "$rcFile"
+    mirrors="$mirrorsX"
+    # When upgrading from versions <0.6.9, update value of tmpDir
+    if strEqual "$tmpDir" "tmp" || strEqual "$tmpDir" "temp"; then
+        tmpDir="."
+    fi
+fi
+
+# If running for the first time, try to read mirror info from sources.list
+if strEmpty "$debianMirror$nonusMirror" && test -f "/etc/apt/sources.list"; then
+    echo "Getting mirror information from /etc/apt/sources.list"
+    while $readLine deb url dist rest; do
+        case "$deb $dist" in
+            "deb "*/non-US)
+                test "$nonusMirror" = "" && nonusMirror="${url%/}/";;
+            "deb "*)
+                test "$debianMirror" = "" && debianMirror="${url%/}/";;
+        esac
+    done <"/etc/apt/sources.list"
+fi
+#________________________________________
+
+# Process command line switches
+batch=false
+while true; do
+  case "$1" in
+  --help|-h)
+    echo
+    echo "Usage: $0 [OPTIONS] [FILES or URLS...]"
+    echo "  -h  --help       Print this message"
+    echo "  -v  --version    Output version information"
+    echo "      --scan PATH  Don't ask for \"Files to scan\", use this path"
+    exit 0;;
+  --version|-v)
+    echo
+    echo "$userAgent"
+    exit 0;;
+  --scan)
+    opt_filesToScan="$2"
+    shift 2;;
+  *)
+    break;;
+    esac
+done
+#________________________________________
+
+# No cmd line argument => prompt user
+if test "$#" -eq 0; then
+    hrule
+    echo "To resume a half-finished download, enter name of .jigdo file."
+    echo "To start a new download, enter URL of .jigdo file."
+    echo "You can also enter several URLs/filenames, separated with spaces,"
+    echo "or enumerate in {}, e.g. \`http://server/cd-{1_NONUS,2,3}.jigdo'"
+    input "jigdo" "$jigdo"
+    jigdo="$REPLY"
+    set -- "$REPLY"
+    saveOptions
+fi
+# Expand "a{b,c{x,y}}" into "ab acx acy". How's that for a sed script?
+set -- `echo "$*" | sed '
+:a
+s%{\([^,]*\)}%\1%g
+s%{\(\([^{},]*,\)*\)\([^{},]*\){\([^,{}]*\),\?\([^{}]*\)}\([^{}]*\)}%{\1\3\4,\3{\5}\6}%
+t a
+:b
+s%{\([^,]*\)}%\1%g
+s%\([^{ ]*\){\([^,{}]*\),\?\([^{}]*\)}\([^ ]*\)%\1\2\4 \1{\3}\4%
+t b'`
+if test "$#" -gt 1; then
+    hrule
+    echo "You have asked me to process several files/URLs:"
+    for file in "$@"; do echo "  $file"; done
+    batch=true
+    echo
+    echo "Entering batch mode"
+    error="return"
+else
+    error="exit"
+fi
+#________________________________________
+
+askQuestions=true
+for url in "$@"; do
+    selectImage "$url"
+done
+exit 0

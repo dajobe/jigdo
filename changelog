@@ -1,0 +1,255 @@
+Changelog for Jigsaw Download                               -*- Text -*-
+------------------------------------------------------------------------
+
+jigdo 0.7.0 -- Richard Atterer, 05 May 2003
+
+  - GUI: Code for guessing the user's proxy settings. On Unix, reads
+    the configuration files of various browsers. On Windows, reads the
+    MSIE registry entries.
+  - GUI: Single downloads (e.g. of .iso files) work, can be paused and
+    continued, stopped and resumed.
+  - GUI: Work on processing of .jigdo files is begun, but far from
+    completed
+  - Changed heuristics for "jigdo-file make-template". As with all
+    heuristics, may actually turn out to be worse than before for some
+    cases. However, with experiments of mine with i386 Debian DVD
+    images, it resulted in a significant size reduction of the
+    template.
+  - Fix for bug in "make-template" which caused invalid template files
+    to be generated sometimes. Funny how these make-template bugs keep
+    popping up, I've already fixed about 5 of them! :-7
+  - jigdo-lite: Fix for problem with the "read" builtin with some
+    shells, e.g. dash
+  - Fixed build problem on newer GCC 3.2
+  - Source code now exceeds 20000 lines of code in almost 100 files.
+
+jigdo 0.6.9 -- Richard Atterer, 19 Jan 2003
+
+  - jigdo-lite: New batch mode - if you enter (or supply on the
+    command line) several files/URLs, all the questions are only asked
+    once before the first download. Furthermore, the program *always*
+    asks for Debian/Non-US mirror URLs, it only asks for "Files to
+    scan" once, it always downloads all images offered by all .jigdo
+    files, and it does not stop immediately after errors, but
+    continues with the next image.
+  - You can enter URLs like "http://server/cd-{1_NONUS,2,3}.jigdo" and
+    they'll be expanded to several separate URLs.
+  - jigdo-lite: --scan command line option to avoid "Files to scan"
+    question.
+  - By popular demand, always use wget's --continue switch, except
+    when fetching .jigdo files. This *will* cause severe breakage in
+    the case that someone starts the download of a .template of
+    fsn.hu's daily snapshot on one day, and resumes it the next day,
+    but that's just a problem people will have to be aware of. :-/
+  - jigdo-lite: Use --force-directories, allows --continue to be used
+    for individual package downloads. (Previously, all downloaded
+    .debs etc were stored directly in the tmp dir, so --continue could
+    not be used because there are e.g. several files named
+    "driver-1.bin" on Debian servers.)
+  - jigdo-lite: Use a separate temporary dir for each new download.
+    This allows you to run several jigdo-lite instances in the same
+    dir at the same time.
+  - jigdo-lite: When temporary dir is already present, scan its
+    contents *before* downloading the first batch of files
+    (Goswin Brederlow and others)
+  - jigdo-file: Default for --min-length is now 1k by default, the
+    hardwired absolute minimum is 256 bytes (used to be 4k/1k)
+  - jigdo-file make-template: Changed heuristics when dropping
+    possible file matches. Difficult to explain... essentially,
+    together with the previous change, .template files for Debian CDs
+    will get quite a bit smaller (Santiago Garcia Mantinan)
+  - On Windows, fail with meaningful error for images >2GB (ATM, we
+    don't have big file support with MinGW GCC)
+  - Fixed compilation error with gcc 3 and --without-libdb (Attila)
+  - Improved check for getopt_long support in configure script, it
+    failed on FreeBSD 5 (Attila Nagy)
+  - Added jigdo.pot to output, including initial German translation
+  - configure script: Made --without-gui the default, as people have
+    problems compiling with GTK & libwww, and the GUI is useless ATM
+  - jigdo-lite: Misc fixes to make it work with mingw under Windows
+  - jigdo-lite accepts --help and --version options
+  - jigdo-lite: Changed timeout from wget's default 15 minutes to just
+    30 seconds (only has an effect if no ~/.jigdo-lite present)
+  - debian-mirrors.jigdo: Bugfix in creation script (HTTP/FTP paths on
+    server were swapped), omit FTP URL if HTTP access possible
+    (Phil Hands)
+  - Build environment: Fix for bug in depend.awk, which made it output
+    dependencies on .ih files when it shouldn't
+  - jigdo-file make-template: Prevent infinite loop if I/O error
+    occurs during scanning of files (Blars Blarson)
+  - jigdo-file make-template: Fixed bug which could lead to
+    segmentation faults if the image contained a long, but only
+    partial match of a file, and another long partial match of another
+    file within the "outer" partial match.
+  - jigdo-file make-template: Bugfix - server line was sometimes added
+    to [Image] section when using --merge
+  - jigdo-file make-template: Fix for bug which is extremely unlikely
+    in practice, caused segfault if read() returned <32 bytes or so
+    while reading start of file.
+  - jigdo-file make-template bugfix: Now creates properly quoted
+    entries in [Parts] sections for filenames containing spaces or
+    characters like "'\
+  - Improved handling of invalid cache files (created if disc gets
+    full during cache update): Instead of crashing, jigdo-file prints
+    an error. However, libdb still corrupts the cache file.
+    (Dmitry E. Melamud, Petr Slansky)
+
+jigdo 0.6.8 -- Richard Atterer, 28 Jun 2002
+
+  - jigdo-lite/mirror use "jigdo-file --no-cache" when reading
+    downloaded files from tmp dir. Cache caused problems because ATM
+    the Debian mirrors contain two different "driver-4.bin" files with
+    identical timestamps. (Santiago Garcia Mantinan)
+  - jigdo-lite uses "wget -e continue=off" for people who put
+    continue=on into their wgetrc. (Iain Broadfoot)
+  - At long last, succeeded in fully porting glibwww to Windows
+  - Fixed bug in md5sum generation, which might lead to incorrect
+    md5sums being generated, but in practice never has.
+
+jigdo 0.6.7 -- Richard Atterer, 06 Jun 2002
+
+  - Updated md5sum code, should now work on big-endian architectures
+  - New version of jigdo-mirror supports include/exclude filtering
+  - No longer use -g switch, unless --enable-debug used
+  - Now compiles with gcc 3.1
+
+jigdo 0.6.6 -- Richard Atterer, 17 May 2002
+
+  - jigdo-lite/mirror: Template URLs can be relative to jigdo URL
+  - jigdo-file: Any template URL added by default is relative
+  - jigdo-lite: Don't use "wget -c" to get jigdo/template files -
+    causes problems if the files are updated daily on the server
+  - jigdo-file: >4GB file sizes now really supported on Linux
+    (James W. Jayaputera) - does still not work under Windows.
+  - jigdo-mirror is now installed by "make install"
+  - Updated documentation, new manpage for jigdo-mirror
+  - jigdo-file make-template: New --merge switch allows you to add
+    this run's data to an existing jigdo file.
+  - jigdo-file now writes out a Template-MD5Sum=... entry to the jigdo
+    file. When using --merge, the entry can also be added to an
+    existent [Image] section. jigdo-lite uses it to verify downloaded
+    template data.
+  - jigdo-file make-template: Always moves [Parts] section to the
+    bottom of the file
+
+jigdo 0.6.5 -- Richard Atterer, 17 Apr 2002
+
+  - jigdo-lite: Better fallback handling, now also works for files
+    that changed (rather than disappeared) on the server.
+  - jigdo-lite: If ~/.jigdo-lite not present, try to fetch mirror info
+    from /etc/apt/sources.list
+  - portability fixes (Mattias Wadenstein)
+  - jigdo GUI: Some more work done, but it's still not usable
+  - new jigdo-mirror script (in the source tarball only)
+
+jigdo 0.6.4 -- Richard Atterer, 02 Mar 2002
+
+  - Fixed a make-template bug introduced in 0.6.3, which caused
+    jigdo-file to crash if there are more than 32 files with identical
+    content (Attila Nagy)
+  - jigdo-lite: Allow customization of flags passed to jigdo-file and
+    wget, by making it save and restore variables in ~/.jigdo-lite.
+    For example, add "--uri Debian=http://myserver.lan/" to the
+    definition of jigdoOpts to define an additional mirror (turns the
+    selected mirrors into fallback mirrors).
+  - jigdo-lite: Made script work with ash
+  - Added configure check for _snprintf (needed for Windows)
+
+jigdo 0.6.3 -- Richard Atterer, 24 Feb 2002
+
+  - jigdo-file make-template: Some loop unrolling, some other
+    optimizations, resulting in a speed increase of at least 30%!
+  - FORMAT CHANGE of template files: Template data now includes
+    RsyncSums - this will be useful in the future for aborting
+    downloads early and when upgrading images to newer versions. This
+    version still reads the old template format, but support for that
+    will be dropped before 1.0.0.
+  - jigdo-lite: Can now supply >1 image sections in .jigdo files
+  - jigdo-lite: Support for gzipped .jigdo files
+  - jigdo-lite: Added a small manpage
+  - jigdo-lite: Use "wget --dot-style=mega --passive-ftp"
+  - Really fixed <sstream> issues this time - by not using sstream at
+    all. (It is not possible to implement an sstream class for the
+    iostream supplied with Debian Potato's GCC 2.95)
+  - Can now build a .deb just by executing "deb/rules"
+  - configure: Can now use --without-gui to prevent jigdo GUI from
+    getting built and installed (does not work with "deb/rules")
+  - Added jigdo.spec for building of RPMs (Alexander Skwar)
+  - Slightly changed the way that missing --image/--jigdo/--template
+    arguments are deduced from other parameters. (Thomas Arnold)
+  - Fixes to make jigdo-file build on 64-bit architectures
+  - Changed abbreviation of "md5sum" command from "md" to "md5". That
+    breaks compatibility, but I keep typing "md5"... :)
+  - Small hack to make "jigdo-file md5 /some/path" include the leading
+    "/" in its output.
+  - jigdo-lite: Fix for obscure problem with "sed /foo/!p" on BSD and
+    some Linux versions - use "egrep -v foo" instead (Attila Nagy)
+
+jigdo 0.6.2 -- Richard Atterer, 26 Jan 2002
+
+  - Added this changelog file to the distribution! :-)
+  - gettext support (but no translations are present yet)
+  - Portability fixes to jigdo-lite (Anne Bezemer)
+  - Portability fixes to the jigdo-file code (for RedHat/Mandrake
+    systems, systems without <sstream> such as Debian Potato)
+  - Support for fallback servers in jigdo-lite
+  - Support for fallback servers in jigdo-file, in the form of a new
+    "print-missing-all" command
+  - First upload of jigdo packages to the Debian archive
+
+jigdo 0.6.1 -- Richard Atterer, 17 Dec 2001
+
+  - Changelog lost
+
+jigdo 0.6.0 -- Richard Atterer, 15 Nov 2001
+
+  - Because the "proper jigdo" (the GTK+ download manager type app) is
+    not going to be finished anytime soon, I've written a small shell
+    script called "jigdo-lite" which does an equivalent job. It
+    downloads files with wget and assembles them using jigdo-file.
+    jigdo-lite can "upgrade" old images to a newer version.
+  - Very first, ***pre-alpha*** version of the GTK+ jigdo application.
+    There is no download capability or other functionality present at
+    all yet.
+  - As of a few days ago, the first beta site offering downloads of
+    Debian 2.2r4 via jigdo is available on cdimage. Thanks for the
+    account to Phil Hands!
+
+jigdo 0.5.3 -- Richard Atterer, 13 Sep 2001
+
+  - *** jigdo-file is finished! ***
+    With the introduction of a cache for file checksums, it is finally
+    possible in practice to let it loose on a Debian archive mirror.
+  - Update and large extension of the documentation.
+  - Now compiles with GCC 3.
+  - Now compiles under Windows! You do not even need Cygwin; plain
+    mingw is sufficient.
+  - Numerous small fixes and changes. Source code now exceeds 10000
+    lines of code.
+
+jigdo 0.5.2 -- Richard Atterer, 2 Sep 2001
+
+  - Would you believe it, documentation!!! (in the form of a manpage)
+  - "print-missing" sub-command for jigdo-file allows for mirror
+    selection etc - more than the old PIK's functionality is now
+    present
+  - Major internal extensions (nearly 2000 lines of code) which don't
+    show now, but which will eventually come in handy for the GUI tool
+
+jigdo 0.5.1 -- Richard Atterer, 22 Jul 2001
+
+  - Can now merge files into a half-finished image with >1 jigdo-file
+    invocations. This will be useful e.g. to "upgrade Debian CD
+    images", i.e. you can take some .debs from the old CD, so they
+    needn't be downloaded again.
+  - Can assign labels to input file locations, e.g. "--label
+    /opt/mirrors/debian=Debian"
+  - Cleanup & extension of .jigdo file format
+
+jigdo 0.5.0 -- Richard Atterer, about 20 Jun 2001
+
+  - Initial release, not very usable.
+
+jigdo 0.0.0 -- Richard Atterer, December 2000
+
+  - Discussion on debian-cd, jigdo enters vapourware stage.

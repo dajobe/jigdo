@@ -1,0 +1,39 @@
+/* $Id$ -*- C++ -*-
+  __   _
+  |_) /|  Copyright (C) 2000-2002  |  richard@
+  | \/¯|  Richard Atterer          |  atterer.net
+  ¯ '` ¯
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License, version 2. See
+  the file COPYING for details.
+
+  Quite secure 128-bit checksum
+
+*/
+
+#ifndef MD5SUM_IH
+#define MD5SUM_IH
+
+#include <mimestream.hh>
+//______________________________________________________________________
+
+ostream& operator<<(ostream& s, const MD5& r) {
+  Base64String m;
+  m.write(r.sum, 16).flush();
+  s << m.result();
+  return s;
+}
+
+ostream& operator<<(ostream& s, const MD5Sum& r) {
+  const byte* d = r.digest();
+  if (d == 0) {
+    s << "[MD5_creation_not_finished]";
+  } else {
+    Base64String m;
+    m.write(d, 16).flush();
+    s << m.result();
+  }
+  return s;
+}
+
+#endif

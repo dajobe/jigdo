@@ -1,0 +1,80 @@
+# Project: Jigdo (Jigsaw download)
+#  __   _
+#  |_) /|  Copyright (C) 2001-2002  |  richard@
+#  | \/¯|  Richard Atterer          |  atterer.net
+#  ¯ '` ¯
+srcdir =	@srcdir@
+VPATH =		@srcdir@
+
+prefix =	@prefix@
+datadir =	@datadir@
+
+PACKAGE =	jigdo
+INSTALL =	@INSTALL@
+GMSGFMT =	msgfmt
+MSGFMT =	msgfmt
+XGETTEXT =	xgettext
+MSGMERGE =	msgmerge
+
+catalogs =	@CATALOGS@
+
+.SUFFIXES:
+.SUFFIXES: .po .pox .gmo .mo
+
+.po.pox:
+		$(MAKE) $(PACKAGE).pot
+		$(MSGMERGE) $< $(srcdir)/$(PACKAGE).pot -o $*.pox
+.po.mo:
+		$(MSGFMT) -o $@ $<
+.po.gmo:
+		rm -f "$*.gmo" && $(GMSGFMT) --statistics -o "$*.gmo" $<
+#______________________________________________________________________
+
+.PHONY:		all clean distclean mostlyclean maintainer-clean doc \
+		dep depend check update-po update-gmo update-pot
+
+all:		Makefile $(catalogs)
+
+clean mostlyclean:
+		rm -f *.pox $(PACKAGE).po *.new.po
+distclean:
+		rm -f *.pox $(PACKAGE).po *.new.po *.old
+		rm -f *~ \#*\# *.bak Makefile config.h
+maintainer-clean:
+		rm -f *.pox $(PACKAGE).po *.new.po *.gmo *.mo
+		rm -f *~ \#*\# *.bak Makefile config.h
+check doc dep:	;
+#______________________________________________________________________
+
+#$(srcdir)/$(PACKAGE).pot: $(srcdir)/../src/Makefile.in Makefile
+update-pot:
+		cd ../src && $(MAKE) gtk/interface.cc gtk/interface.hh
+		(cd "$(srcdir)/../src/" && find . -type f) \
+		| egrep '\.(cc|hh|ih|fh|h)$$' \
+		| xargs $(XGETTEXT) --default-domain=$(PACKAGE) \
+		    --keyword=_ --keyword=N_ --directory="$(srcdir)/../src" \
+		    --c++ --sort-output --foreign-user \
+		&& test ! -f "$(PACKAGE).po" \
+		|| ( rm -f "$(srcdir)/$(PACKAGE).pot" \
+		     && mv "$(PACKAGE).po" "$(srcdir)/$(PACKAGE).pot" )
+
+update-po:	Makefile
+		cd "$(srcdir)"; \
+		$(MAKE) $(PACKAGE).pot; \
+		for file in $(catalogs); do \
+		        lang=`echo $$file | sed -e 's/\.gmo$$//'`; \
+		        echo "$$lang:"; \
+	  	        if $(MSGMERGE) "$$lang.po" "$(PACKAGE).pot" \
+		            -o "$$lang.new.po"; then \
+		            mv -f "$$lang.new.po" "$$lang.po"; \
+		        else \
+		            echo "msgmerge for $$file failed!"; \
+		            rm -f "$$lang.new.po"; \
+		        fi; \
+		    done
+		$(MAKE) update-gmo
+
+update-gmo:	$(catalogs)
+
+Makefile:	Makefile.in
+		cd .. && sh config.status # update Makefile from Makefile.in

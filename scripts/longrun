@@ -1,0 +1,40 @@
+#! /bin/bash -e
+
+# Copyright 2001 Richard Atterer
+# License: GPL version 2
+
+# Run torture on a machine, possibly going through thousands of test
+# cases. At regular intervals, send mail about progress and any failed
+# cases.
+
+first=0
+last=1024
+step=32
+mailto="`whoami`"
+
+tmp="/tmp/`whoami`"
+trap "rm -rf $tmp" EXIT
+mkdir -p "$tmp/ironmaiden"
+if test -O "$tmp"; then true; else
+    echo "Couldn't create $tmp"
+    exit 1
+fi
+x=$first
+cp "torture" "$tmp" \
+|| cp "src/torture" "$tmp"\
+|| cp "debug/src/torture" "$tmp"
+cd "$tmp"
+
+while test "$x" -lt "$last"; do
+    y=$((x + step))
+    nice ./torture $x $y
+    if test "$(set `wc -l ironmaiden/report` && echo $1)" \
+       -ne "$((step * 2 ))" \
+       || egrep -q '^([^O]..|.[^K].|..[^ ])' "ironmaiden/report"; then
+        mail -s "FAIL torture $x $y" "$mailto" <"ironmaiden/report"
+        else
+        mail -s "OK   torture $x $y" "$mailto" <"/dev/null"
+    fi
+    x=$y
+done
+mail -s "torture longrun $first $last finished" "$mailto" <"/dev/null"

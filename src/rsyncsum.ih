@@ -1,0 +1,58 @@
+/* $Id$ -*- C++ -*-
+  __   _
+  |_) /|  Copyright (C) 2000-2002  |  richard@
+  | \/¯|  Richard Atterer          |  atterer.net
+  ¯ '` ¯
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License, version 2. See
+  the file COPYING for details.
+
+  A 32 or 64 bit rolling checksum
+
+*/
+
+#ifndef RSYNCSUM_IH
+#define RSYNCSUM_IH
+
+#include <mimestream.hh>
+//______________________________________________________________________
+
+ostream& operator<<(ostream& s, const RsyncSum& r) {
+  Base64String m;
+  m << r.get() << flush;
+  s << m.result();
+  return s;
+}
+ostream& operator<<(ostream& s, const RsyncSum64& r) {
+  Base64String m;
+  m << r.getLo() << r.getHi() << flush;
+  s << m.result();
+  return s;
+}
+//________________________________________
+
+RsyncSum64& RsyncSum64::addBack(const byte* mem, size_t len) {
+  if (len == 0) return *this;
+  else return addBack2(mem, len);
+}
+
+RsyncSum64& RsyncSum64::addBack(byte x) {
+  sumLo = (sumLo + charTable[x]) & 0xffffffff;
+  sumHi = (sumHi + sumLo) & 0xffffffff;
+  return *this;
+}
+
+RsyncSum64& RsyncSum64::addBackNtimes(byte x, size_t n) {
+  // gaussProd = n*(n+1)/2, but need to do the "/2" before the "*",
+  // otherwise bit 31 of result is lost on 32-bit architectures.
+  uint32 gaussProd;
+  if (n % 2 == 0)
+    gaussProd = (n / 2) * (n + 1);
+  else
+    gaussProd = ((n + 1) / 2) * n;
+  sumHi = (sumHi + n * sumLo + gaussProd * charTable[x]) & 0xffffffff;
+  sumLo = (sumLo + n * charTable[x]) & 0xffffffff;
+  return *this;
+}
+
+#endif

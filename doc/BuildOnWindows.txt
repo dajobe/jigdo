@@ -1,0 +1,182 @@
+
+There are many different ways of building jigdo for Windows:
+
+Recommended:
+ - On Linux, cross-compiling for Windows. Most comfortable in the long
+   run, recommended! Described in detail below.
+ - On Windows, using Cygwin, but actually calling the MinGW gcc/g++.
+   This has the advantage that the final binary will not need the
+   Cygwin DLL. Described in detail in the second half of this file.
+
+Not recommended:
+ - On Windows, using Cygwin. Never tested, but might work out of the
+   box. Not recommended "for production releases", since the resulting
+   binaries depend on the Cygwin DLL and use Unix filename conventions.
+ - On Windows, using minimal MinGW + MSYS setup, with "make
+   -f Makefile.mingw". Hasn't been tested in a long while, probably
+   broken.
+ - On Windows, using Cygwin, and instructing it (with -mms-bitfields)
+   to generate code which does not use the Cygwin DLL. Never tried,
+   was allegedly broken in the past.
+
+
+NOTE: configure.in sets up @MWINDOWS@ in such a way that a console
+window ("DOS window") will open alongside the jigdo window if you
+compile jigdo with --enable-debug. Otherwise, the console window will
+not appear.
+
+
+
+Cross-compiling jigdo on Linux for Windows
+==========================================
+
+All the following steps happen on the build machine, i.e. under Linux.
+
+- Get a MinGW cross-compiler. Under Debian, this is as easy as
+  "apt-get install mingw32 mingw32-binutils mingw32-runtime", for
+  other distros you might be able to find some RPMs somewhere. 
+  Building your own cross-compiler is not that easy, if you really
+  want to go that way, look on the net for cross-compile guides. Maybe
+  have a look at my own "build-cross-gcc" script. 
+  <http://atterer.net/debian/>
+- Get GTK+ 2.x for Windows from
+  <http://www.gimp.org/~tml/gimp/win32/downloads.html>. You need
+  everything except the sources and the older GTK+ 1.2 binaries.
+- Unpack everything in a directory which I'll refer to as $GTKWIN from
+  now on. There will be subdirectories $GTKWIN/include, $GTKWIN/lib
+  etc. (unzip might ask whether to overwrite some files which are
+  present in >1 of the archives - your answer doesn't matter.)
+- Unfortunately, not all packages follow the include/lib convention.
+  As of this writing, you need to move the various files inside the
+  libiconv directory into the appropriate subdirectories, i.e. *.h
+  into include, *.dll and *.lib into lib etc.
+- Install libwww. The easy way to do this is to get a binary package
+  from the jigdo homepage <http://atterer.net/jigdo/>. Unpack into a
+  dir $LIBWWW (can be the same as $GTKWIN, doesn't matter), then edit
+  $LIBWWW/bin/libwww-config and set the value of prefix near the start
+  of the script to $LIBWWW.
+- Set some environment vars:
+  CC="i586-mingw32msvc-gcc -mms-bitfields -march=pentium -I$GTKWIN/include -L$GTKWIN/lib"
+  CXX="i586-mingw32msvc-c++ -mms-bitfields -march=pentium -I$GTKWIN/include -L$GTKWIN/lib"
+  PATH=$LIBWWW/bin:$PATH
+  PKG_CONFIG_PATH=$GTKWIN/lib/pkgconfig
+- configure jigdo --without-libdb --with-pkg-config-prefix=$GTKWIN 
+  --with-uint64=unsigned_long_long --disable-nls
+
+Using samba, I export the directory with the cross-compiled binaries
+to another machine running Windows - very useful because tests are
+possible immediately after compilation. By the way, another very
+useful tool in this situation is "Synergy", it allows you to share a
+keyboard and mouse between the Linux and Windows machines.
+
+
+
+Building jigdo-file and jigdo under Windows
+===========================================
+
+SLIGHTLY OUTDATED, refers to GTK+ 1.2 for Windows, but jigdo now uses
+GTK+ 2.x. Still, most of this should still apply:
+
+- Download Cygwin from <http://www.cygwin.com/>, install in C:\cygwin.
+- Download MinGW32 (minimal GNU for Windows) from
+  <http://www.mingw.org/>. MinGW is similar to Cygwin, but creates
+  binaries that do not depend on the huge Cygwin DLL. Create directory
+  C:\mingw, unpack MinGW-x.y.tar.gz there.
+  Cygwin actually includes mingw as one of the installable components.
+  I have never tried that, though it probably works... better don't
+  use Cygwin's toolchain with the -mno-cygwin switch, apparently this
+  causes problems sometimes.
+- Download GTK+ for Windows from
+  <http://www.gimp.org/~tml/gimp/win32/>. You need libiconv,
+  libiconv-dev, libintl, glib, glib-dev, gtk+, gtk+-dev and zlib.
+  Unpack in C:\mingw\local - this should create new directories
+  C:\mingw\local\bin, C:\mingw\local\lib, C:\mingw\local\include etc.
+- For the mingw binaries, C:\mingw is accessible as /mingw. For Cygwin
+  binaries, that is not the case ("/" in Cygwin is mapped to
+  C:\cygwin). To fix this, execute from within Cygwin:
+  ln -s /cygdrive/c/mingw /mingw
+- Make the mingw compiler available from within Cygwin; add /mingw/bin
+  to the front of PATH. You may also want to add to PATH any
+  directories in /mingw/local that contain DLLs, because at runtime
+  PATH is searched for any DLLs which are not in the same directory as
+  the executable.
+- Should you experience weird problems during compilation later on,
+  remove or rename the mingw version of make, e.g. with
+  mv /mingw/bin/make.exe /mingw/bin/make-mingw.exe
+  In other words, use the Cygwin version. I have encountered a number
+  of bizarre problems with the mingw make when compiling libwww.
+- Install libwww. The easy way to do this is to get a binary package
+  from the jigdo homepage <http://atterer.net/jigdo/> and to unpack it
+  in /mingw/local.
+  Alternatively, get the sources from
+  <http://www.w3.org/Library/Distribution/> and compile it yourself.
+  As of version 5.4.0, my patch for mingw support was included, so it
+  should compile cleanly. Configure libwww as follows:
+  ./configure i586-pc-mingw32 --prefix=/mingw/local --with-zlib=/mingw/local/lib/libz.a --without-regex --without-ssl --without-expat
+- Edit the gtk-config and libwww-config scripts (probably in
+  /mingw/local/bin) and adjust the paths, library versions etc. to
+  match those of your installation. (In practice, you'll want to try
+  compiling jigdo first, then whenever any header or lib isn't found
+  adjust the scripts and rerun jigdo's configure script.) If no
+  gtk-config script comes with the GTK+ release, use the one supplied
+  with my binary libwww package or get it from the jigdo homepage.
+- Set some environment vars:
+  CC=gcc -march=pentium -fnative-struct
+  CXX=c++ -march=pentium -fnative-struct
+  MACHTYPE=i586-pc-mingw32
+  For GCC 3.1, the -fnative-struct switch was renamed to -mms-bitfields
+- configure jigdo --without-libdb
+
+In the future, jigdo on Win might use the NSIS installer from
+<http://www.nullsoft.com/free/nsis/>.
+
+For debugging, the gdb supplied with mingw is useful, and so is Dr.
+MinGW:
+<http://mefriss1.swan.ac.uk/~jfonseca/gnu-win32/software/drmingw/index.html>
+
+In case you want to install software in a different location than
+/mingw/local and want to set LIBRARY_PATH, C_INCLUDE_PATH or
+CPLUS_INCLUDE_PATH, note that with mingw, the path separator is not
+':', but ';'
+
+
+The following script may be useful to you. I put it in my .bashrc
+under Cygwin, then just entering "mingw" will set up all environment
+variables ready for mingw compilation, and "nomingw" will switch back
+to Cygwin.
+
+function mingw() {
+if test -z "$old_PS1"; then
+    dirs=/mingw/local/*
+    old_PS1="$PS1"
+    old_PATH="$PATH"
+    PS1='\[\033[33m\w\033[0m\]
+MinGW> '
+    export CC='gcc -march=pentium -fnative-struct'
+    export CXX='c++ -march=pentium -fnative-struct'
+    export MACHTYPE="i586-pc-mingw32"
+    for dir in $dirs; do
+        C_INCLUDE_PATH="$C_INCLUDE_PATH;/mingw/local/$dir/include"
+        CPLUS_INCLUDE_PATH="$CPLUS_INCLUDE_PATH;/mingw/local/$dir/include"
+        LIBRARY_PATH="$LIBRARY_PATH;/mingw/local/$dir/lib"
+        PATH="$PATH:/mingw/local/$dir/bin:/mingw/local/$dir/lib"
+    done
+    unset dir dirs
+    export PATH="/mingw/bin:$PATH"
+    export C_INCLUDE_PATH="${C_INCLUDE_PATH#;}"
+    export CPLUS_INCLUDE_PATH="${CPLUS_INCLUDE_PATH#;}"
+    export LIBRARY_PATH="${LIBRARY_PATH#;}"
+fi
+}
+function nomingw() {
+    if test "$old_PS1"; then
+        export PS1="$old_PS1"
+        export PATH="$old_PATH"
+        unset old_PS1 CC CXX LIBRARY_PATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH
+        unset old_PATH
+    fi
+}
+
+Contact me in case of problems.
+
+Richard Atterer

@@ -1,0 +1,268 @@
+/* $Id$ -*- C++ -*-
+  __   _
+  |_) /|  Copyright (C) 2002  |  richard@
+  | \/¯|  Richard Atterer     |  atterer.net
+  ¯ '` ¯
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License, version 2. See
+  the file COPYING for details.
+
+  Helper class for mktemplate - queue of partially matched files
+
+*/
+
+#ifndef PARTIALMATCH_IH
+#define PARTIALMATCH_IH
+
+#include <config.h>
+
+#include <iostream>
+#include <map>
+
+#include <debug.hh>
+#include <mktemplate.hh>
+#include <scan.hh>
+//______________________________________________________________________
+
+/** Add a new entry to the front of the queue. The queue must not be full.
+    The new entry has all members set to 0, including its startOffset(). Use
+    the setter methods to change this.
+    @return new object at front() */
+MkTemplate::PartialMatch* MkTemplate::PartialMatchQueue::addFront() {
+  //cerr << "PartialMatchQueue::addFront" << endl;
+  Assert(!full());
+  // Move entry from list of free entries to list of used entries
+  PartialMatch* result = freeHead;
+  freeHead = freeHead->nextPart;
+  result->nextPart = head;
+  head = result;
+  // Initialize new entry
+  result->startOff = 0;
+  result->nextEv = 0;
+  result->blockOff = 0;
+  result->blockNr = 0;
+  result->filePart = 0;
+  return result;
+}
+
+/** Return pointer to element with the lowest startOff value, or null if
+    queue empty. */
+MkTemplate::PartialMatch* MkTemplate::PartialMatchQueue::lowestStartOffset()
+    const {
+  //cerr << "PartialMatchQueue::lowestStartOffset" << endl;
+  Paranoid(!empty());
+  PartialMatch* lowest = head;
+  PartialMatch* i = head;
+  while (true) {
+    i = i->next();
+    if (i == 0) return lowest;
+    if (lowest->startOff > i->startOff) lowest = i;
+  }
+}
+
+/** Return lowest nextEvent() of all queue entries, which is always the
+    nextEvent() of the first queue entry. Queue must not be empty. */
+uint64 MkTemplate::PartialMatchQueue::nextEvent() const {
+  //cerr << "PartialMatchQueue::nextEvent" << endl;
+  Paranoid(!empty()); // Queue must not be empty
+  return front()->nextEvent();
+}
+
+/** Return first matching entry with startOffset()==off, or null if none
+    found. */
+MkTemplate::PartialMatch* MkTemplate::PartialMatchQueue::findStartOffset(
+    uint64 off) const {
+  //cerr << "PartialMatchQueue::findStartOffset" << endl;
+  for (PartialMatch* i = head; i != 0; i = i->next())
+    if (i->startOff == off) return i;
+  return 0;
+}
+
+/** Return entry in list with lowest startOffset() value. List must not be
+    empty. */
+MkTemplate::PartialMatch* MkTemplate::PartialMatchQueue::
+    findLowestStartOffset() const {
+  //cerr << "PartialMatchQueue::findLowestStartOffset" << endl;
+  Paranoid(!empty()); // Queue must not be empty
+  PartialMatch* lowest = front();
+  PartialMatch* i = lowest->next();
+  while (i != 0) {
+    if (lowest->startOffset() > i->startOffset()) lowest = i;
+    i = i->next();
+  }
+  return lowest;
+}
+
+/** Remove first entry from list. List must not be empty. */
+void MkTemplate::PartialMatchQueue::eraseFront() {
+  //cerr << "PartialMatchQueue::eraseFront" << endl;
+  Paranoid(!empty()); // Queue must not be empty
+  //crammedVal = false;
+  PartialMatch* x = head;
+  head = head->nextPart;
+  x->nextPart = freeHead;
+  freeHead = x;
+  consistencyCheck();
+}
+
+/** Remove all entries whose startOffset is strictly less than off */
+void MkTemplate::PartialMatchQueue::eraseStartOffsetLess(uint64 off) {
+  //cerr << "PartialMatchQueue::eraseStartOffsetLess" << endl;
+  //crammedVal = false;
+  PartialMatch** xIndir = &head;
+  PartialMatch* x = *xIndir;
+  while (x != 0) {
+    if (x->startOff >= off) {
+      xIndir = &(x->nextPart);
+      x = *xIndir;
+      continue;
+    }
+    // Remove x from normal list and insert it into free list
+    *xIndir = x->nextPart; // delete from list
+    x->nextPart = freeHead;
+    freeHead = x; // x new head of free list
+    x = *xIndir;
+  }
+  consistencyCheck();
+}
+
+/** Move x's position in the queue depending on the new value of its
+    nextEvent. Uses linear search. */
+void MkTemplate::PartialMatch::setNextEvent(
+    PartialMatchQueue* matches, uint64 newNextEvent) {
+  //cerr << "PartialMatch::setNextEvent" << endl;
+  //matches->crammedVal = false;
+  Paranoid(!matches->empty());
+
+  // Delete "this" from list
+  PartialMatch** xIndir = &(matches->head);
+  PartialMatch* x = *xIndir;
+  while (x != this) {
+    Paranoid(x != 0); // "this" must be present in matches!
+    xIndir = &(x->nextPart);
+    x = *xIndir;
+  }
+  *xIndir = x->nextPart;
+
+  // Find right position and re-insert "this" there
+  xIndir = &(matches->head);
+  x = *xIndir;
+  while (x != 0 && x->nextEv < newNextEvent) {
+    xIndir = &(x->nextPart);
+    x = *xIndir;
+  }
+  // Insert "this" before x
+  nextPart = x;
+  *xIndir = this;
+  nextEv = newNextEvent;
+
+  matches->consistencyCheck();
+}
+
+MkTemplate::PartialMatch* MkTemplate::PartialMatchQueue::findDropCandidate(
+    unsigned* sectorLength, uint64 newStartOffset) {
+  Paranoid(full()); // Queue must be full
+  const PartialMatch* oldestMatch = findLowestStartOffset();
+  unsigned sectorMask;
+
+  while (true) {
+    sectorMask = *sectorLength - 1;
+
+    // Don't drop any match in favour of an unaligned one
+    if ((newStartOffset & sectorMask) != 0) return 0;
+
+    for (PartialMatch* i = front(); i != 0; i = i->next()) {
+      // Never return oldestMatch
+      if (i == oldestMatch) continue;
+      // Only drop match which is not sector-aligned
+      if ((i->startOffset() & sectorMask) != 0) return i;
+    }
+
+    /* Don't increase sectorLength indefinitely - this would lead to an
+       infinite loop if the queue is filled with entries with
+       startOffset==0. */
+    if (*sectorLength == MkTemplate::MAX_SECTOR_LENGTH) return 0;
+
+    // All of the matches are sector-aligned - increase sector size & retry
+    *sectorLength *= 2;
+    if (optDebug())
+      cerr << "Increased sector length to " << *sectorLength << endl;
+  }
+}
+
+#if 0
+/** Find the FilePart object which is referenced most from entries of the
+    PartialMatchQueue, then return the PartialMatch with the highest
+    startOffset which references it. Return null if no FilePart is ref'd more
+    than once. */
+/* NB Whatever the heuristics, *never* return as drop candidate the match
+   with the lowest startOffset of all the list! */
+MkTemplate::PartialMatch* MkTemplate::PartialMatchQueue::findDropCandidate(
+    uint64 newStartOffset) {
+  if (crammed()) return 0;
+
+  typedef map<FilePart*,int> Map;
+  Map m;
+
+  // FileParts whose startOffset is not a multiple of 2048. See below.
+  const int SECTOR_SIZE = 2048; // a power of 2
+  PartialMatch* oddOffset1 = 0;
+  PartialMatch* oddOffset2 = 0;
+
+  // Find FilePart which is referenced most often, and at least twice
+  int highestCount = 0;
+  FilePart* highestFile = 0;
+  for (PartialMatch* i = front(); i != 0; i = i->next()) {
+
+    if ((i->startOffset() & (SECTOR_SIZE-1)) != 0) {
+      oddOffset2 = oddOffset1;
+      oddOffset1 = i;
+    }
+
+    Map::iterator pos = m.find(i->file());
+    if (pos == m.end()) {
+      // Insert new entry with counter 1
+      m.insert(pos, make_pair(i->file(), 1));
+    } else {
+      // Increase existing counter
+      ++(pos->second);
+      Paranoid(pos->second >= 2);
+      if (pos->second > highestCount) {
+        highestCount = pos->second;
+        highestFile = i->file();
+      }
+    }
+  }
+
+  /* Of the PartialMatch entries referencing highestFile, return the one with
+     the highest startOffset() */
+  PartialMatch* result = 0;
+  if (highestFile != 0) {
+    for (PartialMatch* i = front(); i != 0; i = i->next()) {
+      if (i->file() != highestFile) continue;
+      if (result == 0 || i->startOffset() > result->startOffset())
+        result = i;
+    }
+    Assert(result != 0);
+  }
+
+  if (result != 0) return result;
+
+  /* The queue is full of matches of distinct files. As a last resort, drop
+     file matches which do not start at a full sector offset and replace them
+     with ones that do. Take care not to return the FileMatch with the lowest
+     startOffset. */
+  if ((newStartOffset & (SECTOR_SIZE-1)) != 0) return 0;
+  if (findLowestStartOffset() == oddOffset1) oddOffset1 = oddOffset2;
+  if (optDebug()) {
+    if (oddOffset1 == 0)
+      cerr << "QUEUE CRAMMED" << endl;
+    else
+      cerr << "DROPPING match with odd start offset" << endl;
+  }
+  if (oddOffset1 == 0) crammedVal = true;
+  return oddOffset1;
+}
+#endif /*0*/
+
+#endif

@@ -1,0 +1,48 @@
+
+jigdo wouldn't have gotten this far without the following people.
+Thanks to...
+
+Phil Hands
+    for giving me an account on cdimage.debian.org and deciding to use
+    jigdo as the main distribution scheme for Debian 3.0r0
+
+Peter Jay Salzman
+    for writing and maintaining the jigdo mini-HOWTO - also thanks to
+    the translators: Conrad Wood, Elcio Mello, Marcelo Ramos
+
+Paul Bolle (and earlier Alexander Skwar)
+    for maintaining the jigdo.spec.
+
+Wookey
+    for being the first person to actually try it out and give me
+    feedback :)
+
+Santiago Garcia Mantinan
+    for lots of beta testing and for finding that cache bug 5 days
+    before the Debian release
+
+Attila Nagy
+    for beta testing, setting up jigdo generation on fsn.hu, for
+    generating the first .jigdo DVD files ever and for submitting it
+    to the BSD ports collection
+
+Anne Bezemer
+    for writing the pseudo image kit (PIK) which inspired me to write
+    jigdo, and for doing an early port of jigdo to Windows
+
+Mattias Wadenstein
+    for beta testing and mirroring
+
+Jason Andrade
+    for beta testing and mirroring
+
+Julz
+    for offering me a free CD writer and then sending it around half
+    the world, from New Zealand to Germany!
+
+Bernd Herd
+    for offering another free CD writer - wow, thanks, I only need one
+    though! :-)
+
+...and to numerous users for many "jigdo rocks" and "jigdo sucks"
+mails.

@@ -1,0 +1,279 @@
+
+Hacking the jigdo source code
+=============================
+
+This file is not very organized... if in doubt, use the source, Luke!
+
+Use --enable-debug when hacking the source, this enables quite a few
+additional sanity checks (the "Paranoid()" assertions - the "Assert()"
+assertions are always enabled), #defines GTK_DISABLE_DEPRECATED, etc.
+
+
+Mailing list, CVS
+~~~~~~~~~~~~~~~~~
+The jigdo-user mailing list is currently used both for end-user support
+and development.
+
+Subscribe: https://lists.berlios.de/mailman/listinfo/jigdo-user
+Archive:   https://lists.berlios.de/pipermail/jigdo-user
+Address:   jigdo-user at lists.berlios.de
+
+Anonymous CVS access to the latest source code is available. Execute
+    cvs -d:pserver:anonymous@cvs.jigdo.berlios.de:/cvsroot/jigdo login
+Just press return at the login prompt, then execute
+    cvs -z3 -d:pserver:anonymous@cvs.jigdo.berlios.de:/cvsroot/jigdo co jigdo
+
+Latest code: http://cvs.berlios.de/cgi-bin/viewcvs.cgi/jigdo/jigdo/jigdo.tar.gz?tarball=1
+Browse tree: http://cvs.berlios.de/cgi-bin/viewcvs.cgi/jigdo/jigdo/
+
+
+Bootstrapping the code
+~~~~~~~~~~~~~~~~~~~~~~
+If you checkout the code from CVS or download the CVS snapshot, some
+additional files have to be generated - in the jigdo release tarballs,
+these files are already present.
+
+The Makefiles automatically handle regeneration of those files if they
+are not present; the only thing that you need to do manually is to
+invoke autoconf to create the configure script, then you can do
+"./configure --enable-debug ..." and "make" as usual.
+
+Additional tools required for bootstrapping the code:
+
+ - autoconf, to create the configure script
+ - docbook-utils (docbook2html, docbook2man), to generate HTML
+   documentation and manpages from the SGML in the "doc" subdirectory.
+ - the gettext tools (msgfmt), to generate the .gmo files in
+   the "po" subdirectory.
+ - glade, to generate "src/gtk/interface.cc" from "jigdo.glade"
+ - awk (or gawk/mawk), to generate "src/Makedeps" and to post-process
+   "src/gtk/interface.cc"
+
+On Debian systems, bootstrapping and compiling is possible simply by
+typing "deb/rules".
+
+
+Patches
+~~~~~~~
+Small bugfixes are very welcome, just send them to the mailing list.
+
+Before starting anything bigger, better check with me whether it
+coincides with my ideas - just to avoid frustration later on. I'm
+pretty open to all ideas, though, especially if they save me some
+work. :)
+
+
+Sub-projects
+~~~~~~~~~~~~
+There are some things I'd *love* to see done by somebody else:
+
+Windows/Solaris/BSD/MacOS porting:
+
+  ATM, I test and build jigdo on Linux and Windows, and occasionally
+  on Solaris/BSD. Especially maintaining the Windows port is a bit of
+  work...
+
+  It'd also be nice if someone ensured that it builds on
+  Redhat/SuSE/Mandrake, and maintained the jigdo.spec file.
+
+CGI-like program for on-the-fly creation from .jigdo/.template files:
+
+  With Debian, we have lots of mirror admins who have the bandwidth to
+  host CD images, but not the disc space. They'd like a CGI-like
+  program which generates a pseudo dirlisting with .iso links in it,
+  and, when such an .iso link is downloaded, it creates the .iso
+  data from the .jigdo/.template files and a local Debian mirror
+  _on_the_fly_ as it is being sent over the net.
+
+  NB however: This *cannot* be a CGI for performance reasons and
+  because it must support HTTP/1.1 ranges (i.e. resuming of
+  downloads). Also, it will be necessary to "pre-process" the
+  .template file because repeatedly ungzipping it would be too slow.
+
+  If not a CGI, what form should it have? I don't know - I'd go for an
+  Apache module, but Attila Nagy tells me Apache needs too much memory
+  if you have many thousand concurrent downloads. Maybe one could add
+  the functionality to an existing small httpd?
+
+".rawtemplate" support:
+
+  It is possible to make .jigdo creation for Debian CDs much faster
+  by hacking mkisofs to support more direct output of .jigdo/.template
+  files:
+
+  First, change mkisofs to output not .iso format, but a special
+  ".rawtemplate" (or whatever) format. That format is similar to the
+  normal .template format, except that files are not referenced by
+  their md5sum, but by their filename, and that none of the data is
+  compressed. This should be quite simple, and thus the modifications
+  to mkisofs should be few and small, making it more likely that such
+  a patch is accepted by mkisofs upstream.
+
+  Next, the .rawtemplate is piped into jigdo-file, which creates
+  .jigdo and .template files as usual. However, due to its cache, it
+  won't need to read the files' contents to know their md5sum, so the
+  overall process is much faster.
+
+
+Translations
+~~~~~~~~~~~~
+Both jigdo-file and jigdo use gettext, translations are welcome.
+Please announce your efforts on the mailing list before you start, to
+avoid duplication of effort.
+
+Note: Don't translate any of the strings beginning with '#'. glade
+doesn't allow me to selectively switch off the "gettextizing" of some
+strings, and it would make editing the .glade file awkward if I left
+those strings empty, so I'm marking these string with the '#'.
+
+
+Directory layout
+~~~~~~~~~~~~~~~~
+
+src:
+
+    Files which don't belong into one of the subdirs... Also contains
+    lots of stuff from before the point where I started creating
+    subdirs - much of this should move into a subdir sooner or later.
+
+src/net: Low-level network access.
+
+    I'm not entirely happy with libwww and have vague plans to switch
+    away from it once something better is available, so all code
+    accessing libwww should be in this dir *only*, to make it
+    easier to rip out.
+
+    The "something better", BTW, would ideally be the Mozilla HTTP
+    code, but ATM this isn't available as a separate library; you'd
+    have to hack Mozilla to extract it.
+
+    Required features for any replacement for libwww are HTTP/1.1
+    support (both pipelining and ranges), multiple simultaneous
+    connections (either multi-threaded or single-threaded with
+    select()) and portability to Windows.
+
+    Files in this dir may make calls to glib, but not gtk.
+
+src/job: Application logic
+
+    A "job" is a certain task, e.g. downloading an URL, processing a
+    .jigdo file etc. For the gtk frontend, one job corresponds to one
+    line in the lower part of the window - but this visualisation is
+    the gtk GUI's decision.
+
+    All jobs are classes in namespace "Job". Each such class declares
+    a pure virtual child class (i.e. an interface) named "IO", which
+    the code of the user interface needs to implement. For example,
+    Job::SingleURL::IO is implemented by some code in the src/gtk
+    directory, which when called sets up some gtk widgets.
+
+    Files in this dir may make calls to glib, but not gtk.
+
+src/gtk: GTK+ graphical user interface
+
+    Provides a way to access the facilities of "jobs" via gtk widgets
+    etc. This is the only dir whose files may make calls to gtk (and
+    of course also glib).
+
+src/util: Independent small helper classes
+
+    Something goes in here if all of the following is true:
+        - It is a single header file, optionally accompanied by a
+          single .cc file and/or a corresponding *test.cc file
+        - It accesses neither gtk nor glib
+        - It is a small, reusable tool, maybe useful for other projects
+
+BTW, I try at all costs only to use C libraries from the code, never
+C++ libraries. You save yourself a lot of trouble that way, IMHO.
+
+
+Code style
+~~~~~~~~~~
+You're not required to adhere to my rules here, but maybe you'll find
+them useful...
+
+I use K&R-style indentation, indenting by 2 spaces for each level of
+indentation. I dislike using tabs in the source because it seems
+people can never agree on a value for the tab indentation. Emacs can
+be told never to generate tabs when indenting code; see below.
+
+Source files in different directories must not have the same leafname,
+or depend.awk and also #include will break. (IMHO identical leafnames
+are also a source of confusion.)
+
+Functions/methods should not be much longer than one screen. Source
+files should never be larger than 1000 lines, and probably not even
+larger than 500 lines. I'm perfectly aware that the code violates
+these rules all the time. ;-/
+
+All code must, *MUST* be commented.
+
+If possible, larger components should be accompanied by a *-test.cc
+file which tests the code. If the name of the file is "foo-test.cc"
+(with a "-"), depend.awk will automatically generate a simple Makefile
+entry. If that entry is not sufficient, call the file "footest.cc" and
+manually add a Makefile rule.
+
+Lines must not be longer than 77 characters. To format comments to
+exactly that width, and also never to use tabs for indentation, use
+this in your ~/.emacs:
+
+(add-hook 'c++-mode-hook (lambda () (interactive) (setq fill-column 77) (setq indent-tabs-mode nil)))
+
+Don't use reference parameters if a function/method writes to its
+args, use pointers instead. If I call a function, I want to see that
+I'm calling it as "function(&data)", so "data" may be modified.
+
+Don't use multiple inheritance, except if all but one of the base
+classes are completely abstract (i.e. are "interfaces").
+
+Don't have identically named classes in different namespaces, big
+confusion will ensue. (Don't over-use namespaces in the first place.)
+
+
+Header files (.fh, .hh, .ih)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To avoid excessive recompilation, I use three levels of headers.
+
+.fh contain just forward declarations of classes and global functions,
+and must not include .hh or .ih headers.
+
+.hh are the main headers, and .ih files contain functions which are
+compiled inline for --disable-debug and not inline for --enable-debug.
+This is done by checking for the definedness of NOINLINE.
+
+"make depend" updates the dependencies in src/Makedeps. The contents
+of this file are then appended to the Makefile by the configure
+script. See also the comments in scripts/depend.awk.
+
+
+Implementation
+~~~~~~~~~~~~~~
+The application logic in job/ and net/ is separated from the front-end
+in gtk/. Each Job corresponds to one action (downloading a file,
+processing a .jigdo file), the GTK GUI decides to visualize this as
+one line in the display.
+
+The GTK code maintains a list of JobLines, each of which references a
+Job of some kind. A simple type job is a SingleURL, which takes care of
+downloading a single big file.
+
+A more complicated job is the processing of a .jigdo file. This
+involves a number of sub-jobs for downloading data. The "master" job
+is a MakeImageDl, it starts other jobs for the individual downloads.
+
+The action of *assembling* the data is not implemented as a job,
+instead as a MakeImage object which is owned by the MakeImageDl and
+fed data by it. See makeimage.hh.
+
+Important for the UI: Any UI (whether GTK+ or other) is only allowed
+to create and destroy top-level jobs. Any job created by a "master"
+MakeImageDl can only be deleted by the same MakeImageDl. This means
+that the GUI code which handles SingleURL GTK+ visualization must
+distinguish between a "child mode" and "non-child mode".
+
+--
+  __   _
+  |_) /|  Richard Atterer
+  | \/¯|  http://atterer.net
+  ¯ '` ¯

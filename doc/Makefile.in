@@ -1,0 +1,49 @@
+# Project: Jigdo (Jigsaw download)
+#  __   _
+#  |_) /|  Copyright (C) 2001-2003  |  richard@
+#  | \/¯|  Richard Atterer          |  atterer.net
+#  ¯ '` ¯
+srcdir =	@srcdir@
+VPATH =		@srcdir@
+
+AWK =		@AWK@
+DOCBOOK2MAN =	docbook2man
+DOCBOOK2HTML =	docbook2html
+#______________________________
+
+.SUFFIXES:
+.SUFFIXES: .1 .sgml .html
+
+.sgml.1:
+		mkdir -p tmp && cp "$<" tmp \
+		    && cd tmp && $(DOCBOOK2MAN) "$<"
+		sed -e 's/   */ /g' <"`ls tmp/*.1`" >"$@"
+		rm -rf tmp
+#		sed -e 's%\\%\\\\%g;' <"$<" | tr -s '[:space:]' ' ' \
+#		    | $(DOCBOOKTOMAN) - >"$@"
+.sgml.html:
+		rm -f "$@"
+		$(DOCBOOK2HTML) "$<" --nochunks
+		mv "$@" "$@~"
+		$(AWK) -f "$(srcdir)/../scripts/html-beautify.awk" \
+		    "$@~" >"$@"
+#______________________________________________________________________
+
+.PHONY:		all clean distclean mostlyclean maintainer-clean \
+		dep depend doc check
+all:		jigdo-file.1 jigdo-file.html jigdo-lite.1 jigdo-lite.html \
+		jigdo-mirror.1 jigdo-mirror.html jigdo.1 jigdo.html \
+		debian-jigdo-mini-howto.html
+doc mostlyclean dep depend check: ;
+
+clean:		Makefile
+		rm -rf tmp
+distclean:	Makefile
+		rm -rf tmp
+		rm -f *~ \#*\# *.bak
+		rm -f Makefile
+maintainer-clean: Makefile distclean
+		rm -f *.html *.1
+
+Makefile:	Makefile.in
+		cd .. && sh config.status # update Makefile from Makefile.in

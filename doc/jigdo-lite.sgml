@@ -1,0 +1,107 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry lang="en">
+  <refentryinfo>
+    <address>jigdo atterer.net</address>
+    <author>
+      <firstname>Richard</firstname><surname>Atterer</surname>
+    </author>
+    <copyright>
+      <year>2001-2002</year><holder>Richard Atterer</holder>
+    </copyright>
+    <date>May 04, 2002</date>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>jigdo-lite</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+  <refnamediv>
+    <refname>jigdo-lite</refname>
+    <refpurpose>Download jigdo files using wget</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>jigdo-lite</command>
+      <arg>URL</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  <!-- ============================================================= -->
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>See <citerefentry><refentrytitle>jigdo-file</refentrytitle
+    ><manvolnum>1</manvolnum></citerefentry> for an introduction to
+    Jigsaw Download.</para>
+
+    <para>Given the URL of a `<filename>.jigdo</filename>' file,
+    <command>jigdo-lite</command> downloads the large file (e.g. a CD
+    image) that has been made available through that URL.
+    <citerefentry><refentrytitle>wget</refentrytitle><manvolnum
+    >1</manvolnum></citerefentry> is used to download the necessary
+    pieces of administrative data (contained in the
+    `<filename>.jigdo</filename>' file and a corresponding
+    `<filename>.template</filename>' file) as well as the many pieces
+    that the large file is made from. The
+    <citerefentry><refentrytitle>jigdo-file</refentrytitle><manvolnum
+    >1</manvolnum></citerefentry> utility is used to reconstruct the
+    large file from the pieces.</para>
+
+    <para>`<filename>.jigdo</filename>' files that contain references
+    to Debian mirrors are treated specially: When such a file is
+    recognized, you are asked to select one mirror out of a list of
+    all Debian mirrors.</para>
+
+    <para>If <option>URL</option> is not given on the command line,
+    the script prompts for a location to download the
+    `<filename>.jigdo</filename>' file from.</para>
+
+  </refsect1>
+  <!-- ============================================================= -->
+  <refsect1 id="seealso">
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>jigdo-file</refentrytitle><manvolnum>1</manvolnum>
+      </citerefentry>,
+      <citerefentry>
+        <refentrytitle>jigdo-mirror</refentrytitle><manvolnum>1</manvolnum>
+      </citerefentry>,
+      <citerefentry>
+        <refentrytitle>wget</refentrytitle><manvolnum>1</manvolnum>
+      </citerefentry> (or `<command>info wget</command>')
+    </para>
+
+    <para>CD images for Debian Linux can be <ulink
+    url="http://www.debian.org/CD/jigdo-cd/">downloaded with
+    jigdo</ulink>.</para>
+
+  </refsect1>
+  <!-- ============================================================= -->
+  <refsect1 id="author">
+    <title>AUTHOR</title>
+
+    <para><ulink url="http://atterer.net/jigdo/">Jigsaw
+    Download</ulink> was written by Richard Atterer
+    <email>jigdo atterer.net</email>, to make downloading of CD ROM
+    images for the Debian Linux distribution more convenient.</para>
+
+  </refsect1>
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

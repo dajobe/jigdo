@@ -1,0 +1,104 @@
+#! /bin/sh -e
+#  __   _
+#  |_) /|  Copyright (C) 2001  |  richard@
+#  | \/¯|  Richard Atterer     |  atterer.net
+#  ¯ '` ¯
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License, version 2. See
+#  the file COPYING for details.
+
+# Shell script for batch-processing .iso files
+# Syntax: make-templates <directory-name>
+
+# The script looks for all .iso and .raw files in the directory
+# specified on the command line. Then it generates .jigdo and
+# .template files with jigdo-file, placing them into two separate
+# copies of the directory tree that contains the .iso files. The
+# script renices itself to run at minimum priority.
+#
+# You will probably need to edit the variables below. Set mailto to a
+# nonempty value to receive a notification mail once the script has
+# finished.
+
+pubHtml="$HOME/public_html"
+baseUrl="http://cdimage.debian.org/~`whoami`" # corresponds to $pubHtml
+jDir="jigdo" # relative to $pubHtml
+tDir="jigdo/templates" # relative to $pubHtml
+debianMirror="/home/ftp/debian" # NO slash at end!!!
+nonusMirror="/home/ftp/debian/non-US" # NO slash at end!!!
+jigdoFile="jigdo-file --cache=$HOME/jigdo-cache.db"
+mailto="`whoami`" # set to "" not to send mail
+mail="`mktemp /tmp/make-templates-XXXXXXXX`"
+#______________________________________________________________________
+
+if test "$#" -eq 0; then
+    echo "Syntax: $0 <directory>"
+    echo "        $0 <directory> <directory>/file <directory>/otherdir ..."
+    echo "Duplicates dir structure of <directory>;"
+    echo "  - jigdo files in \`$pubHtml/$jDir',"
+    echo "  - templates in \`$pubHtml/$tDir'."
+    echo "  - \`$pubHtml' must be available as"
+    echo "    \`$baseUrl'."
+    exit 1
+fi
+#________________________________________
+
+function log() {
+    printf "%s: %s\n" "`date -R`" "$1" >>"$mail"
+}
+echo >"$mail"
+test "$mailto" \
+&& trap "mail -s \"make-templates run on `hostname -f` finished\" \
+             $mailto <\"$mail\"" EXIT
+log "Start"
+#________________________________________
+
+renice 20 -p $$
+
+dir="$1"
+dirp="`dirname \"$dir\"`"
+# Do not search all of $dir if further cmd args were specified
+if test "$#" -gt 1; then shift; fi
+
+# Find all ISOs
+# Use sed to remove $dirp at front, and also remove all files not in $dir
+find "$@" '(' -type f -o -type l ')' \
+    '(' -name '*.iso' -o -name '*.raw' ')' \
+| sed -n "sÿ^$dirp/\?ÿÿp" \
+| while read file; do
+
+    filep="`dirname \"$file\"`" # Parent dir of $file
+    filestem="`echo $file | sed 's%\.[^.]\+$%%'`" # Remove .iso from $file
+    jigdo="$pubHtml/$jDir/$filestem.jigdo" # Location of .jigdo
+
+    mkdir -p "$pubHtml/$jDir/$filep" "$pubHtml/$tDir/$filep"
+
+    # Supply input files, pipe them into jigdo-file
+    find "$nonusMirror//" "$debianMirror//dists" "$debianMirror//doc" \
+        "$debianMirror//indices" "$debianMirror//pool" \
+        "$debianMirror//project" -type f \
+    | egrep -v '/Contents|/Packages|/README|INDEX$|/Maintainers|/Release$|/debian-keyring\.tar\.gz$|/ls-lR|//doc/[^/]+/?[^/]*\.(txt|pdf|html)$' \
+    | $jigdoFile make-template --force --files-from=- \
+        --image="$dirp/$file" \
+        --jigdo="$jigdo.tmp" \
+        --template="$pubHtml/$tDir/$filestem.template" \
+        --label Non-US="$nonusMirror" \
+        --label Debian="$debianMirror" \
+        --no-image-section --no-servers-section --report=noprogress
+
+    # Append info to .jigdo
+    echo >>"$jigdo.tmp"
+    echo "[Image]" >>"$jigdo.tmp"
+    echo "Filename=`basename \"$file\"`" >>"$jigdo.tmp"
+    echo "Template=$baseUrl/$tDir/$filestem.template" >>"$jigdo.tmp"
+    printf "Info='Generated on %s'\n" "`date -R`" >>"$jigdo.tmp"
+#    echo >>"$jigdo.tmp"
+#    echo "[Servers]" >>"$jigdo.tmp"
+#    echo "Debian=ftp://cdimage.debian.org/debian-2.2r6-snapshot/" >>"$jigdo.tmp"
+#    echo "Non-US=ftp://cdimage.debian.org/debian-2.2r6-snapshot/non-US/" >>"$jigdo.tmp"
+#    echo "MD5Sum=ftp://ftp.fsn.hu/pub/debian-superseded/" >>"$jigdo.tmp"
+    gzip -9 "$jigdo.tmp"
+    mv "$jigdo.tmp.gz" "$jigdo"
+    log "Finished \`$file'"
+done
+log "Exit"

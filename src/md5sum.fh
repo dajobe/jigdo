@@ -1,0 +1,16 @@
+/* $Id$ -*- C++ -*-
+  __   _
+  |_) /|  Copyright (C) 2000-2002  |  richard@
+  | \/¯|  Richard Atterer          |  atterer.net
+  ¯ '` ¯
+  "Ported" to C++ by RA. Actual MD5 code taken from glibc
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License, version 2. See
+  the file COPYING for details.
+
+  Quite secure 128-bit checksum
+
+*/
+
+class MD5Sum;

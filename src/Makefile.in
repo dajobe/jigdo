@@ -1,0 +1,244 @@
+# Project: Jigdo (Jigsaw download)
+#  __   _
+#  |_) /|  Copyright (C) 2001-2003  |  richard@
+#  | \/¯|  Richard Atterer          |  atterer.net
+#  ¯ '` ¯
+srcdir =	@srcdir@
+VPATH =		@srcdir@
+
+prefix =	@prefix@
+datadir =	@datadir@
+
+SUBDIRS =	gtk job net util
+SUBINCLUDE =	-I"$(srcdir)/gtk" -I"$(srcdir)/job" -I"$(srcdir)/net" \
+		-I"$(srcdir)/util" 
+
+# -I. to pick up config.h, _FILE_OFFSET_BITS for big file support under Linux
+CPPFLAGS =	@CPPFLAGS@ -I. -I"$(srcdir)" $(SUBINCLUDE) \
+		-D_FILE_OFFSET_BITS=64 @DEFS@ \
+		-DPACKAGE_DATA_DIR="\"$(datadir)/jigdo/\"" \
+		-DPACKAGE_LOCALE_DIR="\"$(datadir)/locale\"" \
+		$(GTKCFLAGS) $(LIBWWWCFLAGS)
+CC =		@CC@
+CFLAGS =	@CFLAGS@ $(X)
+CXX =		@CXX@
+CXXFLAGS =	@CXXFLAGS@ $(X)
+LD =		@CXX@
+LDFLAGS =	@LIBS@ @LDFLAGS@ $(Y)
+AWK =		@AWK@
+GLADECODE =	glade-2 -w # Create code from .glade file
+DOC =		doc++ --tables --footer /dev/null --filenames --html \
+		    --no-java-graphs --dir html
+WINDRES =	windres
+#NoMinGW#
+GTKCFLAGS =	@GTKCFLAGS@
+GTKLIBS =	@GTKLIBS@
+LIBWWWCFLAGS =	@LIBWWWCFLAGS@
+LIBWWWLIBS =	@LIBWWWLIBS@
+#MinGW## Adjust the next lines to fit your installation
+#MinGW#GTKINST = /mingw/local
+#MinGW#GTKCFLAGS = -I$(GTKINST)/include -I$(GTKINST)/include/glib-2.0 -I$(GTKINST)/lib/glib-2.0/include -I$(GTKINST)/lib/gtk+/include -I$(GTKINST)/include/gdk
+#MinGW#GTKLIBS = -L$(GTKINST)/lib -lgtk-0 -lglib-2.0 -lgdk-0
+#MinGW#LIBWWWINST = /mingw/local
+#MinGW#LIBWWWCFLAGS = -DHAVE_CONFIG_H -I$(LIBWWWINST)/include -I$(LIBWWWINST)/include/w3c-libwww
+#MinGW#LIBWWWLIBS = -L$(LIBWWWINST)/lib -lwwwinit -lwwwapp -lwwwhtml -lwwwtelnet -lwwwnews -lwwwhttp -lwwwmime -lwwwgopher -lwwwftp -lwwwfile -lwwwdir -lwwwcache -lwwwstream -lwwwmux -lwwwtrans -lwwwcore -lwwwutils -lmd5 -lwwwzip -lz -lws2_32
+
+programs =	@BUILD_TARGETS@
+debug-programs = torture@exe@
+libwww-hacks =	@LIBWWW_HACKS@ net/libwww-HTFTP.o net/libwww-HTHost.o
+windows-res =	@UNIX_COMMENT@ jigdo.res
+
+# fmt -s -w1|sed 's%[^a-zA-Z0-9./-]\+%%g'|sort|fmt -w60|sed 's%$% \\%'
+objects-jigdo =	configfile.o glibc-md5.o gtk/gtk-makeimage.o \
+		gtk/gtk-single-url.o gtk/gui.o gtk/interface.o gtk/jigdo.o \
+		gtk/jobline.o gtk/joblist.o gtk/messagebox.o gtk/support.o \
+		gtk/treeiter.o jigdoconfig.o job/jigdodownload.o \
+		job/makeimage.o job/makeimagedl.o job/single-url.o md5sum.o \
+		net/download.o net/glibwww-callbacks.o net/glibwww-init.o \
+		net/proxyguess.o util/glibc-getopt.o util/glibc-getopt1.o \
+		util/gunzip.o util/progress.o util/string-utf.o \
+		$(libwww-hacks) $(windows-res) \
+		util/debug.o # this must come last!
+objects-jigdo-file = cachefile.o compat.o configfile.o glibc-md5.o \
+		jigdo-file-cmd.o jigdo-file.o jigdoconfig.o md5sum.o \
+		mkimage.o mkjigdo.o mktemplate.o partialmatch.o \
+		recursedir.o rsyncsum.o scan.o util/glibc-getopt.o \
+		util/glibc-getopt1.o util/string.o zstream.o \
+		util/debug.o # this must come last!
+objects-torture = cachefile.o compat.o configfile.o glibc-md5.o \
+		jigdoconfig.o md5sum.o mkimage.o mkjigdo.o mktemplate.o \
+		partialmatch.o rsyncsum.o recursedir.o scan.o torture.o \
+		util/string.o zstream.o \
+		util/debug.o # this must come last!
+#______________________________
+
+.SUFFIXES:
+.SUFFIXES: .c .cc .h .o
+.cc.o:
+		-@echo $(CXX) '{options}' -c $< -o $@
+		@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c "$<" -o "$@"
+.c.o:
+		-@echo $(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+		@$(CC) $(CPPFLAGS) $(CFLAGS) -c "$<" -o "$@"
+#______________________________________________________________________
+
+.PHONY:         all all-msg clean distclean mostlyclean maintainer-clean \
+                dep depend doc strip mingw
+#NoMinGW#
+all:		all-msg Makefile $(programs) @DEBUG_PROGRAMS@ #TAGS
+all-msg:
+		-@test "$$EMACS" = t || \
+		    echo Using these '{options}': $(CPPFLAGS) $(CXXFLAGS)
+#MinGW#all:	Makefile all-msg $(programs)
+#MinGW#all-msg:
+#MinGW#		@echo Using these {options}: $(CPPFLAGS) $(CXXFLAGS)
+#MinGW#clean mostlyclean:
+#MinGW#		-del *.o
+#MinGW#		-del *.exe
+#MinGW#		-del *.stamp
+#NoMinGW#
+check:		$(programs) torture
+		@echo 
+		@echo '*** Warning - this will take a few minutes and ~100MB'
+		@echo '*** disk space, and will bash the disc quite a bit...'
+		@echo && sleep 3
+		mkdir ironmaiden || true
+		./torture 0 4
+		./torture 128 132
+		./torture 256 260
+clean mostlyclean:
+		for d in . $(SUBDIRS); do \
+		    rm -f $$d/*.o $$d/core; \
+		    for p in $$d/*test; do if test -x "$$p" -a -f \
+		        "$(srcdir)/$$d/$$p.cc"; then rm -f "$$p"; fi; done; \
+		done
+		rm -f gtk/interface.hh.tmp gtk/gui.cc.tmp gtk/gui.hh.tmp
+		rm -f $(programs) $(debug-programs)
+distclean:	clean
+		for d in . $(SUBDIRS); do \
+		    rm -f $$d/TAGS $$d/*~ $$d/\#*\# $$d/*.bak; \
+		    rm -f $$d/Makefile $$d/config.h; \
+		done
+		rm -rf html
+		if test ! -h ironmaiden; then rm -rf ironmaiden; fi
+doc:
+		find . -type f | egrep '\.(cc|hh|ih|fh|h)$$' | xargs $(DOC)
+maintainer-clean: distclean
+		rm -f gtk/interface.cc gtk/interface.hh
+		rm -f Makedeps
+
+
+make-makedeps =	(cd "$(srcdir)" && find . -type f \
+		    '(' -name '*.cc' -o -name '*.c' ')') \
+		| xargs $(AWK) -f "$(srcdir)/../scripts/depend.awk" \
+		    "$(srcdir)" $(SUBDIRS) -
+# No dependency - don't normally remake Makedeps on gtk/interface.cc remake
+Makedeps:
+		if test ! -r gtk/interface.cc; then \
+		    $(MAKE) gtk/interface.cc; fi
+		$(make-makedeps)
+# Dependency ensures auto-generated files are there & appear in depend output
+dep depend:	gtk/interface.cc
+		$(make-makedeps)
+#MinGW#
+strip:
+		for p in $(programs); do \
+		    if test -f "$$p"; then \
+		        strip -R .comment -R .note "$$p"; \
+		    fi; \
+		done
+#______________________________
+
+jigdo32.ico:	../gfx/jigdo32.ico
+		ln -s "$<" . || cp "$<" .
+
+jigdo.res:	jigdo.rc jigdo32.ico
+		$(WINDRES) "$<" -O coff -o "$@"
+#______________________________
+
+jigdo@exe@:	$(objects-jigdo)
+		$(LD) @MWINDOWS@ -o $@ $(objects-jigdo) $(LDFLAGS) \
+		    $(GTKLIBS) $(LIBWWWLIBS)
+jigdo-file@exe@: $(objects-jigdo-file)
+		$(LD) -o $@ $(objects-jigdo-file) $(LDFLAGS)
+torture@exe@:	$(objects-torture)
+		$(LD) -o $@ $(objects-torture) $(LDFLAGS)
+string-utftest@exe@: util/debug.o util/string-utf.o util/string-utftest.o
+		$(LD) -o $@ util/string-utf.o util/string-utftest.o \
+		    util/debug.o $(LDFLAGS) $(GTKLIBS)
+proxyguesstest@exe@: net/glibwww-callbacks.o net/glibwww-init.o \
+		    net/glibwww-trans.o net/proxyguess.o \
+		    net/proxyguesstest.o util/debug.o
+		$(LD) -o $@ net/glibwww-callbacks.o net/glibwww-init.o \
+		    net/glibwww-trans.o net/proxyguess.o \
+		    net/proxyguesstest.o util/debug.o \
+		    $(LDFLAGS) $(GTKLIBS) $(LIBWWWLIBS)
+gunziptest@exe@: util/gunzip.o util/gunziptest.o util/debug.o
+		$(LD) -o $@ util/gunzip.o util/gunziptest.o util/debug.o \
+		    $(LDFLAGS)
+
+#MinGW## Grr, to prevent built-in rules from being used:
+#MinGW#.PHONY:	jigdo jigdo-file torture
+#MinGW#jigdo:	jigdo.exe
+#MinGW#jigdo-file: jigdo-file.exe
+#MinGW#torture:	torture.exe
+
+#NoMinGW#
+gtk/interface.cc gtk/interface.hh: $(srcdir)/../jigdo.glade
+		cd $(srcdir)/.. \
+		    && $(GLADECODE) "jigdo.glade"
+		$(AWK) -f "$(srcdir)/../scripts/glade-filter.awk" \
+		    "$(srcdir)/gtk/interface"
+		-ln -sf "$(srcdir)/gtk/interface.cc" gtk/interface.cc
+		cd $(srcdir) && rm -f gtk/gui.cc.tmp gtk/gui.hh.tmp \
+		    gtk/interface.cc.tmp gtk/interface.hh.tmp
+
+config.h:	$(srcdir)/../jigdo.spec
+		rm -f config.h
+		@echo "jigdo.spec has changed - rerun the configure script!"; \
+		exit 1
+Makefile:	Makefile.in Makedeps config.h.in
+		cd .. && sh config.status # update Makefile from Makefile.in
+#MinGW#config.h: config.h.mingw
+#MinGW#		copy config.h.mingw config.h
+#MinGW#Makefile: Makefile.mingw
+#MinGW#		copy Makefile.mingw Makefile
+
+#NoMinGW#
+# Makefile for Windows compilation with plain mingw32 (no Cygwin needed)
+mingw:		Makefile.mingw config.h.mingw
+Makefile.mingw:	Makefile.in
+		@echo "Generating \`$@' from \`$<'"; \
+		set -- srcdir . prefix UNUSED datadir UNUSED CPPFLAGS -I. \
+		    DEFS "-DHAVE_CONFIG_H" CC gcc CXX g++ LD g++ LIBS "-lz" \
+		    LDFLAGS "" BUILD_TARGETS "jigdo-file.exe jigdo.exe" \
+		    CFLAGS  "-g -O2 -Wall -W -march=pentium -fnative-struct"\
+		    CXXFLAGS "-g -O2 -Wall -W -march=pentium -fnative-struct"\
+		    AWK gawk DEBUG_PROGRAMS "" exe ".exe"; \
+		while test "$$#" != 0; \
+		    do subst="$$subst gsub(/@$$1@/, \"$$2\");"; shift 2; \
+		done; \
+		$(AWK) "/^#NoMinGW#/ { noOut = 1; next; } \
+                        /^#MinGW#/   { noOut = 0; \$$0 = substr(\$$0, 8); } \
+                        { if (noOut == 0) { $$subst; print; } }" "$<" >"$@";\
+		cat $(srcdir)/Makedeps >>Makefile.mingw
+config.h.mingw:	config.h.in Makefile.in
+		@echo "Generating \`$@' from \`$<'"; \
+		read a b v <"$(srcdir)/../jigdo.spec"; \
+		set -- WINDOWS     "define WINDOWS 1" \
+		    TYPE_UINT64    "define TYPE_UINT64 unsigned long long" \
+		    HAVE_OUTUINT64 "define HAVE_OUTUINT64 1" \
+		    HAVE_SSTREAM   "define HAVE_SSTREAM 1" \
+		    HAVE_GETOPT_H  "define HAVE_GETOPT_H 0" \
+		    JIGDO_VERSION  "define JIGDO_VERSION \"$$v\"" \
+		    DIRENT_HACK    "define DIRENT_HACK 1" \
+		    snprintf       "define snprintf _snprintf" \
+		    stat           "define stat _stati64" \
+		;while test "$$#" != 0; do \
+		    prg="$$prg s%^ *# *\(undef\|define\) \+$$1\( .*\)\?$$%#$$2%;";\
+		    shift 2; \
+		done; \
+		sed -e "$$prg" <"$<" >"$@"
+#______________________________________________________________________
+
+@SRC_MAKEDEPS@

@@ -1,0 +1,234 @@
+
+File format for .jigdo files
+============================
+
+This is described in detail in the manual for jigdo-file. See the
+files `jigdo-file.*' in this directory.
+
+Additional notes:
+
+ - The reason for all those quoting rules in the .jigdo is that in the
+   future, it may be allowed to add options to some lines, e.g.:
+   MyServer=http://foo.com/ --referer=... --priority=... --decrypt
+
+ - The difference between the Base64 encoding used by jigdo and the
+   real one (RFC2045) is that jigdo uses `-' instead of `+' and it
+   uses `_' instead of `/'. Additionally, no `=' characters are
+   appended to the end of the Base64 string.
+
+Support for automatic ungzipping of .jigdo files is currently not
+present in jigdo-file.
+
+
+
+Algorithm for finding the files in the image
+============================================
+
+How do you efficiently search for lots of files within another large
+file?
+
+First, a rolling checksum of the first blockLen bytes of each input
+file is calculated. Next, a "window" of blockLen bytes moves over the
+large image. For each window position, the checksum is calculated and
+looked up in a hash table which contains the checksums of the input
+files.
+
+As soon as the first blockLen bytes of a file have been seen in the
+image this way, the program starts calculating the MD5 sum of blocks
+of length md5BlockLength (where blockLen < md5BlockLength; the
+defaults are 1k, 64k resp.). These MD5 checksums are compared to
+pre-calculated MD5 sums of md5BlockLength-sized chunks of the file
+that matched, until one doesn't match, or the last one matched.
+
+Unfortunately, having to deal with situations like overlapping matches
+in the image, and output of the .template to stdout, lead to quite
+complex code (see mktemplate.cc).
+
+The reason why this whole process is quite fast is that moving the
+RsyncSum window by one byte is a very cheap operation: Two table
+lookups, one multiplication and four additions/subtractions. The
+checksum calculation algorithm is based on that used by rsync
+<http://rsync.samba.org/>, but it has been extended by me from 32 bit
+to 64 bit, and also strengthened by the use of a lookup table.
+
+
+The jigdo-file file cache
+-------------------------
+
+Even without --cache specified, jigdo-file uses an internal cache for
+holding information about files. This information includes at least:
+file length, rsync sum of head of file, MD5 sums of chunks of file,
+MD5 sum of the entire file.
+
+When files are first entered into the cache, the entire file is *not*
+yet read, only enough of it to generate the rsync sum and the first
+chunk's MD5 sum. (If this is also the last MD5 sum because the file is
+small, everything is generated.) The rest of the file is only read "on
+demand" if/when necessary.
+
+
+
+File format of .template and .tmp files
+=======================================
+
+The image template files consist of three types of parts:
+
+ - Header: Short ASCII header identifying the file as a jigdo template
+ - Raw data: those parts of the image that were not matched,
+   compressed with zlib
+ - Description: A description of the image, saying which parts were
+   matched by files and are thus not included in the template
+
+After the header of a template file, one or more raw data parts and
+one description part follow. Each part consists of a 4-byte ID ("DATA"
+or "DESC"), followed by 6 bytes of length. The length values are
+little-endian (i.e. least-significant byte first) because that *is*
+the proper end to open an egg. The length includes the ID and length
+field itself, so for an empty part (containing just the ID and the
+length field) the length field would have the value 10.
+
+Temporary image files (.tmp files) consist of the image data, followed
+by a description part with the same format as in .template files.
+Those areas of the temporary image to which no file data has yet been
+written are filled with zero bytes.
+
+
+Header
+------
+
+The header is three lines of ASCII text, terminated with CR LF. They
+read:
+
+  JigsawDownload template <version> <creator> <CRLF>
+  <comment> <CRLF>
+  <CRLF>
+
+<version> is of the form "1.0" - two integers separated by a dot. The
+integers can consist of more than one digit, e.g. "1.42". The number
+is the file format version of the jigdo template file, which is
+completely unrelated to the program's version number, but is the same
+as the format version of the location list (.jigdo) file. The first
+integer indicates backwards-incompatible changes to the format whenever
+its value changes.
+
+<creator> is the name and version number of the program that was used
+to create the template file. It is just for information and should not
+normally be considered when creating an image from the template. Its
+format is "programName/1.23", i.e. name and version number separated
+by "/". The field must not contain any space characters and only one
+"/" character. jigdo-file uses values like "jigdo-file/1.0.0".
+
+<comment> is any string excluding control characters. It contains some
+information, e.g. an URL, for those people who open the file in a text
+editor and haven't a clue what it is. ;-)
+
+
+Description
+-----------
+
+This is binary data. Integer values are little-endian. File lengths
+are 6 bytes long - 256TB ought to be enough for everybody...
+
+The order of entries with type==2 or type==6 corresponds to how
+matched files and areas of unmatched data appear in the image file.
+There must only be one entry of type==5 in the list [which must
+probably be the last entry].
+
+The pseudo program below would be suitable for decoding the
+description data.
+
+#Bytes  Value   Description
+----------------------------------------------------------------------
+ 4      descID  "ID for the part: 'DESC' = the hex bytes 44 45 53 43"
+ 6      descLen "Length of part"
+                while (less than descLen-16 bytes read) {
+ 1      type      switch (type) {
+                    case 5: "Information about the image file"
+ 6      imgLen        "Length in bytes of the original image"
+16      imgMD5        "MD5 checksum of the original image"
+ 4      blockLen      "Nr of bytes used for calculating RsyncSums below"
+                    case 2: "Unmatched data, contained in 'Raw data'"
+ 6      skipLen       "Length in bytes of area of unmatched data"
+                    case 6: "Information about matched file"
+ 6      fileLen       "Length in bytes of file contained in image"
+ 8      fileRsync     "RsyncSum64 of first blockLen bytes of the file.
+                       fileLen < blockLen never happens."
+16      fileMD5       "MD5 checksum of the file"
+                  }
+                }
+ 6      descLen "Length of part - identical to descLen at start of part"
+----------------------------------------------------------------------
+The following types are obsolete:
+
+                    case 1: "Information about the image file"
+                      Obsoleted by type 5.
+ 6      imgLen        "Length in bytes of the original image"
+16      imgMD5        "MD5 checksum of the original image"
+                    case 3: "Information about matched file"
+                      Obsoleted by type 6.
+ 6      fileLen       "Length in bytes of file contained in image"
+16      fileMD5       "MD5 checksum of the file"
+----------------------------------------------------------------------
+
+The reason why the length is repeated at the end is for determining
+the start offset of the DESC part just by reading those 6 bytes from
+the end of the template file. Otherwise, one would have to read the
+headers of all DATA parts to get to the DESC part. jigdo-file relies
+on this.
+
+[...and the reason why the DESC part comes last and not first in the
+template data is that jigdo-file allows outputting the template to
+stdout, but all the data contained in the description part is only
+available at the end of template creation.]
+
+Note: In the DESC part appended to a *temporary image file*,
+jigdo-file uses another type of entry: Once the type of a type==6
+entry changes to type==7, that entry's data has successfully been
+written to the image.
+
+
+Raw data
+--------
+
+Binary data, a stream compressed with zlib (see RFC1950).
+
+For each type==2 entry in the description data, the uncompressed
+stream contains skipLen bytes of data. This is data that did not match
+any of the files presented to the creator of the template.
+
+For each type==6 entry in the description data, the raw data stream
+contains _nothing_at_all_ - in other words, the raw data is just a
+number of concatenated type==2 data chunks.
+
+No raw data sections may be present at all if the description data
+contains no type==2 entries.
+
+#Bytes     Value   Description
+----------------------------------------------------------------------
+ 4         dataID  "ID for the part: 'DATA' = the hex bytes 44 41 54 41"
+ 6         dataLen "Length of part, i.e. length of compressed data + 16"
+ 6         dataUnc "Number of bytes of *uncompressed* data of this part"
+dataLen-16         "Compressed data"
+----------------------------------------------------------------------
+
+jigdo-file always takes care to subdivide the complete raw data into
+parts which are not larger than about 256kB each compressed. This is
+done to support certain applications of jigdo where seeking in the
+image is necessary. (Additionally, this allows jigdo-file to write the
+final template file to a non-seekable output, e.g. to stdout.)
+
+Example for an application which needs to seek: A CGI program which
+creates an image on the fly as it is being sent to a browser will need
+to seek to certain offsets in the image if it is to support HTTP 1.1
+ranges.
+
+Note that the data of one type==2 entry in the description data may be
+distributed over more than one raw data part.
+
+
+File format version history
+---------------------------
+
+1.0 (jigdo-file/0.5.0): Initial format
+1.1 (jigdo-file/0.6.3): Format change in template files: New type 5
+    obsoletes type 1. New type 6 obsoletes type 3.
