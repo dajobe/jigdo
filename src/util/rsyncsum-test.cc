@@ -76,7 +76,9 @@ void printBlockSums(size_t blockSize, const char* fileName) {
       cur += file.gcount();
     }
     RsyncSum64 sum(buf, cur - buf);
-    cout << ' ' << sum << endl;
+    cout << ' ' << sum
+         << " (lo=0x" << hex << sum.getLo()
+         << ", hi=0x" << hex << sum.getHi() << ')' << endl;
   }
   exit(0);
 }

@@ -379,7 +379,7 @@ public:
 };
 //____________________
 
-/** Each Child object stands for one DataSource (i.e. SingleUrl/CachedUrl)
+/** Each Child object stands for one DataSource (i.e.\ SingleUrl/CachedUrl)
     which the MakeImageDl starts as a "child download" of itself. The Child
     maintains a private pointer to a DataSource. It also listens to what
     happens to the DataSource and informs the parent MakeImageDl e.g. of
