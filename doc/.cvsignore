@@ -1,0 +1,6 @@
+Makefile
+.cvsignore
+*.1
+*.html
+cvs
+tmp
