@@ -12,7 +12,8 @@ Current CVS version:
     original incentive of allowing multiple [Image] sections was to
     make it possible to avoid duplication of .jigdo data, by providing
     all 7 CDs and the single DVD in one .jigdo. This duplication can
-    now be avoided by [Include]ing the CDs' files from the DVD's.
+    now be avoided by [Include]ing the CDs' files from the DVD's,
+    because all except the first [Image] section are ignored.
   - Fixed minor bug in jigdo-lite; it would sometimes abort even if no
     error code was returned by jigdo-file
   - GUI: Added code for processing of .jigdo files and [Include]
