@@ -58,7 +58,8 @@ Job::IO* JigdoIO::job_removeIo(Job::IO* rmIo) {
 
 void JigdoIO::job_deleted() {
   if (frontend != 0) frontend->job_deleted();
-  // Do not "delete this" - childDl owns us and the SingleUrl
+  /* Do not "delete this" - childDl owns us and the SingleUrl, and will
+     delete us from its dtor. */
 }
 
 void JigdoIO::job_succeeded() {

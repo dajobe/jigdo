@@ -46,7 +46,7 @@ public:
       that it has deleted its child and the moment we delete the
       corresponding line from the JobList. The delay allows the user to read
       a "finished" or error message. */
-  static const int CHILD_FINISHED_DELAY = 3000;
+  static const int CHILD_FINISHED_DELAY = 5000;
 
   /** Create a new GtkSingleUrl, and also create an internal Job::SingleUrl
       to do the actual download. Delete the internal SingleURl from

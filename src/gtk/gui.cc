@@ -343,7 +343,7 @@ void on_jigdo_closeButton_clicked(GtkButton*, gpointer) {
 void on_jigdo_startButton_enter(GtkButton*, gpointer) {
   gtk_label_set_markup(GTK_LABEL(GUI::window.jigdo_buttonInfo),
                        _("<b>Continue</b> all child downloads (after Pause) "
-                         "or <b>Resume</b> them (after Stop)"));
+                         "or <b>Resume</b> them (after Stop or error)"));
 }
 void on_jigdo_pauseButton_enter(GtkButton*, gpointer) {
   gtk_label_set_markup(GTK_LABEL(GUI::window.jigdo_buttonInfo),

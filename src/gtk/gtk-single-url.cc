@@ -260,7 +260,7 @@ void GtkSingleUrl::percentDone(uint64* cur, uint64* total) {
 void GtkSingleUrl::updateWindow() {
   if (!jobList()->isWindowOwner(this)) return;
 
-  debug("updateWindow: state=%1 status=%2", int(state), status);
+  debug("updateWindow: state=%1 status=\"%2\"", int(state), status);
 
   // URL and destination lines
   gtk_label_set_text(GTK_LABEL(GUI::window.download_URL), uri.c_str());

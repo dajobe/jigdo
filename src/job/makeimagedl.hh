@@ -128,13 +128,21 @@ private:
   // Write a ReadMe.txt to the download dir; fails silently
   void writeReadMe();
 
+  // Add leafname for object to arg string, e.g. "u-nGJ2hQpUNCIZ0fafwQxZmQ"
+  static void appendLeafname(string* s, bool contentMd, const MD5& md);
+  /* Turn the '-' in string created by above function into a '~' or v.v.
+     Works even if leafname is preceded by dirname or similar in s */
+  static inline void toggleLeafname(string* s);
+
   /** Return child download object which contains a DataSource which produces
       the data of the requested URL. That returned object is usually a newly
       started download, except if the file (or its beginning) was already
       downloaded. The filename is based on either the base64ified md
       checksum, or (if that is 0), the b64ied md5 checksum of the url.
+      @param leafnameOut If non-null, string is overwritten with file's
+      leafname in cache on exit.
       @return New object, or null if error (and io->job_failed was called) */
-  Child* childFor(const string& url, const MD5* md = 0);
+  Child* childFor(const string& url, const MD5* md = 0, string* leafnameOut =0);
   // Helper methods for above
   Child* childForCompleted(const struct stat& fileInfo,
                            const string& filename, bool contentMdKnown,
@@ -244,40 +252,6 @@ private:
   bool contentMd; // True <=> md is checksum of file contents (else of URL)
   MD5 md;
 };
-
-#if 0
-/** Base for downloads etc started by MakeImageDl objects.
-
-    IMPORTANT: The MakeImageDl expects to be informed whether all data was
-    received or not - for this reason, your implementation of DataSource::IO
-    must include the following:
-
-      void job_succeeded() {
-        // "master" is the MakeImageDl, "source" is the DataSource
-        // "frontend" is the frontend IO object
-        master->childSucceeded(source, this, frontend);
-
-        // ...
-      }
-
-      void job_failed(string* message) {
-        master->childFailed(source, this, frontend);
-        // ...
-      }
-
-    As might be obvious from this, either one of childSucceeded/Failed()
-    *MUST* be called before the DataSource is deleted. */
-class Job::MakeImageDl::Child : public Job::DataSource::IO {
-public:
-  friend class MakeImageDl;
-  explicit inline Child(MakeImageDl* m);
-  inline MakeImageDl* master() const;
-private: // For MakeImageDl only:
-  string leafname;
-private: // "Really private":
-  MakeImageDl* masterVal; // Object which owns us
-};
-#endif
 //______________________________________________________________________
 
 const string& Job::MakeImageDl::jigdoUri() const { return jigdoUrl; }
@@ -285,6 +259,7 @@ const string& Job::MakeImageDl::jigdoUri() const { return jigdoUrl; }
 Job::MakeImageDl::State Job::MakeImageDl::state() const { return stateVal; }
 
 void Job::MakeImageDl::generateError(string* message, State newState) {
+  if (finalState()) return;
   stateVal = newState;
   if (io) io->job_failed(message);
 }
@@ -311,6 +286,12 @@ void Job::MakeImageDl::Child::setChildIo(DataSource::IO* c) {
   sourceVal->io.set(c);
   Paranoid(childIoVal == 0);
   childIoVal = c;
+}
+
+void Job::MakeImageDl::toggleLeafname(string* s) {
+  int off = s->length() - 23;
+  Paranoid((*s)[off] == '-' || (*s)[off] == '~');
+  (*s)[off] ^= ('-' ^ '~');
 }
 
 #endif

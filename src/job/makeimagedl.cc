@@ -15,6 +15,7 @@
 
 #include <config.h>
 
+#include <stdio.h>
 #include <fstream>
 #include <memory>
 
@@ -44,21 +45,25 @@ MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
   /* Create name of temporary dir.
      Directory name: "jigdo-" followed by md5sum of .jigdo URL */
   MD5Sum md;
-  md.update(reinterpret_cast<const byte*>(dest.c_str()),
-            dest.length()).finish();
-  Base64String dirname;
+  md.update(reinterpret_cast<const byte*>(jigdoUri.c_str()),
+            jigdoUri.length()).finish();
+
+  debug("ctor a %1 %2", md.toString(), jigdoUri);
+  Base64String b64;
+  b64.result() = dest;
+  b64.result() += DIRSEPS "jigdo-";
   // Halve number of bits by XORing bytes. (Would a real CRC64 be better??)
   byte cksum[8];
-  for (int i = 0; i < 8; ++i) cksum[i] = md.digest()[i] ^ md.digest()[i + 8];
-  dirname.write(cksum, 8).flush();
-  tmpDirVal = dest;
-  tmpDirVal += DIRSEPS "jigdo-";
-  tmpDirVal += dirname.result();
+  const byte* digest = md.digest();
+  for (int i = 0; i < 8; ++i)
+    cksum[i] = digest[i] ^ digest[i + 8];
+  b64.write(cksum, 8).flush();
+  tmpDirVal.swap(b64.result());
 }
 //______________________________________________________________________
 
 Job::MakeImageDl::~MakeImageDl() {
-  delete jigdo;
+  //delete jigdo;
 }
 //______________________________________________________________________
 
@@ -81,13 +86,15 @@ void MakeImageDl::run() {
   writeReadMe();
 
   // Run initial .jigdo download, will start other downloads as needed
-  auto_ptr<Child> childDl(childFor(jigdoUrl, 0));
+  string leafname;
+  auto_ptr<Child> childDl(childFor(jigdoUrl, 0, &leafname));
   if (childDl.get() != 0) {
+    string info = _("Retrieving .jigdo data");
+    string destDesc = subst("%1  --  %2", leafname, info);
     auto_ptr<DataSource::IO> frontend(
-        io->makeImageDl_new(childDl->source(), tmpDir()) );
+        io->makeImageDl_new(childDl->source(), destDesc) );
     childDl->setChildIo(new JigdoIO(childDl.get(), frontend.get()));
     frontend.release();
-    string info = _("Retrieving .jigdo data");
     if (io) io->job_message(&info);
     jigdo = childDl.release();
     jigdo->source()->run();
@@ -105,7 +112,7 @@ void MakeImageDl::info(const string&) {
 }
 //______________________________________________________________________
 
-void Job::MakeImageDl::writeReadMe() {
+void MakeImageDl::writeReadMe() {
   string readmeName = tmpDir();
   readmeName += DIRSEP;
   readmeName += "ReadMe.txt";
@@ -137,33 +144,51 @@ void Job::MakeImageDl::writeReadMe() {
 }
 //______________________________________________________________________
 
-MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md) {
-  debug("dataSourceFor: %L1", url);
+void MakeImageDl::appendLeafname(string* s, bool contentMd, const MD5& md) {
+  Base64String x;
+  *s += (contentMd ? "c-" : "u-");
+  (*s).swap(x.result());
+  x.write(md, 16).flush();
+  (*s).swap(x.result());
+}
+//______________________________________________________________________
+
+MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md,
+                                          string* leafnameOut) {
+  debug("childFor: %L1", url);
+
+  msg("TODO: Maintain cache of active children; if URL requested 2nd time, "
+      "add child which waits for 1st to finish");
 
   bool contentMdKnown = (md != 0);
   MD5 cacheMd; // Will contain md5sum of either file URL or file contents
-  string leafname;
   Base64String b64;
   if (contentMdKnown) {
     // Create leafname from md ("c" for "content")
-    leafname += "c-";
+    b64.result() = "c-";
     b64.write(*md, 16).flush();
     cacheMd = *md;
   } else {
     // Create leafname from url ("u" for "url")
-    leafname += "u-";
+    b64.result() = "u-";
     MD5Sum nameMd;
     nameMd.update(reinterpret_cast<const byte*>(url.c_str()),
                   url.length()).finish();
     b64.write(nameMd.digest(), 16).flush();
     cacheMd = nameMd;
   }
-  leafname += b64.result();
+  string* leafname;
+  if (leafnameOut == 0) {
+    leafname = &b64.result();
+  } else {
+    leafnameOut->swap(b64.result());
+    leafname = leafnameOut;
+  }
 
   // Check whether file already present in cache, i.e. in tmpDir
   string filename = tmpDir();
   filename += DIRSEP;
-  filename += leafname;
+  filename += *leafname;
   struct stat fileInfo;
   int statResult = stat(filename.c_str(), &fileInfo);
   if (statResult == 0)
@@ -172,21 +197,19 @@ MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md) {
   /* statResult != 0, we assume this means "no such file or directory".
      Now check whether a download is already under way, or if a half-finished
      download was aborted earlier. */
-  Paranoid(filename[tmpDir().length() + 2] == '-');
-  filename[tmpDir().length() + 2] = '~';
-  Paranoid(leafname[1] == '-');
-  leafname[1] = '~';
+  toggleLeafname(&filename);
+  toggleLeafname(leafname);
   statResult = stat(filename.c_str(), &fileInfo);
   if (statResult == 0)
     return childForSemiCompleted(fileInfo, filename);
 
   /* Neither the complete nor the partial data is in the cache, so start a
      new download. */
-  debug("dataSourceFor: New download to %L1", filename);
+  debug("childFor: New download to %L1", filename);
   BfstreamCounted* f = new BfstreamCounted(filename.c_str(),
                                     ios::binary|ios::in|ios::out|ios::trunc);
   if (!*f) {
-    string err = subst(_("Could not open `%L1' (%L2)"),
+    string err = subst(_("Could not open `%L1': %L2"),
                        leafname, strerror(errno));
     generateError(&err);
     return 0;
@@ -212,12 +235,12 @@ MakeImageDl::Child* MakeImageDl::childForCompleted(
   }
   if (contentMdKnown) {
     // Data with that MD5 known - no need to go on the net, imm. return it
-    debug("dataSourceFor: already have %L1", filename);
+    debug("childFor: already have %L1", filename);
     Assert(false); return 0;
   } else {
     /* Data for URL fetched before. If less than IF_MOD_SINCE seconds ago,
        just return it, else do an If-Modified-Since request. */
-    debug("dataSourceFor: if-mod-since %L1", filename);
+    debug("childFor: if-mod-since %L1", filename);
     Assert(false); return 0;
   }
 }
@@ -232,7 +255,7 @@ MakeImageDl::Child* MakeImageDl::childForSemiCompleted(
     io->job_failed(&err);
     return 0;
   }
-  debug("dataSourceFor: already have partial %L1", filename);
+  debug("childFor: already have partial %L1", filename);
   Assert(false); return 0;
 #if 0
   if (anotherdownloadunderway) {
@@ -249,8 +272,26 @@ void MakeImageDl::childSucceeded(
     Child* childDl, DataSource::IO* /*childIo*/, DataSource::IO* frontend) {
   if (frontend != 0)
     io->makeImageDl_finished(childDl->source(), frontend);
-  #warning // Rename u~... to u-...
-  // TODO Delete child (sometimes)
+
+  // Rename u~... to u-...
+  string destName = tmpDir();
+  destName += DIRSEP;
+  appendLeafname(&destName, childDl->contentMd, childDl->md);
+  string srcName(destName);
+  toggleLeafname(&srcName);
+  debug("mv %1 %2", srcName, destName);
+
+  // On Windows, cannot rename open file, so ensure it is closed
+  childDl->deleteSource();
+
+  int status = rename(srcName.c_str(), destName.c_str());
+  if (status != 0) {
+    string destName2(destName, tmpDir().length() + 1, string::npos);
+    string err = subst(_("Could not rename `%L1' to `%L2': %L3"),
+                       srcName, destName2, strerror(errno));
+    generateError(&err);
+    return;
+  }
 }
 
 void MakeImageDl::childFailed(
