@@ -13,8 +13,12 @@
 
 #include <config.h>
 
+#include <errno.h>
+#include <string.h>
+
 #include <glib.h>
 #include <iostream>
+#include <fstream>
 
 #include <autoptr.hh>
 #include <debug.hh>
@@ -24,55 +28,41 @@
 using namespace Job;
 //______________________________________________________________________
 
-SingleUrl::SingleUrl(IO* ioPtr, const string& uri, uint64 offset,
-                     const byte* buf, size_t bufLen, bool pragmaNoCache)
+SingleUrl::SingleUrl(IO* ioPtr, const string& uri)
   : ioVal(ioPtr), download(uri, this), progressVal(), resumeFailedId(0),
-    resumeStart(buf), resumePos(buf), resumeEnd(buf + bufLen), tries(1) {
-  if (offset == 0) {
-    download.run(pragmaNoCache);
-  } else {
-    /* NB it is possible that bufLen == 0 here; in that case, buf may or may
-       not be null as well. */
-    if (bufLen == 0) {
-      delete[] resumeStart;
-      resumeStart = resumePos = resumeEnd = 0;
-    }
-    progressVal.setCurrentSize(offset - bufLen);
-    progressVal.reset();
-    download.resume(offset - bufLen);
-  }
+    destStreamVal(0), destOff(0), destEndOff(0), resumeLeft(0), tries(0) {
 }
 
-void SingleUrl::resume(const byte* buf, size_t bufLen) {
-  Assert(resumePossible());
-  Assert(buf != 0 || bufLen == 0);
-  ++tries;
-  uint64 offset = progressVal.currentSize();
-
-  // Compare with ctor above
-  Paranoid(resumeFailedId == 0);
-  resumeStart = buf;
-  resumePos = buf;
-  resumeEnd = buf + bufLen;
-  if (offset == 0) {
-    progressVal.reset();
-    download.run();
-  } else {
-    if (bufLen == 0) {
-      delete[] resumeStart;
-      resumeStart = resumePos = resumeEnd = 0;
-    }
-    progressVal.setCurrentSize(offset - bufLen);
-    progressVal.reset();
-    download.resume(offset - bufLen);
+void SingleUrl::run(uint64 resumeOffset, bfstream* destStream,
+                    uint64 destOffset, uint64 destEndOffset,
+                    bool pragmaNoCache) {
+  if (resumeFailedId != 0) {
+    g_source_remove(resumeFailedId);
+    resumeFailedId = 0;
   }
+
+  destStreamVal = destStream;
+  destOff = destOffset;
+  destEndOff = destEndOffset;
+  if (destEndOffset > destOffset)
+    progressVal.setDataSize(destEndOffset - destOffset);
+  ++tries;
+
+  Assert(resumeOffset == 0 || destStreamVal != 0);
+  if (resumeOffset < RESUME_SIZE)
+    resumeLeft = resumeOffset;
+  else
+    resumeLeft = RESUME_SIZE;
+  // Not "resumeOffset - resumeLeft", won't be calling io for a while:
+  progressVal.setCurrentSize(resumeOffset);
+  progressVal.reset();
+  download.run(resumeOffset - resumeLeft, pragmaNoCache);
 }
 //________________________________________
 
 SingleUrl::~SingleUrl() {
   if (!download.failed() && !download.succeeded())
     download.stop();
-  delete[] resumeStart;
   if (resumeFailedId != 0) {
     // The chance that this code is ever reached is microscopic, but still...
     g_source_remove(resumeFailedId);
@@ -114,72 +104,133 @@ gboolean SingleUrl::resumeFailed_callback(gpointer data) {
 //______________________________________________________________________
 
 void SingleUrl::download_dataSize(uint64 n) {
-  progressVal.setDataSize(n);
+  if (progressVal.dataSize() == 0) {
+    progressVal.setDataSize(n);
+  } else {
+    // Error if reported size of object does not match expected one
+    if (n > 0 && n != progressVal.dataSize()) resumeFailed();
+  }
   if (!resuming()) {
-    if (ioVal) ioVal->singleURL_dataSize(n);
+    if (ioVal) ioVal->singleUrl_dataSize(n);
     return;
   }
-
-  /* Create error in the case that the resume buffer contains more bytes than
-     the server claims to be able to give us; IOW, the file has changed on
-     the server (it was truncated). */
-  if (n > 0 && progressVal.currentSize() + (resumeEnd - resumePos) > n)
-    resumeFailed();
 }
 //______________________________________________________________________
 
-void SingleUrl::download_data(const byte* data, size_t size,
+bool SingleUrl::writeToDestStream(uint64 off, const byte* data,
+                                  unsigned size) {
+  if (destStream() == 0) return SUCCESS;
+
+  // Never go beyond destEndOff
+  unsigned realSize = size;
+  if (destOff < destEndOff
+      && off + size > destEndOff)
+    realSize = destEndOff - off;
+
+  destStream()->seekp(off, ios::beg);
+  writeBytes(*destStream(), data, realSize);
+  if (!destStream()->good()) {
+    download.stop();
+    if (ioVal) {
+      string error = subst("%L1", strerror(errno));
+      ioVal->job_failed(&error);
+    }
+    return FAILURE;
+  }
+  if (realSize < size) {
+    // Server sent more than we expected; error
+    download.stop();
+    if (ioVal) {
+      string error = _("Server sent more data than expected");
+      ioVal->job_failed(&error);
+    }
+    return FAILURE;
+  }
+  return SUCCESS;
+}
+//______________________________________________________________________
+
+void SingleUrl::download_data(const byte* data, unsigned size,
                               uint64 currentSize) {
 # if DEBUG
+  Paranoid(resuming() || progressVal.currentSize() == currentSize - size);
   //g_usleep(10000);
+  cerr << "Got " << size << " bytes ["
+       << progressVal.currentSize() << ',' << currentSize - size << "]: ";
+  for (unsigned i = 0; i < (size < 65 ? size : 65); ++i) {
+    if (data[i] >= ' ' && data[i] < 127 || data[i] >= 160)
+      cerr << data[i];
+    else
+      cerr << '.';
+  }
+  cerr << endl;
 # endif
-  /*
-    cerr << "Got " << size << " bytes ["<<progressVal.currentSize()<<"]: ";
-    if (size > 80) size = 80;
-    while (size > 0 && (*data >= ' ' && *data < 127 || *data >= 160))
-      cerr << *data++;
-    cerr << endl;
-  */
+
   if (!progressVal.autoTick() // <-- extra check for efficiency only
       && !download.pausedSoon())
     progressVal.setAutoTick(true);
 
-  progressVal.setCurrentSize(currentSize);
-
   if (!resuming()) {
-    // Normal case: Just forward it all downstream
-    if (ioVal) ioVal->singleURL_data(data, size, currentSize);
+    // Normal case: Just write it to file and forward it downstream
+    progressVal.setCurrentSize(currentSize);
+    if (writeToDestStream(destOff + currentSize - size, data, size)
+        == FAILURE) return;
+    if (ioVal) ioVal->singleUrl_data(data, size, currentSize);
     return;
   }
+  //____________________
 
-  /* We're in the middle of a resume - compare downloaded bytes with bytes in
-     buffer, don't pass them on */
+  /* We're in the middle of a resume - compare downloaded bytes with bytes
+     from destStream, don't pass them on. Note that progressVal.currentSize()
+     is "stuck" at the value currentSize+resumeLeft, i.e. the offset of the
+     end of the overlap area. */
+# if DEBUG
+  cerr<<"RESUME left="<<resumeLeft<<" off="<<destOff + currentSize - size<<" currentSize="<<currentSize<<endl;
+# endif
 
   // If resume already failed, ignore further calls
   if (resumeFailedId != 0) return;
 
-  // Got new data, compare it to the data in buf
-  while (size > 0 && resumePos < resumeEnd) {
-    //cerr<<int(*data)<<' '<<int(*resumePos)<<endl;
-    if (*data != *resumePos) {
+  // Read from file
+  unsigned toRead = min(resumeLeft, size);
+  byte buf[toRead];
+  byte* bufEnd = buf + toRead;
+  byte* b = buf;
+  destStream()->seekg(destOff + currentSize - size, ios::beg);
+  while (destStream()->good() && toRead > 0) {
+    readBytes(*destStream(), b, toRead);
+    size_t n = destStream()->gcount();
+    b += n;
+    toRead -= n;
+  }
+  if (toRead > 0 && !destStream()->good()) { resumeFailed(); return; }
+
+  // Compare
+  b = buf;
+  while (size > 0 && b < bufEnd) {
+    if (*data != *b) {
       resumeFailed();
+      if (DEBUG)
+        cerr << " fromfile=" << int(*b) << " fromnet=" << int(*data) << endl;
       return;
     }
-    ++data; ++resumePos; --size;
+    ++data; ++b; --size; --resumeLeft;
   }
 
-  string info = subst(_("Resuming... %1kB"), (resumeEnd - resumePos) / 1024);
+  string info = subst(_("Resuming... %1kB"), resumeLeft / 1024);
   if (ioVal) ioVal->job_message(&info);
 
-  if (resumePos < resumeEnd) return;
+  if (resumeLeft > 0) return;
 
   /* Success: End of buf reached and all bytes matched. Pass remaining bytes
      from this chunk to IO. */
-  Assert(currentSize - size
-         == download.resumeOffset() + (resumeEnd - resumeStart));
-  if (size > 0 && ioVal) ioVal->singleURL_data(data, size, currentSize);
-  delete[] resumeStart;
-  resumeStart = resumePos = resumeEnd = 0;
+  progressVal.reset();
+  if (size > 0) {
+    progressVal.setCurrentSize(currentSize);
+    if (writeToDestStream(destOff + currentSize - size, data, size)
+        == FAILURE) return;
+    if (ioVal) ioVal->singleUrl_data(data, size, currentSize);
+  }
 }
 //______________________________________________________________________
 
@@ -207,8 +258,7 @@ void SingleUrl::download_failed(string* message) {
   if (resuming()) {
     /* Fix progress.currentSize() so resume won't subtract yet another
        RESUME_SIZE bytes later */
-    progressVal.setCurrentSize(progressVal.currentSize()
-                               + (resumeEnd - resumePos));
+    progressVal.setCurrentSize(progressVal.currentSize() + resumeLeft);
   }
   if (ioVal) ioVal->job_failed(message);
 }

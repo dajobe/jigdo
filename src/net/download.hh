@@ -46,9 +46,13 @@ public:
 
   Download(const string& uri, Output* o /*= 0*/);
   ~Download();
+
   /** Start downloading. Returns (almost) immediately and runs the download
-      in the background via the glib/libwww event loop. */
-  void run(bool pragmaNoCache = false);
+      in the background via the glib/libwww event loop. If resumeOffset > 0,
+      continue downloading the data from a given byte position. If a resume
+      is not possible (e.g. server does not support HTTP ranges), there's an
+      error. */
+  void run(uint64 resumeOffset, bool pragmaNoCache);
 
   inline const string& uri() const;
 
@@ -70,11 +74,6 @@ public:
   inline bool succeeded() const;
   /** The connection was interrupted during the download, or it timed out. */
   inline bool interrupted() const;
-
-  /** Just like run(), but continue downloading the data from a given byte
-      position. If a resume is not possible (e.g. server does not support
-      HTTP ranges), there's an error. */
-  inline void resume(uint64 offset);
 
   /** Forcibly stop this download. Careful, in case we are pipelining it is
       unavoidable that other (pending and not pending) downloads in the same
@@ -171,7 +170,7 @@ public:
       arrived. You can write the data to a file, copy it away etc.
       currentSize is the offset into the downloaded data (including the
       "size" new bytes) - useful for "x% done" messages. */
-  virtual void download_data(const byte* data, size_t size,
+  virtual void download_data(const byte* data, unsigned size,
                              uint64 currentSize) = 0;
 
   /** Called when download is complete. If this is called, you may want to
@@ -209,10 +208,6 @@ bool Download::failed() const { return state == ERROR; }
 bool Download::succeeded() const { return state == SUCCEEDED; }
 bool Download::interrupted() const { return state == INTERRUPTED; }
 
-void Download::resume(uint64 offset) {
-  resumeOffsetVal = offset;
-  run();
-}
 uint64 Download::resumeOffset() const { return resumeOffsetVal; }
 
 #endif

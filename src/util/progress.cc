@@ -173,8 +173,10 @@ int Progress::speed(const GTimeVal& now) const {
   else
     elapsed -= slotStart[calcSlot].tv_usec - now.tv_usec;
   if (elapsed == 0.0) return -1;
-//   cerr<<"speed: "<<currentSizeVal - slotSizeVal[calcSlot]<<" bytes in "
-//       <<elapsed / 1000000.0<<" sec, current size "<<currentSizeVal<<endl;
+# if DEBUG_PROGRESS
+  cerr<<"speed: "<<currentSizeVal - slotSizeVal[calcSlot]<<" bytes (" << slotSizeVal[calcSlot] << " previously, " << currentSizeVal << " now) in "
+      <<elapsed / 1000000.0<<" sec, current size "<<currentSizeVal<<endl;
+# endif
   int speed = static_cast<int>(
       static_cast<double>(currentSizeVal - slotSizeVal[calcSlot])
       / elapsed * 1000000.0);

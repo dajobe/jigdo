@@ -38,17 +38,15 @@
 using namespace Job;
 //______________________________________________________________________
 
-/* We would like to call the SingleUrl ctor as SingleUrl(this,jigdoURL), but
-   that would make immediate calls back to the not yet fully initialized
-   object. So first pass a null IO ptr, then later set it to "this". That
-   means we'll lose some messages like "DNS lookup of...", oh well. */
 MakeImageDl::JigdoDownload::JigdoDownload(MakeImageDl* m, JigdoDownload* p,
-                                          const string& jigdoURL,
+                                          const string& jigdoUrl,
                                           ConfigFile::iterator destPos)
-    : SingleUrl(0, jigdoURL), master(m), parent(p), ioVal(0),
+    : SingleUrl(this, jigdoUrl), master(m), parent(p), ioVal(0),
       gunzipBuf(), gunzip(this), insertPos(destPos) {
-  SingleUrl::io().set(this);
+  //SingleUrl::io().set(this);
   ioVal.set(master->io->makeImageDl_new(this));
+  SingleUrl::run(0, 0, 0, 0, false);
+# warning "fixme introduce JigdoDownload::run() + separate base class?"
 }
 
 MakeImageDl::JigdoDownload::~JigdoDownload() {
@@ -83,10 +81,10 @@ void MakeImageDl::JigdoDownload::job_failed(string* message) {
 void MakeImageDl::JigdoDownload::job_message(string* message) {
   if (ioVal) ioVal->job_message(message);
 }
-void MakeImageDl::JigdoDownload::singleURL_dataSize(uint64 n) {
-  if (ioVal) ioVal->singleURL_dataSize(n);
+void MakeImageDl::JigdoDownload::singleUrl_dataSize(uint64 n) {
+  if (ioVal) ioVal->singleUrl_dataSize(n);
 }
-void MakeImageDl::JigdoDownload::singleURL_data(const byte* data,
+void MakeImageDl::JigdoDownload::singleUrl_data(const byte* data,
                                                 size_t size,
                                                 uint64 currentSize) {
   if (master->state() == ERROR) return;
@@ -99,7 +97,7 @@ void MakeImageDl::JigdoDownload::singleURL_data(const byte* data,
     master->stateVal = ERROR;
     return;
   }
-  if (ioVal) ioVal->singleURL_data(data, size, currentSize);
+  if (ioVal) ioVal->singleUrl_data(data, size, currentSize);
 }
 //______________________________________________________________________
 

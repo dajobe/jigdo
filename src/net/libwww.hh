@@ -26,6 +26,9 @@ extern "C" {
 #include <WWWStream.h>
 #include <WWWTrans.h>
 //#include "WWWUtil.h"
+
+// HTReqMan.h incorrectly defines the name as HTRequest_deleteRangeAll
+extern BOOL HTRequest_deleteRange (HTRequest * request);
 }
 
 #include <config.h>

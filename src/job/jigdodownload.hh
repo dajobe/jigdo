@@ -37,9 +37,9 @@ class Job::MakeImageDl::JigdoDownload
 public:
   /** @param m Master which owns us
       @param p Parent JigdoDownload which [Include]d us, or null
-      @param jigdoURL Where to download .jigdo data
+      @param jigdoUrl Where to download .jigdo data
       @param destPos Where in config file to insert downloaded data */
-  JigdoDownload(MakeImageDl* m, JigdoDownload* p, const string& jigdoURL,
+  JigdoDownload(MakeImageDl* m, JigdoDownload* p, const string& jigdoUrl,
                 ConfigFile::iterator destPos);
   virtual ~JigdoDownload();
 
@@ -53,8 +53,8 @@ private:
   virtual void job_succeeded();
   virtual void job_failed(string* message);
   virtual void job_message(string* message);
-  virtual void singleURL_dataSize(uint64 n);
-  virtual void singleURL_data(const byte* data, size_t size,
+  virtual void singleUrl_dataSize(uint64 n);
+  virtual void singleUrl_data(const byte* data, size_t size,
                               uint64 currentSize);
 
   // Virtual methods from Gunzip::IO

@@ -65,7 +65,7 @@ void GtkMakeImage::selectRow() {
       GtkWidget* entry = gtk_notebook_get_nth_page(notebook, page);
       if (GTK_WIDGET_VISIBLE(entry)) break;
     }
-    cerr<<"selrowcallback "<<page<<" of "<<npages<<endl;
+    //cerr<<"selrowcallback "<<page<<" of "<<npages<<endl;
     gtk_notebook_set_current_page(notebook, page);
   } else {
     // Don't cycle through tabs, just switch to jigdo info in main window

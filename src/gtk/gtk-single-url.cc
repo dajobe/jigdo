@@ -36,7 +36,9 @@ GtkSingleUrl::GtkSingleUrl(const string& uriStr, Job::SingleUrl* download)
 GtkSingleUrl::~GtkSingleUrl() {
   if (jobList()->isWindowOwner(this))
     setNotebookPage(GUI::window.pageOpen);
-  if (!childMode()) {
+  if (childMode()) {
+    if (job != 0) job->setDestStream(0);
+  } else {
     // Only delete if job owned, i.e. if we're not a child of another job
     delete job;
     Paranoid(job == 0); // Was set to 0 during above stmt by job_deleted()
@@ -114,17 +116,18 @@ void GtkSingleUrl::openOutputAndRun(bool pragmaNoCache) {
             dest, strerror(errno)));
     m->show();
     messageBox.set(m);
-    //delete this;
     return;
   }
 
   // Allocate job and run it
   status = _("Waiting...");
-  Assert(job == 0);
-  job = new Job::SingleUrl(this, uri, 0, 0, 0, pragmaNoCache);
+  if (job == 0)
+    job = new Job::SingleUrl(this, uri);
+  job->run(0, destStream, 0, 0, pragmaNoCache);
 }
 //________________________________________
 
+#if 0
 namespace {
 
   /** Create a byte array of the indicated size and load into it bytes from
@@ -149,10 +152,9 @@ namespace {
   }
 
 }
+#endif
 //________________________________________
 
-/* Load RESUME_SIZE bytes from the old file's end, for comparison with the
-   first bytes of the downloaded data. Then call DownloadJob::resume(). */
 void GtkSingleUrl::openOutputAndResume() {
   Paranoid(!childMode());
   struct stat fileInfo;
@@ -161,17 +163,14 @@ void GtkSingleUrl::openOutputAndResume() {
   if (statResult == 0) {
     if (destStream != 0) delete destStream;
     destStream = new bfstream(dest.c_str(), ios::binary|ios::in|ios::out);
-    unsigned resumeSize = Job::SingleUrl::RESUME_SIZE;
-    if (static_cast<uint64>(fileInfo.st_size) < Job::SingleUrl::RESUME_SIZE)
-      resumeSize = fileInfo.st_size;
-    byte* buf = loadData(destStream, fileInfo.st_size - resumeSize,
-                         resumeSize);
-    if (buf != 0) {
+    if (*destStream) {
       // Start the resume download
       status = subst(_("Resuming download - overlap is %1kB"),
-                     resumeSize / 1024);
+                     Job::SingleUrl::RESUME_SIZE / 1024);
       updateWindow();
-      job = new Job::SingleUrl(this, uri, fileInfo.st_size, buf, resumeSize);
+      if (job == 0)
+        job = new Job::SingleUrl(this, uri);
+      job->run(fileInfo.st_size, destStream, 0, 0, false);
       return;
     }
   }
@@ -179,13 +178,12 @@ void GtkSingleUrl::openOutputAndResume() {
   // An error occurred
 # if DEBUG
   cerr << "GtkSingleUrl::openOutputAndResume: statResult=" << statResult
-       << endl;
+       << ' ' << strerror(errno) << endl;
 # endif
   treeViewStatus = _("<b>Open of output file failed</b>");
   string error = subst(_("Could not open output file: %L1"),
                        strerror(errno));
   failedPermanently(&error);
-  return;
 }
 //______________________________________________________________________
 
@@ -199,15 +197,7 @@ void GtkSingleUrl::startResume() {
 
   Assert(destStream == 0);
   destStream = new bfstream(dest.c_str(), ios::binary|ios::in|ios::out);
-  unsigned resumeSize = Job::SingleUrl::RESUME_SIZE;
-  uint64 currentSize = job->progress()->currentSize();
-  if (currentSize < Job::SingleUrl::RESUME_SIZE)
-    resumeSize = currentSize;
-  if (DEBUG) cerr<<"resume now size="<<resumeSize<<" off="<<
-               currentSize - resumeSize<<endl;
-  byte* buf = loadData(destStream, currentSize - resumeSize,
-                       resumeSize);
-  if (buf == 0) {
+  if (!*destStream) {
     // An error occurred
     treeViewStatus = _("<b>Open of output file failed</b>");
     string error = subst(_("Could not open output file: %L1"),
@@ -218,9 +208,9 @@ void GtkSingleUrl::startResume() {
 
   // Start the resume download
   status = subst(_("Resuming download - overlap is %1kB"),
-                 resumeSize / 1024);
+                 Job::SingleUrl::RESUME_SIZE / 1024);
   updateWindow();
-  job->resume(buf, resumeSize);
+  job->run(0, destStream, 0, 0, false);
   return;
 }
 //______________________________________________________________________
@@ -256,11 +246,14 @@ void GtkSingleUrl::cont() {
 void GtkSingleUrl::stop() {
 # if DEBUG
   //#warning "TODO what if childMode"
-  cerr << "Stopping SingleUrl " << (job != 0 ? job : 0) << endl;
+  cerr << "Stopping SingleUrl " << (job != 0 ? job : 0) << " at byte "
+       << job->progress()->currentSize() << endl;
 # endif
+  destStream->sync();
   delete destStream;
   destStream = 0;
   if (job != 0) {
+    job->setDestStream(0);
     if (job->paused()) job->cont();
     job->stop();
   }
@@ -388,6 +381,7 @@ void GtkSingleUrl::job_succeeded() {
   // Can't see the same problem as with job_failed(), but just to be safe...
   delete destStream;
   destStream = 0;
+  job->setDestStream(0);
   status = _("Download is complete");
   updateWindow();
   string s;
@@ -400,6 +394,7 @@ void GtkSingleUrl::job_succeeded() {
 /* Like job_failed() below, but don't pay attention whether
    job->resumePossible() - *never* auto-resume the download. */
 void GtkSingleUrl::failedPermanently(string* message) {
+  job->setDestStream(0);
   delete destStream;
   destStream = 0;
   treeViewStatus = subst(_("<b>%1</b>"), message);
@@ -419,6 +414,7 @@ void GtkSingleUrl::job_failed(string* message) {
      JobLine doesn't overwrite all data from the first one, we end up with
      file contents like "data from 2nd download" + "up to a page full of null
      bytes" + "stale data from 1st download". */
+  job->setDestStream(0);
   delete destStream;
   destStream = 0;
 
@@ -452,19 +448,22 @@ void GtkSingleUrl::job_message(string* message) {
 //______________________________________________________________________
 
 // Don't need this info - ignore
-void GtkSingleUrl::singleURL_dataSize(uint64) {
+void GtkSingleUrl::singleUrl_dataSize(uint64) {
   return;
 }
 //______________________________________________________________________
 
-void GtkSingleUrl::singleURL_data(const byte* data, unsigned size,
+void GtkSingleUrl::singleUrl_data(const byte* /*data*/, unsigned /*size*/,
                                   uint64 /*currentSize*/) {
+# if DEBUG
+  cerr<<"GtkSingleUrl::singleUrl_data "<<job->progress()->currentSize()<<endl;
+# endif
   if (!needTicks())
     callRegularly(&GtkSingleUrl::showProgress);
 
   if (childMode()) return;
 
-  writeBytes(*destStream, data, size);
+  //writeBytes(*destStream, data, size);
   if (!*destStream) {
     /* According to Stroustrup, "all bets are off" WRT the state of the
        stream. We assume that this does *not* mean that junk has been
@@ -695,11 +694,12 @@ void GtkSingleUrl::restart() {
   delete destStream;
   destStream = 0;
   if (job != 0) {
+    job->setDestStream(0);
     Assert(!childMode());
     if (job->paused()) job->cont();
     job->stop();
-    delete job;
-    job = 0;
+//     delete job;
+//     job = 0;
   }
 
   // Start the new download

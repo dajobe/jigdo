@@ -136,8 +136,7 @@ namespace {
 
 Download::Download(const string& uri, Output* o)
     : uriVal(uri), resumeOffsetVal(0), resumeChecked(true), currentSize(0),
-      outputVal(o), request(0), state(CREATED)//, activated(0),
-      /*destroyRequestId(0)*/ {
+      outputVal(o), request(0), state(CREATED) {
 # if DEBUG
   insideNewData = false;
 # endif
@@ -177,26 +176,36 @@ Download::~Download() {
 }
 //______________________________________________________________________
 
-void Download::run(bool pragmaNoCache) {
+/* Important: Our HTRequest object can be used several times - we must ensure
+   that any non-default settings (e.g. "Range" header) are reset before
+   reusing it. */
+void Download::run(uint64 resumeOffset, bool pragmaNoCache) {
+# if DEBUG
+  cerr << "Download::run resumeOffset=" << resumeOffset << endl;
+# endif
   Assert(outputVal != 0); // Must have set up output
   Paranoid(request != 0); // Don't call this after stop()
   //Assert(destroyRequestId == 0); // No pending callback allowed from now on
   state = RUNNING;
+  resumeOffsetVal = currentSize = resumeOffset;
 
   // Force reload from originating server, bypassing proxies?
   if (pragmaNoCache)
     HTRequest_addGnHd(request, HT_G_PRAGMA_NO_CACHE);
+  else
+    HTRequest_setGnHd(request, static_cast<HTGnHd>(HTRequest_gnHd(request)
+                                                   & ~HT_G_PRAGMA_NO_CACHE));
 
   // Shall we resume the download from a certain offset?
-  if (resumeOffset() > 0) {
-
+  HTRequest_deleteRange(request); // Delete old range, if any
+  if (resumeOffset > 0) {
     /* TODO: If we contacted the host earlier, we could use
        HTHost_isRangeUnitAcceptable() to check whether the host accepts range
        requests. */
 
     // range can be "345-999" (both inclusive) or "345-"; offsets start at 0
     string range;
-    append(range, resumeOffset());
+    append(range, resumeOffset);
     range += '-';
     HTRequest_addRange(request, "bytes", const_cast<char*>(range.c_str()));
     /* A server can ignore the range for various reasons (unsupported,
@@ -205,8 +214,6 @@ void Download::run(bool pragmaNoCache) {
        present and "206 Partial Response" <=> partial retrieval OK). Check
        later whether Content-Range is present and correct. */
     resumeChecked = false;
-
-    currentSize = resumeOffset();
   }
 
   if (HTLoad(request, NO) == NO) generateError();

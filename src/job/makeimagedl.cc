@@ -17,6 +17,8 @@
 
 #include <config.h>
 
+#include <fstream>
+
 #include <compat.hh>
 #include <jigdodownload.hh>
 #include <makeimagedl.hh>
@@ -59,13 +61,19 @@ void MakeImageDl::run() {
   // Now create tmpdir
   //cerr<<"TMPDIR="<<tmpDirVal<<endl;
   int status = compat_mkdir(tmpDir().c_str());
-  if (status != 0 /*&& errno != EEXIST*/) { // FIXME: Resume if EEXIST
-    string error = subst(_("Could not create temporary directory: "
-                           "%L1"), strerror(errno));
-    generateError(&error);
-    return;
+  if (status != 0) {
+    if (errno == EEXIST) {
+      // FIXME: Resume if EEXIST
+      cerr << "RESUME NOT YET SUPPORTED, SORRY" << endl;
+    } else {
+      string error = subst(_("Could not create temporary directory: "
+                             "%L1"), strerror(errno));
+      generateError(&error);
+      return;
+    }
   }
 
+  writeReadMe();
   jigdo = new JigdoDownload(this, 0, jigdoUrl, mi.configFile().end());
 }
 
@@ -76,4 +84,35 @@ void MakeImageDl::error(const string& message) {
 }
 void MakeImageDl::info(const string&) {
   Assert(false); // ATM, is never called!
+}
+//______________________________________________________________________
+
+void Job::MakeImageDl::writeReadMe() {
+  string readmeName = tmpDir();
+  readmeName += DIRSEP;
+  readmeName += "ReadMe.txt";
+  ofstream f(readmeName.c_str());
+  f << subst(_(
+    "Jigsaw Download - half-finished download\n"
+    "\n"
+    "This directory contains the data for a half-finished download of a\n"
+    ".jigdo file. Unless you do not want to continue with the download, do\n"
+    "not change or delete any of the files in this directory!\n"
+    "\n"
+    "If the jigdo application was stopped and you want it to resume this\n"
+    "download, simply enter again the same values you used the first time.\n"
+    "\n"
+    "In the \"URL\" field, enter:\n"
+    "  %1\n"
+    "\n"
+    "In the \"Save to\" field, enter the parent directory of the directory\n"
+    "containing this file. Unless you have moved it around, the correct\n"
+    "value is:\n"
+    "  %2\n"
+    "\n"
+    "\n"
+    "[Download]\n"
+    "URL=%1\n"
+    "Destination=%2\n"
+    ), jigdoUri(), dest);
 }

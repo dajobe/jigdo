@@ -40,8 +40,18 @@ inline istream& readBytes(istream& s, byte* buf, streamsize count) {
   return s.read(reinterpret_cast<char*>(buf), count);
 }
 
+inline iostream& readBytes(iostream& s, byte* buf, streamsize count) {
+  s.read(reinterpret_cast<char*>(buf), count);
+  return s;
+}
+
 inline ostream& writeBytes(ostream& s, const byte* buf, streamsize count) {
   return s.write(reinterpret_cast<const char*>(buf), count);
+}
+
+inline iostream& writeBytes(iostream& s, const byte* buf, streamsize count) {
+  s.write(reinterpret_cast<const char*>(buf), count);
+  return s;
 }
 
 // template<class somestream>

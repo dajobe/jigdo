@@ -16,6 +16,7 @@
 #ifndef SINGLE_URL_HH
 #define SINGLE_URL_HH
 
+#include <bstream.hh>
 #include <job.hh>
 #include <download.hh>
 #include <nocopy.hh>
@@ -48,9 +49,8 @@ public:
   class IO;
 
   /** Number of bytes to download again when resuming a download. These bytes
-      will be compared with the old data. This value is never read by
-      SingleUrl itself, it's just a hint for code using SingleUrl. */
-  static const unsigned RESUME_SIZE = 64*1024;
+      will be compared with the old data. */
+  static const unsigned RESUME_SIZE = 16*1024;
   /** Number of times + 1 a download for the same URL will be resumed. A
       resume is necessary if the connection drops unexpectedly. */
   static const int MAX_TRIES = 20;
@@ -60,26 +60,9 @@ public:
       SingleUrl. */
   static const int RESUME_DELAY = 3000;
 
-  /** Create object and immediately start the download. If offset == 0, the
-      download starts from the beginning, otherwise we resume the download
-      from that offset.
-
-      When resuming, the IO object will eventually be fed data starting from
-      the given offset. However, before that, we download the preceding
-      bufLen bytes again (i.e. offsets [offset-bufLen;offset) ) and compare
-      them with the data supplied in buf. If there is a mismatch, the file
-      changed on the server and IO::job_failed() is called. If a resume is
-      not possible (e.g. server does not support HTTP ranges), there's also
-      an error.
-
-      @param buf An ARRAY WHICH MUST HAVE BEEN ALLOCATED WITH new[]
-      containing bufLen bytes of previously downloaded data. Will be freed
-      automatically. Can be null if bufLen is also 0.
-      @param bufLen length of buf. An assertion will trigger and you will be
-      slapped over the head if bufLen>offset */
-  SingleUrl(IO* ioPtr, const string& uri, uint64 offset = 0,
-            const byte* buf = 0, size_t bufLen = 0,
-            bool pragmaNoCache = false);
+  /** Create object, but don't start the download yet - use run() to do that.
+      @param uri URI to download */
+  SingleUrl(IO* ioPtr, const string& uri);
   virtual ~SingleUrl();
 
   /** This class does not have a public io member because this interferes
@@ -87,6 +70,41 @@ public:
       the correct io object, use this method. */
   virtual IOPtr<SingleUrl::IO>& io();
   virtual const IOPtr<SingleUrl::IO>& io() const;
+
+  /*  Start download or resume it
+
+      If resumeOffset>0, SingleUrl will first read RESUME_SIZE bytes from
+      destStream at offset destOffset+resumeOffset-RESUME_SIZE (or less if
+      the first read byte would be <destOffset otherwise). These bytes are
+      compared to bytes downloaded and *not* passed on to the IO object.
+
+      All following bytes are written to destStream as well as passed to the
+      IO object. We seek to the correct position each time when writing, so
+      several parallel downloads for the same destStream are possible.
+
+      An error is raised if you want to resume but the server doesn't support
+      it, or if the server wants to send more data than expected, i.e. the
+      byte at destEndOffset inside destStream would be overwritten, or if
+      destEndOffset is set and the size of the data as reported by the server
+      is not destEndOffset-destOffset.
+
+      @param resumeOffset 0 to start download from start. Otherwise,
+      destStream[destOffset;destOffset+resumeOffset) is expected to contain
+      data from an earlier, partial download. The last up to RESUME_SIZE
+      bytes of these will be read from the file and compared to newly
+      downloaded data.
+      @param destStream Stream to write downloaded data to, or null. Is *not*
+      closed from the dtor!
+      @param destOffset Offset of URI's data within the file. 0 for
+      single-file download, >0 if downloaded data is to be written somewhere
+      inside a bigger file.
+      @param destEndOffset Offset of first byte in destStream (>destOffset)
+      which the SingleUrl is not allowed to overwrite. 0 means don't care, no
+      limit.
+      @param pragmaNoCache If true, perform a "reload", discarding anything
+      cached e.g. in a proxy. */
+  void run(uint64 resumeOffset, bfstream* destStream, uint64 destOffset,
+           uint64 destEndOffset, bool pragmaNoCache);
 
   /** Current try - possible values are 1..MAX_TRIES (inclusive) */
   inline int currentTry() const;
@@ -114,6 +132,12 @@ public:
   /** Return the internal progress object */
   inline const Progress* progress() const;
 
+  /** Return the registered destination stream, or null */
+  inline bfstream* destStream() const;
+
+  /** Set destination stream, can be null */
+  inline void setDestStream(bfstream* destStream);
+
   /** Call this after the download has failed (and your job_failed() has been
       called), to check whether resuming the download is possible. Returns
       true if resume is possible, i.e. error was not permanent and maximum
@@ -125,22 +149,21 @@ public:
       an error doing so. */
   inline void setNoResumePossible();
 
-  /** After resumePossible() returned true, call this to resume the download.
-      Buf and buflen must be set up as described above, the first byte in buf
-      must be the byte at offset (progress()->currentSize() - bufLen). bufLen
-      can be 0; in this case, buf can be null too. */
-  void resume(const byte* buf, size_t bufLen);
-
 private:
   IOPtr<IO> ioVal; // Points to e.g. a GtkSingleUrl
 
   // Virtual methods from Download::Output
   virtual void download_dataSize(uint64 n);
-  virtual void download_data(const byte* data, size_t size,
+  virtual void download_data(const byte* data, unsigned size,
                              uint64 currentSize);
   virtual void download_succeeded();
   virtual void download_failed(string* message);
   virtual void download_message(string* message);
+
+  /* Write bytes at specified offset. Return FAILURE and call
+     ioVal->job_failed() if error during writing or if written data would
+     exceed destEndOff. */
+  inline bool writeToDestStream(uint64 off, const byte* data, unsigned size);
 
   Download download; // download.run() called by ctor
   Progress progressVal;
@@ -155,10 +178,9 @@ private:
   static gboolean resumeFailed_callback(gpointer data);
   unsigned int resumeFailedId; // GTK idle function id, or 0 if none
 
-  // All 3 are null if we're not / no longer resuming
-  const byte* resumeStart; // ptr to start of buffer
-  const byte* resumePos; // current pos in buffer
-  const byte* resumeEnd; // ptr to first byte after buffer
+  bfstream* destStreamVal;
+  uint64 destOff, destEndOff;
+  unsigned resumeLeft; // >0: Nr of bytes of resume overlap left
 
   int tries; // Nr of tries resuming after interrupted connection
 };
@@ -186,22 +208,26 @@ public:
   /** Called as soon as the size of the downloaded data is known. May not be
       called at all if the size is unknown.
       Problem with libwww: Returns size as long int - 2 GB size limit! */
-  virtual void singleURL_dataSize(uint64 n) = 0;
+  virtual void singleUrl_dataSize(uint64 n) = 0;
 
   /** Called during download whenever data arrives, with the data that just
       arrived. You can write the data to a file, copy it away etc.
       currentSize is the offset into the downloaded data (including the
       "size" new bytes) - useful for "x% done" messages. */
-  virtual void singleURL_data(const byte* data, size_t size,
+  virtual void singleUrl_data(const byte* data, size_t size,
                               uint64 currentSize) = 0;
 };
 //======================================================================
 
 int Job::SingleUrl::currentTry() const { return tries; }
-bool Job::SingleUrl::resuming() const { return resumePos != resumeEnd; }
+bool Job::SingleUrl::resuming() const { return resumeLeft > 0; }
 bool Job::SingleUrl::failed() const { return download.failed(); }
 bool Job::SingleUrl::succeeded() const { return download.succeeded(); }
 const Progress* Job::SingleUrl::progress() const { return &progressVal; }
+bfstream* Job::SingleUrl::destStream() const { return destStreamVal; }
+void Job::SingleUrl::setDestStream(bfstream* destStream) {
+  destStreamVal = destStream;
+}
 bool Job::SingleUrl::resumePossible() const {
   if (tries >= MAX_TRIES || !download.interrupted()) return false;
   if (progressVal.currentSize() == 0) return true;

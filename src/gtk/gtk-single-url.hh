@@ -81,8 +81,8 @@ private:
   virtual void job_succeeded();
   virtual void job_failed(string* message);
   virtual void job_message(string* message);
-  virtual void singleURL_dataSize(uint64 n);
-  virtual void singleURL_data(const byte* data, unsigned size,
+  virtual void singleUrl_dataSize(uint64 n);
+  virtual void singleUrl_data(const byte* data, unsigned size,
                               uint64 currentSize);
 
   /* Return true if the object was created using the second ctor, i.e. with a
