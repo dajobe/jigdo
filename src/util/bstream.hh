@@ -145,8 +145,8 @@ bistream& bistream::seekg(long off, ios::seekdir dir) {
     whence = SEEK_END;
   else
     { Assert(false); whence = SEEK_SET; }
-  int r = fseek(f, off, whence);
-  Assert((r == -1) == (ferror(f) != 0));
+  /*int r =*/ fseeko(f, off, whence);
+  // Fails: Assert((r == -1) == (ferror(f) != 0));
   return *this;
 }
 
@@ -159,13 +159,13 @@ bostream& bostream::seekp(long off, ios::seekdir dir) {
     whence = SEEK_END;
   else
     { Assert(false); whence = SEEK_SET; }
-  int r = fseek(f, off, whence);
-  Assert((r == -1) == (ferror(f) != 0));
+  /*int r =*/ fseeko(f, off, whence);
+  // Fails: Assert((r == -1) == (ferror(f) != 0));
   return *this;
 }
 
 uint64 bistream::tellg() const {
-  return ftell(f);
+  return ftello(f);
 }
 
 void bistream::getline(string& l) {
