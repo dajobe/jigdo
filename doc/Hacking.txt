@@ -78,6 +78,16 @@ Windows/Solaris/BSD/MacOS porting:
   It'd also be nice if someone ensured that it builds on
   Redhat/SuSE/Mandrake, and maintained the jigdo.spec file.
 
+Non-interactive frontend for jigdo:
+
+  The current GTK+ jigdo program is meant to be used interactively,
+  not from a script or similar. The moment it is released, I will be
+  inundated with requests for a version which does not need GTK+ or
+  which behaves more like wget, or which uses curses, or...
+
+  The code is organized in a way which makes adding new frontends
+  quite easy. (Model-View yada yada...;-)
+
 CGI-like program for on-the-fly creation from .jigdo/.template files:
 
   With Debian, we have lots of mirror admins who have the bandwidth to
@@ -126,12 +136,11 @@ avoid duplication of effort.
 Note: Don't translate any of the strings beginning with '#'. glade
 doesn't allow me to selectively switch off the "gettextizing" of some
 strings, and it would make editing the .glade file awkward if I left
-those strings empty, so I'm marking these string with the '#'.
+those strings empty, so I'm marking them with the '#'.
 
 
 Directory layout
 ~~~~~~~~~~~~~~~~
-
 src:
 
     Files which don't belong into one of the subdirs... Also contains
@@ -152,7 +161,8 @@ src/net: Low-level network access.
     Required features for any replacement for libwww are HTTP/1.1
     support (both pipelining and ranges), multiple simultaneous
     connections (either multi-threaded or single-threaded with
-    select()) and portability to Windows.
+    select()) and portability to Windows. [libcurl has all of these
+    except pipelining.]
 
     Files in this dir may make calls to glib, but not gtk.
 
@@ -164,18 +174,18 @@ src/job: Application logic
     the gtk GUI's decision.
 
     All jobs are classes in namespace "Job". Each such class declares
-    a pure virtual child class (i.e. an interface) named "IO", which
-    the code of the user interface needs to implement. For example,
+    an abstract child class (i.e. an interface) named "IO", which the
+    code of the user interface needs to implement. For example,
     Job::SingleURL::IO is implemented by some code in the src/gtk
-    directory (GtkSingleUrl), which when called sets up some gtk
+    directory (GtkSingleUrl), which when called sets up some GTK
     widgets.
 
     Files in this dir may make calls to glib, but not gtk.
 
 src/gtk: GTK+ graphical user interface
 
-    Provides a way to access the facilities of "jobs" via gtk widgets
-    etc. This is the only dir whose files may make calls to gtk (and
+    Provides a way to access the facilities of "jobs" via GTK widgets
+    etc. This is the only dir whose files may make calls to GTK (and
     of course also glib).
 
 src/util: Independent small helper classes
@@ -217,6 +227,7 @@ file which tests the code. If the name of the file is "foo-test.cc"
 (with a "-"), depend.awk will automatically generate a simple Makefile
 entry. If that entry is not sufficient, call the file "footest.cc" and
 manually add a Makefile rule.
+[Maybe I should switch to cppunit sometime...]
 
 Lines must not be longer than 77 characters. To format comments to
 exactly that width, and also never to use tabs for indentation, use
@@ -229,7 +240,8 @@ args, use pointers instead. If I call a function, I want to see that
 I'm calling it as "function(&data)", so "data" may be modified.
 
 Don't use multiple inheritance, except if all but one of the base
-classes are completely abstract (i.e. are "interfaces").
+classes are abstract or trivial (where "trivial" is things like
+NoCopy, which prevents copying of its derived classes).
 
 Don't have identically named classes in different namespaces, big
 confusion will ensue. (Don't over-use namespaces in the first place.)
@@ -253,7 +265,7 @@ script. See also the comments in scripts/depend.awk.
 
 Implementation
 ~~~~~~~~~~~~~~
-The application logic in job/ and net/ is separated from the front-end
+The application logic in job/ and net/ is separated from the frontend
 in gtk/. Each Job corresponds to one action (downloading a file,
 processing a .jigdo file), the GTK GUI decides to visualize this as
 one line in the display.
@@ -276,7 +288,9 @@ to create and destroy top-level jobs. Any job created by a "master"
 MakeImageDl can only be deleted by the same MakeImageDl. This means
 that the GUI code which handles SingleURL GTK+ visualization must
 distinguish between a "child mode" (we don't own the SingleUrl) and
-"non-child mode" (we created and own the SingleUrl).
+"non-child mode" (we created and own the SingleUrl). It might even be
+advisable to have two classes for the two cases; ATM the GTK+ frontend
+doesn't.
 
 
 MakeImageDl
@@ -286,14 +300,13 @@ the frontend in gtk/ is decoupled from the application logic in job/
 and other dirs.
 
 Basic idea: In the object that makes data available (e.g. SingleUrl in
-the case of a HTTP/FTP download), maintain a pointer to a
-SingleUrl::IO object. SingleUrl::IO is an abstract class, to be
-implemented by the "consumer" of the data. This consumer is fed the
-data via calls to virtual methods like
-SingleUrl::IO::singleUrl_data(). There are many IO classes; Job::IO is
-their base (see job.hh). Implementers of SingleUrl::IO include
-GtkSingleUrl (GTK+ frontend) and JigdoIO (decompression/parsing of
-.jigdo data.)
+the case of a HTTP/FTP download), maintain a pointer to an IO object. 
+SingleUrl::IO is an abstract class, to be implemented by the
+"consumer" of the data. This consumer is fed the data via calls to
+virtual methods like SingleUrl::IO::singleUrl_data(). There are many
+IO classes; Job::IO is their base (see job.hh). Implementers of
+SingleUrl::IO include GtkSingleUrl (GTK+ frontend) and JigdoIO
+(decompression/parsing of .jigdo data.)
 
 Often, there is more than one consumer, resulting in chains or even
 trees of consumers. For example, when downloading .jigdo data, the
@@ -325,7 +338,7 @@ output image.
 
 With childFor(), MakeImageDl is a factory of DataSource objects. A
 DataSource can be either a download (SingleUrl) or a "dummy" spooler
-object which just reads data from a file in the cache (CachedUrl). 
+object which just reads data from a file in the cache (CachedUrl).
 After creation of the DataSource, an appropriate consumer for the
 downloaded data (e.g. a JigdoIO) is attached to it.
 

@@ -34,10 +34,10 @@ All the following steps happen on the build machine, i.e. under Linux.
 
 - Get a MinGW cross-compiler. Under Debian, this is as easy as
   "apt-get install mingw32 mingw32-binutils mingw32-runtime", for
-  other distros you might be able to find some RPMs somewhere. 
+  other distros you might be able to find some RPMs somewhere.
   Building your own cross-compiler is not that easy, if you really
   want to go that way, look on the net for cross-compile guides. Maybe
-  have a look at my own "build-cross-gcc" script. 
+  have a look at my own "build-cross-gcc" script.
   <http://atterer.net/debian/>
 - Get GTK+ 2.x for Windows from
   <http://www.gimp.org/~tml/gimp/win32/downloads.html>. You need
@@ -60,7 +60,7 @@ All the following steps happen on the build machine, i.e. under Linux.
   CXX="i586-mingw32msvc-c++ -mms-bitfields -march=pentium -I$GTKWIN/include -L$GTKWIN/lib"
   PATH=$LIBWWW/bin:$PATH
   PKG_CONFIG_PATH=$GTKWIN/lib/pkgconfig
-- configure jigdo --without-libdb --with-pkg-config-prefix=$GTKWIN 
+- configure jigdo --without-libdb --with-pkg-config-prefix=$GTKWIN
   --with-uint64=unsigned_long_long --disable-nls
 
 Using samba, I export the directory with the cross-compiled binaries

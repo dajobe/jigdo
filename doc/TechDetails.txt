@@ -17,7 +17,7 @@ Additional notes:
    appended to the end of the Base64 string.
 
 Support for automatic ungzipping of .jigdo files is currently not
-present in jigdo-file.
+present in jigdo-file, only in jigdo.
 
 
 

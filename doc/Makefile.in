@@ -16,7 +16,7 @@ DOCBOOK2HTML =	docbook2html
 
 .sgml.1:
 		mkdir -p tmp && cp "$<" tmp \
-		    && cd tmp && $(DOCBOOK2MAN) "$<"
+		    && cd tmp && $(DOCBOOK2MAN) "`echo $< | sed 's%.*/%%'`"
 		sed -e 's/   */ /g' <"`ls tmp/*.1`" >"$@"
 		rm -rf tmp
 #		sed -e 's%\\%\\\\%g;' <"$<" | tr -s '[:space:]' ' ' \
