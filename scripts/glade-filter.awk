@@ -69,6 +69,13 @@ BEGIN {
   sub(/\.hh?\.tmp/, ".hh");
 }
 
+/^# *include <config.h>$/ { afterConfigInclude = 1; }
+/^$/ && afterConfigInclude {
+  # RA 2004-05-29: glade-2 output uses deprecated stuff
+  addcc("#ifdef GTK_DISABLE_DEPRECATED\n#  undef GTK_DISABLE_DEPRECATED\n#endif");
+  afterConfigInclude = 0;
+}
+
 #/@VERSION@/ {
 #  gsub(/@VERSION@/, version);
 #}
