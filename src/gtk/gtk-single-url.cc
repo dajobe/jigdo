@@ -18,9 +18,12 @@
 #include <autoptr.hh>
 #include <gtk-single-url.hh>
 #include <joblist.hh>
+#include <log.hh>
 #include <messagebox.hh>
 #include <string-utf.hh>
 //______________________________________________________________________
+
+DEBUG_UNIT("gtk-single-url")
 
 GtkSingleUrl::GtkSingleUrl(const string& uriStr, const string& destination)
   : uri(uriStr), dest(destination), progress(), status(), treeViewStatus(),
@@ -176,10 +179,8 @@ void GtkSingleUrl::openOutputAndResume() {
   }
 
   // An error occurred
-# if DEBUG
-  cerr << "GtkSingleUrl::openOutputAndResume: statResult=" << statResult
-       << ' ' << strerror(errno) << endl;
-# endif
+  debug("openOutputAndResume: statResult=%1, %2", statResult,
+        strerror(errno));
   treeViewStatus = _("<b>Open of output file failed</b>");
   string error = subst(_("Could not open output file: %L1"),
                        strerror(errno));
@@ -244,11 +245,8 @@ void GtkSingleUrl::cont() {
 }
 
 void GtkSingleUrl::stop() {
-# if DEBUG
-  //#warning "TODO what if childMode"
-  cerr << "Stopping SingleUrl " << (job != 0 ? job : 0) << " at byte "
-       << job->progress()->currentSize() << endl;
-# endif
+  debug("Stopping SingleUrl %1 at byte %2",
+        job, job->progress()->currentSize());
   destStream->sync();
   delete destStream;
   destStream = 0;
@@ -455,9 +453,7 @@ void GtkSingleUrl::singleUrl_dataSize(uint64) {
 
 void GtkSingleUrl::singleUrl_data(const byte* /*data*/, unsigned /*size*/,
                                   uint64 /*currentSize*/) {
-# if DEBUG
-  cerr<<"GtkSingleUrl::singleUrl_data "<<job->progress()->currentSize()<<endl;
-# endif
+  debug("singleUrl_data %1", job->progress()->currentSize());
   if (!needTicks())
     callRegularly(&GtkSingleUrl::showProgress);
 
@@ -488,7 +484,7 @@ void GtkSingleUrl::showProgress() {
 //     return;
 //   }
 
-//  cerr<<*job->progress()<<endl;
+//  debug("%1", *job->progress());
 
   if (job == 0 || job->failed() || job->succeeded()) return;
 
@@ -630,8 +626,7 @@ void GtkSingleUrl::afterCloseButtonClickedResponse(GtkDialog*, int r,
                                                    gpointer data) {
   if (r == GTK_RESPONSE_CANCEL) return;
   GtkSingleUrl* self = static_cast<GtkSingleUrl*>(data);
-  if (DEBUG) cerr << "GtkSingleUrl::afterCloseButtonClickedResponse: "
-                     "deleting " << self << endl;
+  debug("afterCloseButtonClickedResponse: deleting %1", self);
   delete self;
 }
 //______________________________________________________________________
@@ -660,11 +655,8 @@ void GtkSingleUrl::on_restartButton_clicked() {
   /* speed will be 0 after Pause+Stop, in that case just assume an arbitrary
      speed of 64kB/sec, which is better than nothing... */
   if (speed == 0) speed = 65536;
-# if DEBUG
-  cerr << "GtkSingleUrl::on_restartButton_clicked: cur="
-       << jobProgress->currentSize() << " speed=" << speed << " thresh="
-       << speed * RESTART_WARNING_THRESHOLD << endl;
-# endif
+  debug("on_restartButton_clicked: cur=%2 speed=%1 thresh=%3", speed,
+        jobProgress->currentSize(), speed * RESTART_WARNING_THRESHOLD);
   if (speed == 0
       || jobProgress->currentSize() < speed * RESTART_WARNING_THRESHOLD) {
     restart();

@@ -21,6 +21,9 @@
 // Define to 1 if "uint64 x; cout << x;" works
 #define HAVE_OUTUINT64 1
 
+// Is "#define debug(format, ...)" possible in C++? The C99 standard has it.
+#define HAVE_VARMACRO 0
+
 // Define to 1 if header <stddef.h> is available on the system
 #define HAVE_STDDEF_H 0
 #if HAVE_STDDEF_H

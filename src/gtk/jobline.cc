@@ -23,6 +23,8 @@
 #include <string-utf.hh>
 //______________________________________________________________________
 
+DEBUG_TO(JobList::debug)
+
 namespace {
 
   /* Returns true if last characters of uri are the same as ext.
@@ -152,5 +154,5 @@ JobLine::~JobLine() {
 
 void JobLine::waitTick() {
   if (--waitCountdown == 0) callRegularly(waitDestination);
-  JobList::debug("waitCountdown=%1", waitCountdown);
+  debug("waitCountdown=%1", waitCountdown);
 }

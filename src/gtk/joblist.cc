@@ -28,9 +28,11 @@
 #include <treeiter.hh>
 //______________________________________________________________________
 
-JobList GUI::jobList;
+#if DEBUG
+Logger JobList::debug("joblist");
+#endif
 
-DebugLogger JobList::debug("joblist");
+JobList GUI::jobList;
 
 const char* const JobList::PROGRESS_IMAGE_FILE = "progress-green.png";
 

@@ -24,11 +24,11 @@
    --debug command line switch. */
 Logger* Logger::list = 0;
 
-DebugLogger msg("general");
+Logger msg("general");
 
-Logger::Logger(const char* unitName)
+Logger::Logger(const char* unitName, bool enabled)
     : unitNameVal(unitName), unitNameLen(strlen(unitName)),
-      enabledVal(false), next(list) {
+      enabledVal(enabled), next(list) {
   list = this;
 }
 
@@ -58,4 +58,53 @@ void Logger::put(const char* format, int args, const Subst arg[]) const {
   cerr << unitNameVal << ':';
   if (unitNameLen < 15) cerr << "               " + unitNameLen;
   cerr << Subst::subst(format, args, arg) << endl;
+}
+//______________________________________________________________________
+
+/* The value of the --debug cmd line option is either missing (empty) or a
+   comma-separated list of words (we also allow spaces for the fun of it).
+   Each word can be preceded by a '!' for negation (i.e. disable debug
+   messages rather than enable them). The word is the name of a compilation
+   unit, or one of the special values "all" or "help". */
+void Logger::scanOptions(const string& s, const char* binName) {
+  unsigned i = 0;
+  string word;
+  bool enable;
+  unsigned len = s.length();
+  while (i < len) {
+    word.erase();
+    enable = true;
+    while ((s[i] == '!' || s[i] == ' ') && i < len) {
+      if (s[i] == '!') enable = !enable;
+      ++i;
+    }
+    while (s[i] != ' ' && s[i] != ',' && i < len) {
+      word += s[i]; ++i;
+    }
+    while ((s[i] == ',' || s[i] == ' ') && i < len) ++i;
+    if (word == "all") { // Argument "all" - all units
+      Logger::setEnabled(0, enable);
+    } else if (word != "help") { // Other word - the name of a unit
+      // Do not fail if unit not found - some units are only there with DEBUG
+      if (!Logger::setEnabled(word.c_str(), enable)) {
+        cerr << subst(_("%1: Unit `%2' not found while scanning --debug "
+                        "argument"), binName, word) << endl;
+        throw Cleanup(3);
+      }
+    } else { // Argument "help" - print list of units
+      Logger* l = Logger::enumerate();
+      cerr << _(
+      "By default, debug output is disabled except for `assert'. Argument\n"
+      "to --debug is a comma-separated list of unit names, or `all' for\n"
+      "all units. Just `--debug' is equivalent to`--debug=all'. Output for\n"
+      "the listed units is enabled, precede a name with `!' to disable it.\n"
+      "Registered units:");
+      while (l != 0) {
+        cerr << ' ' << l->name();
+        l = Logger::enumerate(l);
+      }
+      cerr << endl;
+      throw Cleanup(3);
+    }
+  }
 }

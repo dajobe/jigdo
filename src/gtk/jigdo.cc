@@ -46,12 +46,17 @@ const char* binaryName;
 
 vector<string> optUris;
 enum OptProxy { GUESS, ON, OFF } optProxy = GUESS;
+string optDebug;
 
 void tryHelp() {
   cerr << subst(_("%L1: Try `%L1 -h' or `man jigdo' for more "
                   "information"), binaryName) << endl;
   exit(3);
 }
+
+enum {
+  LONGOPT_DEBUG = 0x100, LONGOPT_NODEBUG
+};
 
 inline void cmdOptions(int argc, char* argv[]) {
   bool optHelp = false;
@@ -61,7 +66,9 @@ inline void cmdOptions(int argc, char* argv[]) {
   bool error = false;
   while (true) {
     static const struct option longopts[] = {
+      { "debug",              optional_argument, 0, LONGOPT_DEBUG },
       { "help",               no_argument,       0, 'h' },
+      { "no-debug",           no_argument,       0, LONGOPT_NODEBUG },
       { "proxy",              required_argument, 0, 'Y' },
       { "version",            no_argument,       0, 'v' },
       { 0, 0, 0, 0 }
@@ -78,6 +85,10 @@ inline void cmdOptions(int argc, char* argv[]) {
       else cerr << subst(_("%L1: Please specify `on', `off' or `guess' after"
                            " --proxy"), binaryName) << endl;
       break;
+    case LONGOPT_DEBUG:
+      if (optarg) optDebug = optarg; else optDebug = "all";
+      break;
+    case LONGOPT_NODEBUG: optDebug.erase(); break;
     case '?': error = true;
     case ':': break;
     default:
@@ -97,9 +108,18 @@ inline void cmdOptions(int argc, char* argv[]) {
     "  -Y  --proxy=on/off/guess [guess]\n"
     "                   Turn proxy on or off, or guess from Mozilla/KDE/\n"
     "                   wget/lynx settings\n"
-    "  -v  --version    Output version info"), binaryName) << endl;
+    "  -v  --version    Output version info\n"
+    "  --debug[=all|=UNIT1,UNIT2...|=help]\n"
+    "                   [make-template] Print debugging information for\n"
+    "                   all units, or for specified units, or print list\n"
+    "                   of units. Can use `!', e.g. `all,!UNIT1'\n"
+    "  --no-debug       [make-template] No debugging info [default]\n"),
+    binaryName) << endl;
     exit(0);
   }
+
+  Logger::scanOptions(optDebug, binaryName);
+
   while (optind < argc) optUris.push_back(argv[optind++]);
 }
 
@@ -138,36 +158,45 @@ int main (int argc, char *argv[]) {
   textdomain(PACKAGE);
   bind_textdomain_codeset(PACKAGE, "UTF-8");
 # endif
+# if DEBUG
+  Logger::setEnabled("general");
+# endif
 
-  // Initialize GTK+ and display window
-  gtk_set_locale();
-  gtk_init(&argc, &argv);
-  {
-#   if !WINDOWS
-    add_pixmap_directory("../gfx");
-    add_pixmap_directory("gfx");
-#   endif
-    string pixDir = packageDataDir; pixDir += "pixmaps";
-    add_pixmap_directory(pixDir.c_str());
+  try {
+    // Initialize GTK+ and display window
+    gtk_set_locale();
+    gtk_init(&argc, &argv);
+    {
+#     if !WINDOWS
+      add_pixmap_directory("../gfx");
+      add_pixmap_directory("gfx");
+#     endif
+      string pixDir = packageDataDir; pixDir += "pixmaps";
+      add_pixmap_directory(pixDir.c_str());
+    }
+    GUI::create();
+    cmdOptions(argc, argv);
+    gtk_widget_show(GUI::window.window);
+
+    // Initialize networking code
+    Download::init();
+    if (optProxy != OFF) glibwww_parse_proxy_env();
+    if (optProxy == GUESS) proxyGuess();
+
+    // Start downloads of any URIs specified on command line
+    const char* dest = g_get_current_dir();
+    for (vector<string>::const_iterator i = optUris.begin(),
+           e = optUris.end(); i != e; ++i)
+      JobLine::create(i->c_str(), dest);
+    optUris.clear();
+    g_free((gpointer)dest);
+
+    gtk_main(); // Here be dragons
   }
-  GUI::create();
-  cmdOptions(argc, argv);
-  gtk_widget_show(GUI::window.window);
-
-  // Initialize networking code
-  Download::init();
-  if (optProxy != OFF) glibwww_parse_proxy_env();
-  if (optProxy == GUESS) proxyGuess();
-
-  // Start downloads of any URIs specified on command line
-  const char* dest = g_get_current_dir();
-  for (vector<string>::const_iterator i = optUris.begin(), e = optUris.end();
-       i != e; ++i)
-    JobLine::create(i->c_str(), dest);
-  optUris.clear();
-  g_free((gpointer)dest);
-
-  gtk_main(); // Here be dragons
+  catch (Cleanup c) {
+    msg("[Cleanup %1]", c.returnValue);
+    return c.returnValue;
+  }
 
 # if DEBUG && !WINDOWS
   const char* preload = getenv("LD_PRELOAD");

@@ -23,7 +23,9 @@
 #  endif
 #endif
 
-// One object for each offset in image where any file /might/ match
+/** One object for each offset in image where any file /might/ match. Class
+    interface is tailored towards mktemplate's needs, hence the unusual
+    methods... */
 class MkTemplate::PartialMatch {
   friend class MkTemplate::PartialMatchQueue;
 public:

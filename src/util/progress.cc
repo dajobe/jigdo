@@ -28,9 +28,9 @@
 #include <log.hh>
 #include <progress.hh>
 #include <string-utf.hh>
-
-namespace { DebugLogger debug("progress"); }
 //______________________________________________________________________
+
+DEBUG_UNIT("progress")
 
 /** Append to s something like "9999B", "9999kB", "9999MB", "99.9MB" */
 void Progress::appendSize(string* s, uint64 size) {

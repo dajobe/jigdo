@@ -114,6 +114,8 @@ private:
   static const unsigned INITIAL_SECTOR_LENGTH = 512;
   static const unsigned MAX_SECTOR_LENGTH = 65536;
 
+  /* debug(...) may be defined as a CPP macro. Luckily, that won't affect
+     this occurance of the word. */
   static Logger debug;
 
   // Disallow assignment; op is never defined

@@ -437,51 +437,6 @@ size_t scanTimespan(const char* str) {
 }
 //______________________________________________________________________
 
-/* The value of the --debug cmd line option is either missing (empty) or a
-   comma-separated list of words (we also allow spaces for the fun of it).
-   Each word can be preceded by a '!' for negation (i.e. disable debug
-   messages rather than enable them). The word is the name of a compilation
-   unit, or one of the special values "all" or "help". */
-void scanOptDebug(const string& s) {
-  unsigned i = 0;
-  string word;
-  bool enable;
-  unsigned len = s.length();
-  while (i < len) {
-    word.erase();
-    enable = true;
-    while ((s[i] == '!' || s[i] == ' ') && i < len) {
-      if (s[i] == '!') enable = !enable;
-      ++i;
-    }
-    while (s[i] != ' ' && s[i] != ',' && i < len) {
-      word += s[i]; ++i;
-    }
-    while ((s[i] == ',' || s[i] == ' ') && i < len) ++i;
-    if (word == "all") { // Argument "all" - all units
-      Logger::setEnabled(0, enable);
-    } else if (word != "help") { // Other word - the name of a unit
-      // Do not fail if unit not found - some units are only there with DEBUG
-      if (!Logger::setEnabled(word.c_str(), enable))
-        cerr << subst(_("%1: Unit `%2' not found while scanning --debug "
-                        "argument"), binName(), word) << endl;
-    } else { // Argument "help" - print list of units
-      Logger* l = Logger::enumerate();
-      cerr << _(
-      "Argument to --debug is a comma-separated list of unit names, or\n"
-      "`all' for all units. By default, debug output for the listed units\n"
-      "is enabled, precede the name with `!' to disable it.\n"
-      "Registered units:");
-      while (l != 0) {
-        cerr << ' ' << l->name();
-        l = Logger::enumerate(l);
-      }
-      cerr << endl;
-    }
-  }
-}
-//______________________________________________________________________
-
 /* Try creating a filename in dest by stripping any file extension
    from source and appending ext.
    Only deduceName() should call deduceName2(). */
@@ -627,7 +582,7 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
     throw Cleanup(0);
   }
 
-  scanOptDebug(optDebug);
+  Logger::scanOptions(optDebug, binName().c_str());
   //______________________________
 
   // Silently correct invalid blockLength/md5BlockLength args

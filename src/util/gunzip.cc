@@ -20,9 +20,9 @@
 #include <debug.hh>
 #include <gunzip.hh>
 #include <log.hh>
-
-namespace { DebugLogger debug("gunzip"); }
 //______________________________________________________________________
+
+DEBUG_UNIT("gunzip")
 
 void Gunzip::error(const char* msg) {
   string err = _("Decompression error");

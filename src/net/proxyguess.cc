@@ -30,7 +30,7 @@
 #include <proxyguess.hh>
 //______________________________________________________________________
 
-namespace { DebugLogger debug("proxyguess"); }
+DEBUG_UNIT("proxyguess")
 
 #if WINDOWS
 

@@ -73,6 +73,29 @@ fi
 AC_CACHE_SAVE
 dnl ________________________________________
 
+dnl C99-style vararg macros are not supported by GCC 2.95
+AC_CACHE_CHECK([whether the C++ preprocessor supports variable-arg macros],
+               jigdo_cv_prog_cxx_varmacro,
+    AC_TRY_COMPILE(
+    #if defined(__GNUC__) && __GNUC__ < 3
+    #  define debug(_args...) do { } while (false)
+    #else
+    #  define debug(...) do { } while (false)
+    #endif
+    int foo() {
+      int debug = 0; // No substitution!
+      debug("!");
+      debug("%1", debug);
+      return debug;
+    },, jigdo_cv_prog_cxx_varmacro="yes", jigdo_cv_prog_cxx_varmacro="no")
+)
+if test "$jigdo_cv_prog_cxx_varmacro" = "yes"; then
+    AC_DEFINE(HAVE_VARMACRO, 1)
+else
+    AC_DEFINE(HAVE_VARMACRO, 0)
+fi
+dnl ________________________________________
+
 AC_CHECK_PROG(have_wget, wget, yes, no)
 if test "$have_wget" = "no"; then
     AC_MSG_RESULT([   * wget was not found on your system. Please install])

@@ -15,6 +15,10 @@ Written by Richard Atterer:  atterer.net>
 To build the programs, execute:
     ./configure && make
 
+(If no file named "configure" is present in this directory, you have
+downloaded a jigdo CVS snapshot. Have a look at the "bootstrapping"
+section in doc/Hacking.txt.)
+
 After a successful build, you can install the program (by default into
 /usr/local) with
 
@@ -22,9 +26,6 @@ After a successful build, you can install the program (by default into
 
 To build Debian packages (.deb) from the sources, execute:
     deb/rules
-
-To compile jigdo-file on the old Debian "potato" release, use:
-    ./configure --without-libdb --without-gui && make
 
 To build an RPM package (.rpm) from the sources, execute:
     rpmbuild -ta jigdo-x.y.z.tar.bz2

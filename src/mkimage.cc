@@ -35,9 +35,9 @@
 
 //______________________________________________________________________
 
-namespace {
+DEBUG_UNIT("make-image")
 
-DebugLogger debug("make-image");
+namespace {
 
 typedef JigdoDesc::ProgressReporter ProgressReporter;
 
@@ -161,10 +161,9 @@ bistream& JigdoDescVec::get(bistream& file)
       unserialize(rsum, f);
       unserialize(entryMd5, f);
       if (!file) break;
-      if (debug)
-        debug("JigdoDesc::read: %1 %2File %3 %4",
-              off, (type == JigdoDesc::MATCHED_FILE ? "Matched" : "Written"),
-              entryLen, entryMd5.toString());
+      debug("JigdoDesc::read: %1 %2File %3 %4",
+            off, (type == JigdoDesc::MATCHED_FILE ? "Matched" : "Written"),
+            entryLen, entryMd5.toString());
       if (type == JigdoDesc::MATCHED_FILE)
         desc.reset(new JigdoDesc::MatchedFile(off, entryLen, rsum,entryMd5));
       else
@@ -180,8 +179,8 @@ bistream& JigdoDescVec::get(bistream& file)
       unserialize6(entryLen, f);
       unserialize(entryMd5, f);
       if (!file) break;
-      if (debug) debug("JigdoDesc::read: old ImageInfo %1 %2",
-                       entryLen, entryMd5.toString());
+      debug("JigdoDesc::read: old ImageInfo %1 %2",
+            entryLen, entryMd5.toString());
       // Special case: passing blockLength==0, which is otherwise impossible
       desc.reset(new JigdoDesc::ImageInfo(entryLen, entryMd5, 0));
       push_back(desc.release());
@@ -193,10 +192,9 @@ bistream& JigdoDescVec::get(bistream& file)
       unserialize6(entryLen, f);
       unserialize(entryMd5, f);
       if (!file) break;
-      if (debug)
-        debug("JigdoDesc::read: %1 old %2File %3 %4", off,
-              (type == JigdoDesc::OBSOLETE_MATCHED_FILE ? "Matched" :
-               "Written"), entryLen, entryMd5.toString());
+      debug("JigdoDesc::read: %1 old %2File %3 %4", off,
+            (type == JigdoDesc::OBSOLETE_MATCHED_FILE ? "Matched" :
+             "Written"), entryLen, entryMd5.toString());
       /* Value of rsum is "don't care" because the ImageInfo's
          blockLength will be zero. */
       rsum.reset();
@@ -812,7 +810,7 @@ int JigdoDesc::makeImage(JigdoCache* cache, const string& imageFile,
       if (md != 0 && *md == m->md5()) {
         toCopy.push(&*ci); // Found matching file
         totalBytes += m->size();
-        if (debug) debug("%1 found, pushed %2", m->md5().toString(), &*ci);
+        debug("%1 found, pushed %2", m->md5().toString(), &*ci);
         found = true;
         break;
       }

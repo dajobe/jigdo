@@ -18,7 +18,7 @@
 //______________________________________________________________________
 
 Logger info("Log-test");
-DebugLogger debug("Flame-fest");
+Logger debug("Flame-fest");
 
 int main() {
   Logger::setEnabled("Log-test");

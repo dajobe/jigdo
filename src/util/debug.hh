@@ -43,12 +43,15 @@
 // inline bool optDebug() { return OptDebug::optDebug(); }
 //______________________________________________________________________
 
-// This prints an "Assertion failed" message
 namespace Debug {
-extern int assertFail(const char* assertion, const char* file,
-                       unsigned int line);
-extern int assertMessage(const char* assertion, const char* file,
-                         unsigned int line);
+
+  /** Print an "Assertion failed" message */
+  extern int assertFail(const char* assertion, const char* file,
+                        unsigned int line);
+
+//   extern int assertMessage(const char* assertion, const char* file,
+//                            unsigned int line);
+
 }
 #if DEBUG
 #  define Paranoid(_expr) \

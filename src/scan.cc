@@ -30,9 +30,9 @@
 #include <scan.hh>
 #include <string.hh>
 #include <serialize.hh>
-
-namespace { DebugLogger debug("scan"); }
 //______________________________________________________________________
+
+DEBUG_UNIT("scan")
 
 void JigdoCache::ProgressReporter::error(const string& message) {
   cerr << message << endl;
@@ -86,11 +86,9 @@ size_t FilePart::unserializeCacheEntry(const byte* data, size_t dataSize,
   // Ignore strange-looking entries
   if (blocks * serialSizeOf(md5Sum) != dataSize - PART_MD5SUM
       || blocks == 0) {
-    if (debug) {
-      if (blocks == 0) debug("ERR #blocks == 0");
-      else debug("ERR wrong entry size (%1 vs %2)",
-                 blocks * 16, dataSize - PART_MD5SUM);
-    }
+    if (blocks == 0) debug("ERR #blocks == 0");
+    else debug("ERR wrong entry size (%1 vs %2)",
+               blocks * 16, dataSize - PART_MD5SUM);
     return 0;
   }
   Paranoid(serialSizeOf(rsyncSum) == 8);
@@ -356,10 +354,9 @@ const MD5* FilePart::getSumsRead(JigdoCache* c, size_t blockNr) {
       size_t nn = n - mdLeft;
       do {
         md.finishForReuse();
-        if (debug)
-          debug("%1: mdLeft (0), switching to next md at off %2, left %3, "
-                "writing sum#%4: %5", name, off - n + cur - buf, nn,
-                sum - sums.begin(), md.toString());
+        debug("%1: mdLeft (0), switching to next md at off %2, left %3, "
+              "writing sum#%4: %5", name, off - n + cur - buf, nn,
+              sum - sums.begin(), md.toString());
         Paranoid(sum != sums.end());
         *sum = md;
         ++sum;
@@ -389,8 +386,8 @@ const MD5* FilePart::getSumsRead(JigdoCache* c, size_t blockNr) {
     c->reporter.scanningFile(this, size()); // 100% scanned
     if (mdLeft < c->md5BlockLength) {
       (*sum) = md.finish(); // Digest of trailing bytes
-      if (debug) debug("%1: writing trailing sum#%2: %3",
-                       name, sum - sums.begin(), md.toString());
+      debug("%1: writing trailing sum#%2: %3",
+            name, sum - sums.begin(), md.toString());
     }
     md5Sum.finish(); // Digest of whole file
     setFlag(MD_VALID);

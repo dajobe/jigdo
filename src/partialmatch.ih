@@ -185,7 +185,9 @@ MkTemplate::PartialMatch* MkTemplate::PartialMatchQueue::findDropCandidate(
 
     // All of the matches are sector-aligned - increase sector size & retry
     *sectorLength *= 2;
+#   if DEBUG
     MkTemplate::debug("Increased sector length to %1", *sectorLength);
+#   endif
   }
 }
 

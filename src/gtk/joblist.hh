@@ -51,7 +51,7 @@ public:
      of TICK_INTERVAL */
   static const int TICK_INTERVAL = 250; // = progress report update interval
 
-  static DebugLogger debug;
+  DEBUG_UNIT_LOCAL_DECL;
 
   typedef unsigned size_type;
   inline JobList();

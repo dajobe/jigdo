@@ -65,7 +65,7 @@
 #  define SSIZE_MAX (UINT_MAX)
 #endif
 
-DebugLogger debug("torture");
+DEBUG_UNIT_LOCAL("torture")
 //______________________________________________________________________
 
 /* I sometimes run torture on machines on which 'niced', the nice

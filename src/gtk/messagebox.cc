@@ -19,9 +19,9 @@
 #include <messagebox.hh>
 #include <string-utf.hh>
 #include <support.hh>
-
-namespace { DebugLogger debug("messagebox"); }
 //______________________________________________________________________
+
+DEBUG_UNIT("messagebox")
 
 const char* const MessageBox::MESSAGE = "gtk-dialog-info";
 const char* const MessageBox::INFO = "gtk-dialog-info";

@@ -165,7 +165,8 @@ src/job: Application logic
     a pure virtual child class (i.e. an interface) named "IO", which
     the code of the user interface needs to implement. For example,
     Job::SingleURL::IO is implemented by some code in the src/gtk
-    directory, which when called sets up some gtk widgets.
+    directory (GtkSingleUrl), which when called sets up some gtk
+    widgets.
 
     Files in this dir may make calls to glib, but not gtk.
 
@@ -181,7 +182,8 @@ src/util: Independent small helper classes
         - It is a single header file, optionally accompanied by a
           single .cc file and/or a corresponding *test.cc file
         - It accesses neither gtk nor glib
-        - It is a small, reusable tool, maybe useful for other projects
+        - It is a small, reusable tool, maybe useful for other
+          projects
 
 BTW, I try at all costs only to use C libraries from the code, never
 C++ libraries. You save yourself a lot of trouble that way, IMHO.

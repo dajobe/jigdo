@@ -26,9 +26,9 @@
 #include <zstream.hh>
 //______________________________________________________________________
 
-namespace {
+DEBUG_UNIT("zstream")
 
-  DebugLogger debug("zstream");
+namespace {
 
   // Turn zlib error codes/messages into C++ exceptions
   void throwZerror(int status, const char* zmsg) {
