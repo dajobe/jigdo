@@ -188,7 +188,6 @@ bindist:	Makefile
 		    bzip2 -f -9 "$$jdir.tar"; \
 		    rm -rf "$$jdir" src/jigdo-file
 
-# .jigdo file for Debian FTP mirrors - actively checks whether site is up
 debian-mirrors.jigdo: Mirrors.masterlist
 		$(AWK) -f $(srcdir)/scripts/convert-cvsmirrors.awk "$<" >"$@"
 
