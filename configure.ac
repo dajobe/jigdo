@@ -102,8 +102,9 @@ AC_CACHE_CHECK(whether the C++ compiler is recent enough,
         template<typename T = double> struct X {
           template<class U> void function(T* t, U* u);
         };
+        template<> struct X<void> { void function(void* t, int* u); };
       }
-      template<> void B::X<void>::function(void* t, int* u);
+      void B::X<void>::function(void*, int*) { }
     },, jigdo_cv_prog_cxx_recent="yes", jigdo_cv_prog_cxx_recent="no")
 )
 if test "$jigdo_cv_prog_cxx_recent" = "no"; then
