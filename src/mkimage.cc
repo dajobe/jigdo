@@ -891,11 +891,11 @@ int JigdoDesc::makeImage(JigdoCache* cache, const string& imageFile,
   if (task == CREATE_TMP) { // CREATE new tmp file
     name = imageTmpFile.c_str();
     finalName = imageFile.c_str();
-    imgDel.reset(new bfstream(name, ios::binary | ios::out));
+    imgDel.reset(new bfstream(name, ios::binary|ios::out|ios::trunc));
     img = imgDel.get();
   } else if (imageFile != "-") { // SINGLE_PASS; create output file
     name = imageFile.c_str();
-    imgDel.reset(new bfstream(name, ios::binary | ios::out));
+    imgDel.reset(new bfstream(name, ios::binary|ios::out|ios::trunc));
     img = imgDel.get();
   } else { // SINGLE_PASS, outputting to stdout
     name = "-";

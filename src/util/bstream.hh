@@ -199,7 +199,7 @@ bifstream::bifstream(const char* name, ios::openmode m) : bistream() {
 
 void bifstream::open(const char* name, ios::openmode m) {
   Paranoid((m & ios::binary) != 0 && f == 0);
-  f = fopen(name, "r");
+  f = fopen(name, "rb");
 }
 
 bofstream::bofstream(const char* name, ios::openmode m) : bostream() {
@@ -210,20 +210,20 @@ void bofstream::open(const char* name, ios::openmode m) {
   Paranoid((m & ios::binary) != 0 && f == 0);
   Paranoid((m & ios::ate) == 0);
   if ((m & ios::trunc) != 0)
-    f = fopen(name, "w+");
+    f = fopen(name, "w+b");
   else
-    f = fopen(name, "r+");
+    f = fopen(name, "r+b");
 }
 
 bfstream::bfstream(const char* name, ios::openmode m) : biostream() {
   Paranoid((m & ios::binary) != 0);
   Paranoid((m & ios::ate) == 0);
   if ((m & ios::out) == 0)
-    f = fopen(name, "r");
+    f = fopen(name, "rb");
   else if ((m & ios::trunc) != 0)
-    f = fopen(name, "w+");
+    f = fopen(name, "w+b");
   else
-    f = fopen(name, "r+");
+    f = fopen(name, "r+b");
 }
 
 #endif /* HAVE_WORKING_FSTREAM */

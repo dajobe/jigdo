@@ -93,7 +93,7 @@ bostream* openForOutput(bostream*& dest, const string& name) throw(Cleanup) {
     dest = &stdoutStream;
     return 0;
   }
-  dest = new bofstream(name.c_str(), ios::binary);
+  dest = new bofstream(name.c_str(), ios::binary|ios::trunc);
   if (!*dest) {
     cerr << subst(_("%1: Could not open `%2' for output: %3"),
                   binName(), name, strerror(errno)) << endl;
@@ -108,7 +108,7 @@ ostream* openForOutput(ostream*& dest, const string& name) throw(Cleanup) {
     dest = reinterpret_cast<ostream*>(&cout); // EEEEK!
     return 0;
   } else {
-    dest = new ofstream(name.c_str(), ios::binary);
+    dest = new ofstream(name.c_str(), ios::binary|ios::trunc);
     if (!*dest) {
       cerr << subst(_("%1: Could not open `%2' for output: %3"),
                     binName(), name, strerror(errno)) << endl;
