@@ -24,7 +24,6 @@
 #include <string>
 
 #include <datasource.hh>
-#include <gunzip.hh>
 #include <job.hh>
 #include <makeimage.hh>
 #include <makeimagedl.fh>
@@ -37,7 +36,7 @@
     MakeImageDl: Everything related to downloads
     <ul>
 
-      <li>Pushes .jigdo file contents from a SingleURL to the MakeImage
+      <li>Downloads and interprets .jigdo file contents
 
       <li>Downloads .template via SingleURL, notifies MakeImage once done
 
@@ -60,6 +59,8 @@
     See comments in makeimage.hh for the big picture. */
 class Job::MakeImageDl : NoCopy, public JigdoConfig::ProgressReporter {
 public:
+  class Child;
+
   class IO;
   IOPtr<IO> io; // Points to e.g. a GtkMakeImage
 
@@ -99,6 +100,26 @@ public:
       (ctor arg), contains a hash of the jigdoUri. Never ends in '/'. */
   inline const string& tmpDir() const;
 
+  /** Set state to ERROR and call io->job_failed */
+  inline void generateError(string* message, State newState = ERROR);
+  /** Return true if current state is final */
+  inline bool finalState() const;
+
+  /** To be called by implementers of DataSource::IO only: Notify this object
+      that the download is complete and that all bytes have been received.
+      Will also call io->makeImageDl_finished().
+      @param child The SingleUrl or similar whose IO pointer points to
+      childIo
+      @param childIo The "this" pointer of the DataSource::IO implementer.
+      @param frontendIo The IO object to which childIo forwards calls; e.g.
+      GtkSingleUrl. */
+  void childSucceeded(Child* childDl, DataSource::IO* childIo,
+                      DataSource::IO* frontend);
+  /** As above, but notify this object that the download has failed, not all
+      bytes have been received. */
+  void childFailed(Child* childDl, DataSource::IO* childIo,
+                   DataSource::IO* frontend);
+
 private:
   /** Methods from JigdoConfig::ProgressReporter */
   virtual void error(const string& message);
@@ -107,38 +128,35 @@ private:
   // Write a ReadMe.txt to the download dir; fails silently
   void writeReadMe();
 
-  /** Return an object which returns the data of the requested URL. That
-      returned object is usually a newly started download, except if the file
-      (or its beginning) was already downloaded. The filename is based on
-      either the base64ified md checksum, or (if that is 0), the b64ied md5
-      checksum of the url.
+  /** Return child download object which contains a DataSource which produces
+      the data of the requested URL. That returned object is usually a newly
+      started download, except if the file (or its beginning) was already
+      downloaded. The filename is based on either the base64ified md
+      checksum, or (if that is 0), the b64ied md5 checksum of the url.
       @return New object, or null if error (and io->job_failed was called) */
-  DataSource* dataSourceFor(const string& url, const MD5* md = 0);
+  Child* childFor(const string& url, const MD5* md = 0);
   // Helper methods for above
-  DataSource* dataSourceForCompleted(const struct stat& fileInfo,
-                                     const string& filename, const MD5* md);
-  DataSource* dataSourceForSemiCompleted(const struct stat& fileInfo,
-                                         const string& filename);
-
-  // Wraps around a SingleUrl, for downloading the .jigdo file
-  class JigdoDownload;
-  friend class JigdoDownload;
-
-  // Set state to ERROR and call io->job_failed
-  inline void generateError(string* message, State newState = ERROR);
-  // Return true if current state is final
-  inline bool finalState() const;
+  Child* childForCompleted(const struct stat& fileInfo,
+                           const string& filename, bool contentMdKnown,
+                           const MD5& cacheMd);
+  Child* childForSemiCompleted(const struct stat& fileInfo,
+                               const string& filename);
 
   State stateVal; // State, e.g. "downloading jigdo file", "error"
 
   string jigdoUrl; // URL of .jigdo file
-  Job::JigdoIO* jigdo; // .jigdo file; may contain tree of [Include]d files
+  Child* jigdo; // JigdoIO; may contain tree of [Include]d files
 
   string dest; // Destination dir. No trailing '/', empty string for root dir
   string tmpDirVal; // Temporary dir, a subdir of dest
 
   // Workhorse which actually generates the image from the data we feed it
   MakeImage mi;
+
+  // Accessed by JigdoIO
+//   string imageName;
+//   string imageDesc;
+//   MD5 templateMd5;
 };
 //______________________________________________________________________
 
@@ -191,6 +209,77 @@ public:
 };
 //______________________________________________________________________
 
+/** Each Child object stands for one DataSource (i.e. SingleUrl/CachedUrl)
+    which the MakeImageDl starts as a "child download" of itself. The Child
+    maintains a private pointer to a DataSource.
+
+    Used to store additional information which the MakeImageDl needs, e.g.
+    the filename in the cache. */
+class Job::MakeImageDl::Child : NoCopy {
+  friend class MakeImageDl;
+public:
+  ~Child() { delete sourceVal; delete childIoVal; }
+
+  /** @return The MakeImageDl which owns this object. */
+  MakeImageDl* master() const { return masterVal; }
+  /** @return The SingleUrl/CachedUrl owned by this object. */
+  DataSource* source() const { return sourceVal; }
+  /** @return The JigdoIO or similar owned by this object. null after init */
+  DataSource::IO* childIo() const { return childIoVal; }
+
+  void deleteSource() { delete sourceVal; sourceVal = 0; }
+private:
+  /** Only to be generated by MakeImageDl. */
+  inline Child(MakeImageDl* master, DataSource* src, bool contentMdKnown,
+               const MD5& mdOfContentOrUrl);
+  inline void setChildIo(DataSource::IO* c);
+
+  MakeImageDl* masterVal;
+  DataSource* sourceVal;
+  /** Most of the time, the value of childIoVal is the same as
+      sourceVal->io.get() - except when another Child has been started for
+      the same URL as we and is now waiting for us to finish; to be notified
+      when we finish, it'll insert another IO in sourceVal->io. */
+  DataSource::IO* childIoVal;
+  bool contentMd; // True <=> md is checksum of file contents (else of URL)
+  MD5 md;
+};
+
+#if 0
+/** Base for downloads etc started by MakeImageDl objects.
+
+    IMPORTANT: The MakeImageDl expects to be informed whether all data was
+    received or not - for this reason, your implementation of DataSource::IO
+    must include the following:
+
+      void job_succeeded() {
+        // "master" is the MakeImageDl, "source" is the DataSource
+        // "frontend" is the frontend IO object
+        master->childSucceeded(source, this, frontend);
+
+        // ...
+      }
+
+      void job_failed(string* message) {
+        master->childFailed(source, this, frontend);
+        // ...
+      }
+
+    As might be obvious from this, either one of childSucceeded/Failed()
+    *MUST* be called before the DataSource is deleted. */
+class Job::MakeImageDl::Child : public Job::DataSource::IO {
+public:
+  friend class MakeImageDl;
+  explicit inline Child(MakeImageDl* m);
+  inline MakeImageDl* master() const;
+private: // For MakeImageDl only:
+  string leafname;
+private: // "Really private":
+  MakeImageDl* masterVal; // Object which owns us
+};
+#endif
+//______________________________________________________________________
+
 const string& Job::MakeImageDl::jigdoUri() const { return jigdoUrl; }
 
 Job::MakeImageDl::State Job::MakeImageDl::state() const { return stateVal; }
@@ -203,5 +292,25 @@ void Job::MakeImageDl::generateError(string* message, State newState) {
 bool Job::MakeImageDl::finalState() const { return state() > FINAL_STATE; }
 
 const string& Job::MakeImageDl::tmpDir() const { return tmpDirVal; }
+
+#if 0
+Job::MakeImageDl::Child::Child(MakeImageDl* m) : masterVal(m) { }
+
+Job::MakeImageDl* Job::MakeImageDl::Child::master() const {
+  return masterVal;
+}
+#endif
+
+Job::MakeImageDl::Child::Child(MakeImageDl* master, DataSource* src,
+    bool contentMdKnown, const MD5& mdOfContentOrUrl)
+    : masterVal(master), sourceVal(src), childIoVal(0),
+      contentMd(contentMdKnown), md(mdOfContentOrUrl) { }
+
+void Job::MakeImageDl::Child::setChildIo(DataSource::IO* c) {
+  Paranoid(sourceVal->io.get() == 0);
+  sourceVal->io.set(c);
+  Paranoid(childIoVal == 0);
+  childIoVal = c;
+}
 
 #endif

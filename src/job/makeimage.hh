@@ -17,7 +17,6 @@
 #include <config.h>
 
 #include <debug.hh>
-#include <jigdo-io.hh>
 #include <jigdoconfig.hh>
 #include <nocopy.hh>
 //______________________________________________________________________
@@ -89,7 +88,7 @@
     MakeImageDl: Everything related to downloads
     <ul>
 
-      <li>Pushes .jigdo file contents from a SingleURL to the MakeImage
+      <li>Downloads and interprets .jigdo file contents
 
       <li>Downloads .template via SingleURL, notifies MakeImage once done
 

@@ -16,7 +16,7 @@
 #ifndef SINGLE_URL_HH
 #define SINGLE_URL_HH
 
-#include <bstream.hh>
+#include <bstream-counted.hh>
 #include <datasource.hh>
 #include <download.hh>
 #include <job.hh>
@@ -91,7 +91,7 @@ public:
       @param destEndOffset Offset of first byte in destStream (>destOffset)
       which the SingleUrl is not allowed to overwrite. 0 means don't care, no
       limit. */
-  void setDestination(bfstream* destStream,
+  void setDestination(BfstreamCounted* destStream,
                       uint64 destOffset, uint64 destEndOffset);
 
   /** Behaviour as above. Defaults if not called before run() is false, i.e.
@@ -138,9 +138,11 @@ public:
 
   /** Return the internal progress object. From DataSource. */
   virtual const Progress* progress() const;
+  /** Return the URL used to download the data. From DataSource. */
+  virtual const string& location() const;
 
   /** Return the registered destination stream, or null */
-  inline bfstream* destStream() const;
+  inline BfstreamCounted* destStream() const;
 
   /** Set destination stream, can be null */
   //inline void setDestStream(bfstream* destStream);
@@ -165,6 +167,9 @@ private:
   virtual void download_failed(string* message);
   virtual void download_message(string* message);
 
+  /** Stop download from idle callback. */
+  void stopLater();
+
   /* Write bytes at specified offset. Return FAILURE and call
      io->job_failed() if error during writing or if written data would
      exceed destEndOff. */
@@ -173,16 +178,16 @@ private:
   Download download; // download.run() called by ctor
   Progress progressVal;
 
-  // Register resumeFailed_callback
+  // Call io->job_failed(), then stopLater()
   inline void resumeFailed();
-  /* A callback function which is registered if the resume needs to be
-     aborted. It'll get executed the next time the main glib loop is
+  /* A callback function which is registered if the download/resume needs to
+     be aborted. It'll get executed the next time the main glib loop is
      executed. This delayed execution is necessary because libwww doesn't
      like Download::stop() being called from download_newData(). */
-  static gboolean resumeFailed_callback(gpointer data);
-  unsigned int resumeFailedId; // GTK idle function id, or 0 if none
+  static gboolean stopLater_callback(gpointer data);
+  unsigned int stopLaterId; // GTK idle function id, or 0 if none
 
-  bfstream* destStreamVal;
+  SmartPtr<BfstreamCounted> destStreamVal;
   uint64 destOff, destEndOff;
   unsigned resumeLeft; // >0: Nr of bytes of resume overlap left
 
@@ -203,7 +208,8 @@ int Job::SingleUrl::currentTry() const { return tries; }
 bool Job::SingleUrl::resuming() const { return resumeLeft > 0; }
 bool Job::SingleUrl::failed() const { return download.failed(); }
 bool Job::SingleUrl::succeeded() const { return download.succeeded(); }
-bfstream* Job::SingleUrl::destStream() const { return destStreamVal; }
+BfstreamCounted* Job::SingleUrl::destStream() const {
+  return destStreamVal.get(); }
 // void Job::SingleUrl::setDestStream(bfstream* destStream) {
 //   destStreamVal = destStream;
 // }

@@ -16,12 +16,11 @@
 
 #include <config.h>
 
-#include <fstream>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <bstream.hh>
+#include <bstream-counted.hh>
 #include <jobline.hh>
 #include <messagebox.hh>
 #include <single-url.hh>
@@ -139,7 +138,7 @@ private:
   string dest; // Destination filename
   string progress, status; // Lines to display in main window
   string treeViewStatus; // Status section in the list of jobs
-  bfstream* destStream;
+  SmartPtr<BfstreamCounted> destStream;
 
   MessageBox::Ref messageBox;
   // If !childMode, the next two point to the same object!

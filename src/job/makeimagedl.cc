@@ -19,7 +19,7 @@
 #include <memory>
 
 #include <compat.hh>
-#include <jigdodownload.hh>
+#include <jigdo-io.hh>
 #include <log.hh>
 #include <makeimagedl.hh>
 #include <md5sum.hh>
@@ -81,11 +81,17 @@ void MakeImageDl::run() {
   writeReadMe();
 
   // Run initial .jigdo download, will start other downloads as needed
-  auto_ptr<DataSource> dl(dataSourceFor(jigdoUrl, 0));
-  auto_ptr<DataSource::IO> frontend(io->makeImageDl_new(dl.get(), "blubb"));
-  jigdo = new JigdoIO(this, dl.get(), frontend.get());
-  frontend.release();
-  dl.release()->run();
+  auto_ptr<Child> childDl(childFor(jigdoUrl, 0));
+  if (childDl.get() != 0) {
+    auto_ptr<DataSource::IO> frontend(
+        io->makeImageDl_new(childDl->source(), tmpDir()) );
+    childDl->setChildIo(new JigdoIO(childDl.get(), frontend.get()));
+    frontend.release();
+    string info = _("Retrieving .jigdo data");
+    if (io) io->job_message(&info);
+    jigdo = childDl.release();
+    jigdo->source()->run();
+  }
 }
 //______________________________________________________________________
 
@@ -131,81 +137,102 @@ void Job::MakeImageDl::writeReadMe() {
 }
 //______________________________________________________________________
 
-DataSource* MakeImageDl::dataSourceFor(const string& url, const MD5* md) {
-  debug("dataSourceFor: %1", url);
+MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md) {
+  debug("dataSourceFor: %L1", url);
 
-  string filename = tmpDir();
-  filename += DIRSEP;
+  bool contentMdKnown = (md != 0);
+  MD5 cacheMd; // Will contain md5sum of either file URL or file contents
+  string leafname;
   Base64String b64;
-  if (md == 0) {
+  if (contentMdKnown) {
+    // Create leafname from md ("c" for "content")
+    leafname += "c-";
+    b64.write(*md, 16).flush();
+    cacheMd = *md;
+  } else {
     // Create leafname from url ("u" for "url")
-    filename += "u-";
+    leafname += "u-";
     MD5Sum nameMd;
     nameMd.update(reinterpret_cast<const byte*>(url.c_str()),
                   url.length()).finish();
     b64.write(nameMd.digest(), 16).flush();
-  } else {
-    // Create leafname from md ("c" for "content")
-    filename += "c-";
-    b64.write(*md, 16).flush();
+    cacheMd = nameMd;
   }
-  filename += b64.result();
+  leafname += b64.result();
 
   // Check whether file already present in cache, i.e. in tmpDir
+  string filename = tmpDir();
+  filename += DIRSEP;
+  filename += leafname;
   struct stat fileInfo;
   int statResult = stat(filename.c_str(), &fileInfo);
   if (statResult == 0)
-    return dataSourceForCompleted(fileInfo, filename, md);
+    return childForCompleted(fileInfo, filename, contentMdKnown, cacheMd);
 
   /* statResult != 0, we assume this means "no such file or directory".
      Now check whether a download is already under way, or if a half-finished
      download was aborted earlier. */
   Paranoid(filename[tmpDir().length() + 2] == '-');
   filename[tmpDir().length() + 2] = '~';
+  Paranoid(leafname[1] == '-');
+  leafname[1] = '~';
   statResult = stat(filename.c_str(), &fileInfo);
   if (statResult == 0)
-    return dataSourceForSemiCompleted(fileInfo, filename);
+    return childForSemiCompleted(fileInfo, filename);
 
   /* Neither the complete nor the partial data is in the cache, so start a
      new download. */
-  debug("dataSourceFor: New download to %1", filename);
-  return new SingleUrl(0, url);
+  debug("dataSourceFor: New download to %L1", filename);
+  BfstreamCounted* f = new BfstreamCounted(filename.c_str(),
+                                    ios::binary|ios::in|ios::out|ios::trunc);
+  if (!*f) {
+    string err = subst(_("Could not open `%L1' (%L2)"),
+                       leafname, strerror(errno));
+    generateError(&err);
+    return 0;
+  }
+  auto_ptr<SingleUrl> dl(new SingleUrl(0, url));
+  dl->setDestination(f, 0, 0);
+  Child* c = new Child(this, dl.get(), contentMdKnown, cacheMd);
+  dl.release();
+  return c;
 }
 //______________________________________________________________________
 
 // Cache contains already completed download for requested URL/md5sum
-DataSource* MakeImageDl::dataSourceForCompleted(
-    const struct stat& fileInfo, const string& filename, const MD5* md) {
+MakeImageDl::Child* MakeImageDl::childForCompleted(
+    const struct stat& fileInfo, const string& filename, bool contentMdKnown,
+    const MD5& /*cacheMd*/) {
   if (!S_ISREG(fileInfo.st_mode)) {
     // Something messed with the cache dir
-    string err = subst(_("Invalid cache entry: `%1' is not a file"),
+    string err = subst(_("Invalid cache entry: `%L1' is not a file"),
                        filename);
     io->job_failed(&err);
     return 0;
   }
-  if (md != 0) {
+  if (contentMdKnown) {
     // Data with that MD5 known - no need to go on the net, imm. return it
-    debug("dataSourceFor: already have %1", filename);
+    debug("dataSourceFor: already have %L1", filename);
     Assert(false); return 0;
   } else {
     /* Data for URL fetched before. If less than IF_MOD_SINCE seconds ago,
        just return it, else do an If-Modified-Since request. */
-    debug("dataSourceFor: if-mod-since %1", filename);
+    debug("dataSourceFor: if-mod-since %L1", filename);
     Assert(false); return 0;
   }
 }
 //______________________________________________________________________
 
-DataSource* MakeImageDl::dataSourceForSemiCompleted(
+MakeImageDl::Child* MakeImageDl::childForSemiCompleted(
     const struct stat& fileInfo, const string& filename) {
   if (!S_ISREG(fileInfo.st_mode)) {
     // Something messed with the cache dir
-    string err = subst(_("Invalid cache entry: `%1' is not a file"),
+    string err = subst(_("Invalid cache entry: `%L1' is not a file"),
                        filename);
     io->job_failed(&err);
     return 0;
   }
-  debug("dataSourceFor: already have partial %1", filename);
+  debug("dataSourceFor: already have partial %L1", filename);
   Assert(false); return 0;
 #if 0
   if (anotherdownloadunderway) {
@@ -215,4 +242,19 @@ DataSource* MakeImageDl::dataSourceForSemiCompleted(
     return x;
   }
 #endif
+}
+//______________________________________________________________________
+
+void MakeImageDl::childSucceeded(
+    Child* childDl, DataSource::IO* /*childIo*/, DataSource::IO* frontend) {
+  if (frontend != 0)
+    io->makeImageDl_finished(childDl->source(), frontend);
+  #warning // Rename u~... to u-...
+  // TODO Delete child (sometimes)
+}
+
+void MakeImageDl::childFailed(
+    Child* childDl, DataSource::IO* /*childIo*/, DataSource::IO* frontend) {
+  if (frontend != 0)
+    io->makeImageDl_finished(childDl->source(), frontend);
 }

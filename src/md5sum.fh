@@ -13,4 +13,5 @@
 
 */
 
+class MD5;
 class MD5Sum;

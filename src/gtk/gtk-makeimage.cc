@@ -128,12 +128,10 @@ void GtkMakeImage::job_succeeded() { }
 void GtkMakeImage::job_failed(string* message) {
   treeViewStatus = subst(_("<b>%E1</b>"), message);
   status.swap(*message);
+  progress = _("Failed:");
   updateWindow();
   gtk_tree_store_set(jobList()->store(), row(), JobList::COLUMN_STATUS,
                      treeViewStatus.c_str(), -1);
-#if DEBUG
-  //#warning "TODO"
-#endif
 }
 
 void GtkMakeImage::job_message(string* message) {
@@ -167,10 +165,10 @@ void GtkMakeImage::makeImageDl_finished(Job::DataSource* /*childDownload*/,
 }
 //______________________________________________________________________
 
-void GtkMakeImage::on_startButton_clicked() { }
-void GtkMakeImage::on_pauseButton_clicked() { }
-void GtkMakeImage::on_stopButton_clicked() { }
-void GtkMakeImage::on_restartButton_clicked() { }
+void GtkMakeImage::on_startButton_clicked() { debug("unimplemented"); }
+void GtkMakeImage::on_pauseButton_clicked() { debug("unimplemented"); }
+void GtkMakeImage::on_stopButton_clicked() { debug("unimplemented"); }
+void GtkMakeImage::on_restartButton_clicked() { debug("unimplemented"); }
 void GtkMakeImage::on_closeButton_clicked() {
   if (jobList()->isWindowOwner(this))
     setNotebookPage(GUI::window.pageOpen);

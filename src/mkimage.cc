@@ -384,8 +384,8 @@ namespace {
 
     if (toWrite > 0 && (!f || f.eof())) {
       const char* errDetail = "";
-      if (f.eof()) errDetail = _("file is too short");
-      else if (errno != 0) errDetail = strerror(errno);
+      if (errno != 0) errDetail = strerror(errno);
+      else if (f.eof()) errDetail = _("file is too short");
       err = subst(_("Error reading from `%1' (%2)"), fileName, errDetail);
       // Even if there was an error - always try to write right amount
       memClear(buf, readAmount);

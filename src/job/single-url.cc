@@ -32,23 +32,26 @@ using namespace Job;
 DEBUG_UNIT("single-url")
 
 SingleUrl::SingleUrl(DataSource::IO* ioPtr, const string& uri)
-  : DataSource(ioPtr), download(uri, this), progressVal(), resumeFailedId(0),
-    destStreamVal(0), destOff(0), destEndOff(0), resumeLeft(0),
-    haveResumeOffset(false), haveDestination(false),
+  : DataSource(ioPtr), download(uri, this), progressVal(),
+    stopLaterId(0), destStreamVal(0), destOff(0), destEndOff(0),
+    resumeLeft(0), haveResumeOffset(false), haveDestination(false),
     havePragmaNoCache(false), tries(0) {
 }
 //________________________________________
 
 SingleUrl::~SingleUrl() {
+  debug("~SingleUrl %1", this);
   if (!download.failed() && !download.succeeded())
     download.stop();
-  if (resumeFailedId != 0) {
+  if (stopLaterId != 0) {
     // The chance that this code is ever reached is microscopic, but still...
-    g_source_remove(resumeFailedId);
+    g_source_remove(stopLaterId);
   }
 }
 
 const Progress* Job::SingleUrl::progress() const { return &progressVal; }
+
+const string& Job::SingleUrl::location() const { return download.uri(); }
 //______________________________________________________________________
 
 void SingleUrl::setResumeOffset(uint64 resumeOffset) {
@@ -63,7 +66,7 @@ void SingleUrl::setResumeOffset(uint64 resumeOffset) {
   haveResumeOffset = true;
 }
 
-void SingleUrl::setDestination(bfstream* destStream,
+void SingleUrl::setDestination(BfstreamCounted* destStream,
                                uint64 destOffset, uint64 destEndOffset) {
   destStreamVal = destStream;
   destOff = destOffset;
@@ -73,9 +76,9 @@ void SingleUrl::setDestination(bfstream* destStream,
 }
 
 void SingleUrl::run() {
-  if (resumeFailedId != 0) {
-    g_source_remove(resumeFailedId);
-    resumeFailedId = 0;
+  if (stopLaterId != 0) {
+    g_source_remove(stopLaterId);
+    stopLaterId = 0;
   }
 
   if (!haveResumeOffset) setResumeOffset(0);
@@ -100,23 +103,26 @@ void SingleUrl::run() {
 //______________________________________________________________________
 
 void SingleUrl::resumeFailed() {
-  if (resumeFailedId != 0) return;
-  resumeFailedId = g_idle_add_full(G_PRIORITY_HIGH_IDLE,
-                                   &resumeFailed_callback,
-                                   (gpointer)this, NULL);
-  Assert(resumeFailedId != 0); // because we use 0 as a special value
+  setNoResumePossible();
+  string error(_("Resume failed"));
+  if (io) io->job_failed(&error);
+  stopLater();
   return;
 }
 
-gboolean SingleUrl::resumeFailed_callback(gpointer data) {
-  debug("resumeFailed_callback");
+void SingleUrl::stopLater() {
+  if (stopLaterId != 0) return;
+  stopLaterId = g_idle_add_full(G_PRIORITY_HIGH_IDLE,
+                                &stopLater_callback,
+                                (gpointer)this, NULL);
+  Assert(stopLaterId != 0); // because we use 0 as a special value
+}
+
+gboolean SingleUrl::stopLater_callback(gpointer data) {
+  debug("stopLater_callback");
   SingleUrl* self = static_cast<SingleUrl*>(data);
   self->download.stop();
-  self->setNoResumePossible();
-  string error(_("Resume failed"));
-  if (self->io) self->io->job_failed(&error);
-
-  self->resumeFailedId = 0;
+  self->stopLaterId = 0;
   return FALSE; // "Don't call me again"
 }
 //______________________________________________________________________
@@ -137,7 +143,9 @@ void SingleUrl::download_dataSize(uint64 n) {
 
 bool SingleUrl::writeToDestStream(uint64 off, const byte* data,
                                   unsigned size) {
-  if (destStream() == 0) return SUCCESS;
+  if (destStream() == 0 || stopLaterId != 0) return SUCCESS;
+  debug("writeToDestStream %1 %2 bytes at offset %3",
+        destStream(), size, off);
 
   // Never go beyond destEndOff
   unsigned realSize = size;
@@ -147,8 +155,8 @@ bool SingleUrl::writeToDestStream(uint64 off, const byte* data,
 
   destStream()->seekp(off, ios::beg);
   writeBytes(*destStream(), data, realSize);
-  if (!destStream()->good()) {
-    download.stop();
+  if (!*destStream()) {
+    stopLater();
     if (io) {
       string error = subst("%L1", strerror(errno));
       io->job_failed(&error);
@@ -157,7 +165,7 @@ bool SingleUrl::writeToDestStream(uint64 off, const byte* data,
   }
   if (realSize < size) {
     // Server sent more than we expected; error
-    download.stop();
+    stopLater();
     if (io) {
       string error = _("Server sent more data than expected");
       io->job_failed(&error);
@@ -202,7 +210,7 @@ void SingleUrl::download_data(const byte* data, unsigned size,
         resumeLeft, destOff + currentSize - size, currentSize);
 
   // If resume already failed, ignore further calls
-  if (resumeFailedId != 0) return;
+  if (stopLaterId != 0) return;
 
   // Read from file
   unsigned toRead = min(resumeLeft, size);
@@ -210,13 +218,13 @@ void SingleUrl::download_data(const byte* data, unsigned size,
   byte* bufEnd = buf + toRead;
   byte* b = buf;
   destStream()->seekg(destOff + currentSize - size, ios::beg);
-  while (destStream()->good() && toRead > 0) {
+  while (*destStream() && toRead > 0) {
     readBytes(*destStream(), b, toRead);
     size_t n = destStream()->gcount();
     b += n;
     toRead -= n;
   }
-  if (toRead > 0 && !destStream()->good()) { resumeFailed(); return; }
+  if (toRead > 0 && !*destStream()) { resumeFailed(); return; }
 
   // Compare
   b = buf;
@@ -261,6 +269,7 @@ void SingleUrl::download_succeeded() {
 //     io->job_failed(&error);
 //     return;
 //   }
+  if (stopLaterId != 0) return;
   if (io) io->job_succeeded();
 }
 //______________________________________________________________________

@@ -183,7 +183,7 @@ namespace {
     "modify it under the terms of the GNU General Public License, version "
     "2, as published by the Free Software Foundation.\n"
     "\n"
-    "In addition, as a special exception, Richard Atterer gives permission "
+    "In addition, as a special exception, the author gives permission "
     "to link the jigdo code with the OpenSSL project's \"OpenSSL\" library "
     "(or with modified versions of it that use the same license as the "
     "\"OpenSSL\" library), and to distribute the linked executables.\n"),

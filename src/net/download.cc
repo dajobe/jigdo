@@ -117,6 +117,7 @@ void Download::init() {
 #   endif
     userAgent += " libwww/";
     userAgent += HTLib_version();
+    debug("User-Agent: %1", userAgent);
   }
 }
 //______________________________________________________________________
@@ -144,10 +145,9 @@ Download::Download(const string& uri, Output* o)
   };
   vptr = &downloadWriter;
 
-  /* The code below (e.g. in putChar()) silently assumes that the
-     first data member's address of a Download object is identical to
-     the object's address. The C++ standard makes no guarantee about
-     this. :-/ */
+  /* The code below (e.g. in putChar()) silently assumes that the first data
+     member's address of a Download object is identical to the object's
+     address. The C++ standard makes no guarantee about this. :-/ */
   Assert(static_cast<void*>(this) == static_cast<void*>(&vptr));
   request = HTRequest_new();
 
@@ -563,7 +563,9 @@ void Download::stop() {
 #   endif
   }
   state = SUCCEEDED;
-  outputVal->download_succeeded();
+  string err = _("Download stopped");
+  outputVal->download_failed(&err);
+  //outputVal->download_succeeded();
 }
 //______________________________________________________________________
 

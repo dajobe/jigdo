@@ -52,7 +52,6 @@ GtkSingleUrl::~GtkSingleUrl() {
     job->io.remove(this);
     Paranoid(job->io.get() != this); // Check whether remove() really worked
   }
-  delete destStream;
 }
 //______________________________________________________________________
 
@@ -110,8 +109,8 @@ void GtkSingleUrl::openOutputAndRun(bool pragmaNoCache) {
   // Open output file
   Paranoid(!childMode);
   Paranoid(destStream == 0);
-  destStream = new bfstream(dest.c_str(),
-                            ios::binary|ios::in|ios::out|ios::trunc);
+  destStream = new BfstreamCounted(dest.c_str(),
+                                   ios::binary|ios::in|ios::out|ios::trunc);
   if (!*destStream) {
     MessageBox* m = new MessageBox(MessageBox::ERROR, MessageBox::OK,
       _("Error accessing destination"),
@@ -126,7 +125,7 @@ void GtkSingleUrl::openOutputAndRun(bool pragmaNoCache) {
   // Allocate job and run it
   status = _("Waiting...");
   if (job == 0) job = singleUrl = new Job::SingleUrl(this, uri);
-  singleUrl->setDestination(destStream, 0, 0);
+  singleUrl->setDestination(destStream.get(), 0, 0);
   singleUrl->setPragmaNoCache(pragmaNoCache);
   singleUrl->run();
 }
@@ -138,8 +137,9 @@ void GtkSingleUrl::openOutputAndResume() {
   int statResult = stat(dest.c_str(), &fileInfo);
 
   if (statResult == 0) {
-    if (destStream != 0) delete destStream;
-    destStream = new bfstream(dest.c_str(), ios::binary|ios::in|ios::out);
+    //if (destStream != 0) delete destStream;
+    destStream = new BfstreamCounted(dest.c_str(),
+                                    ios::binary|ios::in|ios::out|ios::trunc);
     if (*destStream) {
       // Start the resume download
       status = subst(_("Resuming download - overlap is %1kB"),
@@ -147,7 +147,7 @@ void GtkSingleUrl::openOutputAndResume() {
       updateWindow();
       if (job == 0) job = singleUrl = new Job::SingleUrl(this, uri);
       singleUrl->setResumeOffset(fileInfo.st_size);
-      singleUrl->setDestination(destStream, 0, 0);
+      singleUrl->setDestination(destStream.get(), 0, 0);
       singleUrl->run();
       return;
     }
@@ -172,7 +172,8 @@ void GtkSingleUrl::startResume() {
   callRegularly(0);
 
   Assert(destStream == 0);
-  destStream = new bfstream(dest.c_str(), ios::binary|ios::in|ios::out);
+  destStream = new BfstreamCounted(dest.c_str(),
+                                   ios::binary|ios::in|ios::out|ios::trunc);
   if (!*destStream) {
     // An error occurred
     treeViewStatus = _("<b>Open of output file failed</b>");
@@ -188,7 +189,7 @@ void GtkSingleUrl::startResume() {
                  Job::SingleUrl::RESUME_SIZE / 1024);
   updateWindow();
   singleUrl->setResumeOffset(job->progress()->currentSize());
-  singleUrl->setDestination(destStream, 0, 0);
+  singleUrl->setDestination(destStream.get(), 0, 0);
   singleUrl->run();
   return;
 }
@@ -233,8 +234,7 @@ void GtkSingleUrl::stop() {
   debug("Stopping SingleUrl %1 at byte %2",
         singleUrl, singleUrl->progress()->currentSize());
   destStream->sync();
-  delete destStream;
-  destStream = 0;
+  destStream.clear();
   if (job != 0) {
     singleUrl->setDestination(0, 0, 0);
     if (state == PAUSED) singleUrl->cont();
@@ -372,8 +372,7 @@ void GtkSingleUrl::job_succeeded() {
   callRegularly(0);
 
   // Can't see the same problem as with job_failed(), but just to be safe...
-  delete destStream;
-  destStream = 0;
+  destStream.clear();
   if (!childMode) singleUrl->setDestination(0, 0, 0);
   status = _("Download is complete");
   if (state != STOPPED) state = SUCCEEDED;
@@ -389,8 +388,7 @@ void GtkSingleUrl::job_succeeded() {
    job->resumePossible() - *never* auto-resume the download. */
 void GtkSingleUrl::failedPermanently(string* message) {
   if (!childMode) singleUrl->setDestination(0, 0, 0);
-  delete destStream;
-  destStream = 0;
+  destStream.clear();
   state = ERROR;
 
   treeViewStatus = subst(_("<b>%1</b>"), message);
@@ -411,9 +409,9 @@ void GtkSingleUrl::job_failed(string* message) {
      file contents like "data from 2nd download" + "up to a page full of null
      bytes" + "stale data from 1st download". */
   if (!childMode) singleUrl->setDestination(0, 0, 0);
-  delete destStream;
-  destStream = 0;
+  destStream.clear();
   state = ERROR;
+  debug("job_failed: %1", message);
 
   bool resumePossible = (job != 0 && !childMode
                          && singleUrl->resumePossible());
@@ -426,6 +424,7 @@ void GtkSingleUrl::job_failed(string* message) {
   }
   //debug("job_failed: %1", message);
   status.swap(*message);
+  progress = _("Failed:");
   updateWindow();
   gtk_tree_store_set(jobList()->store(), row(), JobList::COLUMN_STATUS,
                      treeViewStatus.c_str(), -1);
@@ -698,8 +697,7 @@ void GtkSingleUrl::restart() {
   Assert(!childMode);
 
   // Kill the old download
-  delete destStream;
-  destStream = 0;
+  destStream.clear();
   if (singleUrl != 0) {
     singleUrl->setDestination(0, 0, 0);
     if (state == PAUSED) singleUrl->cont();

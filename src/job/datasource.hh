@@ -14,7 +14,10 @@
 #ifndef DATASOURCE_HH
 #define DATASOURCE_HH
 
+#include <config.h>
+
 #include <job.hh>
+#include <makeimagedl.fh>
 #include <nocopy.hh>
 #include <progress.fh>
 //______________________________________________________________________
@@ -23,17 +26,23 @@ namespace Job {
   class DataSource;
 }
 
-/** Implemented by SingleUrl and CachedUrl. MakeImageDl::dataSourceFor() is
+/** Interface for objects returning data from the network or from disk.
+
+    Implemented by SingleUrl and CachedUrl. MakeImageDl::dataSourceFor() is
     the function which examines the local jigdo download's temporary
-    directory and creates a SingleUrl/CachedUrl as appropriate. */
+    directory and creates a SingleUrl/CachedUrl as appropriate before putting
+    it inside a MakeImageDl::Child. */
 class Job::DataSource : NoCopy {
 public:
 
-  /** User interaction for DataSource. */
+  /** User interaction for DataSource.
+
+      Instances of derived classes are attached to any DataSources that the
+      MakeImageDl creates. */
   class IO : public Job::IO {
   public:
 
-    // Not overrding here:
+    // Not overriding here:
     // virtual IO* job_removeIo(IO* rmIo);
 
     /** Called by the job when it is deleted or when a different IO object is
@@ -67,7 +76,7 @@ public:
 
   IOPtr<IO> io;
 
-  explicit inline DataSource(IO* ioPtr);
+  inline DataSource(IO* ioPtr);
   virtual ~DataSource();
 
   /** Start delivering data. */
@@ -82,6 +91,9 @@ public:
 
   /** Return the internal progress object. */
   virtual const Progress* progress() const = 0;
+
+  /** Return the URL used to download the data, or its filename on disc */
+  virtual const string& location() const = 0;
 };
 //______________________________________________________________________
 
