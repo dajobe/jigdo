@@ -1,6 +1,6 @@
 /* $Id$ -*- C++ -*-
   __   _
-  |_) /|  Copyright (C) 2000-2002  |  richard@
+  |_) /|  Copyright (C) 2000-2004  |  richard@
   | \/¯|  Richard Atterer          |  atterer.net
   ¯ '` ¯
   "Ported" to C++ by RA. Uses glibc code for the actual algorithm.
@@ -59,6 +59,13 @@ MD5Sum& MD5Sum::operator=(const MD5Sum& md) {
     *p = *md.p;
   }
   return *this;
+}
+//______________________________________________________________________
+
+string MD5::toString() const {
+  Base64String m;
+  m.write(sum, 16).flush();
+  return m.result();
 }
 //______________________________________________________________________
 

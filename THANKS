@@ -10,6 +10,10 @@ Peter Jay Salzman
     for writing and maintaining the jigdo mini-HOWTO - also thanks to
     the translators: Conrad Wood, Elcio Mello, Marcelo Ramos
 
+Steve McIntyre
+    for his project JTE (Jigdo Template Extractor), which patches
+    mkisofs to allow direct creation of .jigdo/.template files
+
 Paul Bolle (and earlier Alexander Skwar)
     for maintaining the jigdo.spec.
 
@@ -25,6 +29,9 @@ Attila Nagy
     for beta testing, setting up jigdo generation on fsn.hu, for
     generating the first .jigdo DVD files ever and for submitting it
     to the BSD ports collection
+
+Peter Siering
+    of c't magazine for feedback and using jigdo for the Heise VDR CDs
 
 Anne Bezemer
     for writing the pseudo image kit (PIK) which inspired me to write

@@ -34,7 +34,7 @@ build: configure-stamp src/Makedeps debian/changelog build-stamp
 build-stamp:
 	dh_testdir
 	$(MAKE)
-	src/cppunit-main
+	$(MAKE) -C src test
 	touch build-stamp
 
 clean:

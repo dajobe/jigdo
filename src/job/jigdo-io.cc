@@ -22,7 +22,7 @@
 #include <makeimagedl.hh>
 #include <md5sum.hh>
 #include <mimestream.hh>
-#include <url-part.hh>
+//#include <url-part.hh>
 //______________________________________________________________________
 
 DEBUG_UNIT("jigdo-io")
