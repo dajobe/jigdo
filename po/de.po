@@ -6,7 +6,7 @@ msgstr ""
 "Project-Id-Version: jigdo\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2003-09-02 23:41+0200\n"
-"PO-Revision-Date: 2003-09-02 23:41+0200\n"
+"PO-Revision-Date: 2003-09-04 18:26+0200\n"
 "Last-Translator: RA\n"
 "Language-Team: de\n"
 "MIME-Version: 1.0\n"
@@ -507,7 +507,7 @@ msgstr "<b>?</b>: Dateien wiederverwenden"
 msgid ""
 "<b>Close</b> this download and all its children, and remove them from the "
 "list below"
-msgstr "Downloads <b>Schließen</b> und ihn aus der Liste unten entfernen"
+msgstr "Download <b>Schließen</b> und ihn zusammen mit ihm zugeordneten Downloads aus der Liste unten entfernen"
 
 #: gtk/gui.cc:314
 msgid "<b>Close</b> this download and remove it from the list below"
@@ -628,9 +628,7 @@ msgstr "<b>_OK, Herunterladen starten!</b>"
 msgid ""
 "<span size=\"x-small\">This is Free Software, distributable under the terms "
 "of the GNU GPL v2.</span>"
-msgstr ""
-"<span size=\"x-small\">Freie Software, Verbreitung erlaubt gemäß GNU GPL v2</"
-"span>"
+msgstr "<span size=\"x-small\">Dies ist Freie Software, Verbreitung erlaubt gemäß GNU GPL v2</span>"
 
 #: gtk/gui.cc:84
 #, c-format
