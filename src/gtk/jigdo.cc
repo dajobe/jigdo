@@ -108,8 +108,9 @@ inline void cmdOptions(int argc, char* argv[]) {
     "Options:\n"
     "  -h  --help       Output help\n"
     "  -Y  --proxy=on/off/guess [guess]\n"
-    "                   Turn proxy on or off, or guess from Mozilla/KDE/\n"
-    "                   wget/lynx settings\n"
+    "                   Turn proxy on (i.e. use env vars http_proxy,\n"
+    "                   ftp_proxy, all_proxy) or off, or guess (from\n"
+    "                   Mozilla/KDE/wget/lynx settings)\n"
     "  -v  --version    Output version info\n"
     "  --debug[=all|=UNIT1,UNIT2...|=help]\n"
     "                   Print debugging information for all units, or for\n"
@@ -184,8 +185,17 @@ int main(int argc, char *argv[]) {
 
     // Initialize networking code
     Download::init();
-#warning    if (optProxy != OFF) glibwww_parse_proxy_env();
-    if (optProxy == GUESS) proxyGuess();
+    if (optProxy == OFF) {
+      // Make libcurl ignore environment variables, simply by unsetting them
+      putenv("http_proxy=");
+      putenv("https_proxy=");
+      putenv("ftp_proxy=");
+      putenv("gopher_proxy=");
+      putenv("no_proxy=");
+      putenv("all_proxy=");
+    } else if (optProxy == GUESS) {
+      proxyGuess();
+    }
 
     // Start downloads of any URIs specified on command line
     const char* dest = g_get_current_dir();

@@ -45,19 +45,21 @@ namespace {
   public:
     /* If contents == 0, will call job_failed() */
     MemData(DataSource::IO* ioPtr, const string& loc, const char* contents)
-      : DataSource(ioPtr), locVal(loc),
+      : DataSource(), locVal(loc),
         data(reinterpret_cast<const byte*>(contents)),
         cur(data), dataEnd(data) {
+      if (ioPtr) io.addListener(*ioPtr);
       if (contents != 0) dataEnd += strlen(contents);
       msg("MemData %1 len=%2", location(), dataEnd - data);
     }
     virtual ~MemData();
 
     virtual void run() {
-      if (data == 0 && io) {
+      if (data == 0) {
         msg("MemData fail %1", location());
         string err = "Failed";
-        io->job_failed(&err);
+        //io->job_failed(&err);
+        IOSOURCE_SEND(DataSource::IO, io, job_failed, (err));
       }
     }
 
@@ -82,9 +84,13 @@ namespace {
         ++newCur;
       }
       if (newCur == cur) return;
-      if (io) io->dataSource_data(cur, newCur - cur, newCur - data);
+      //x if (io) io->dataSource_data(cur, newCur - cur, newCur - data);
+      IOSOURCE_SEND(DataSource::IO, io,
+                    dataSource_data, (cur, newCur - cur, newCur - data));
       cur = newCur;
-      if (cur == dataEnd && io) io->job_succeeded();
+      if (cur == dataEnd)
+        IOSOURCE_SEND(DataSource::IO, io, job_succeeded, ());
+        //x io->job_succeeded();
     }
 
   private:
@@ -206,35 +212,34 @@ MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md,
   return c;
 }
 
-MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
+MakeImageDl::MakeImageDl(/*IO* ioPtr,*/ const string& jigdoUri,
                          const string& destination)
-    : io(ioPtr), stateVal(DOWNLOADING_JIGDO),
+    : io(/*ioPtr*/), stateVal(DOWNLOADING_JIGDO),
       jigdoUrl(jigdoUri), childrenVal(), dest(destination),
       tmpDirVal("/tmp"), mi(),
       imageNameVal(), imageInfoVal(), imageShortInfoVal(), templateUrlVal(),
       templateMd5Val(0) {
   if (!jigdoUri.empty()) {
     Child* a = childFor(jigdoUri);
-    JigdoIO* jio = new JigdoIO(a, jigdoUrl, 0/*frontend*/);
-    a->setChildIo(jio);
+    JigdoIO* jio = new JigdoIO(a, jigdoUrl);
+    //x a->setChildIo(jio);
+    a->source()->io.addListener(*jio);
     a->source()->run();
   }
 }
 
 Job::MakeImageDl::~MakeImageDl() { }
 
-const char* Job::MakeImageDl::destDescTemplateVal =
-    _("Cache entry %1  --  %2");
+// const char* Job::MakeImageDl::destDescTemplateVal =
+//     _("Cache entry %1  --  %2");
 
-void MakeImageDl::childFailed(Child* childDl, DataSource::IO*,
-                              DataSource::IO*) {
+void MakeImageDl::childFailed(Child* childDl, DataSource::IO*) {
   msg("childFailed: %1",
       childDl->source() ? childDl->source()->location() :"[deleted source]");
   // No: delete childDl;
 }
 
-void MakeImageDl::childSucceeded(Child* childDl, DataSource::IO* /*childIo*/,
-                                 DataSource::IO* /*frontend*/) {
+void MakeImageDl::childSucceeded(Child* childDl, DataSource::IO* /*chldIo*/) {
   msg("childSucceeded: %1",
       childDl->source() ? childDl->source()->location() :"[deleted source]");
   // No: delete childDl;
@@ -248,6 +253,10 @@ void MakeImageDl::setImageSection(string* imageName, string*, string*,
 
 void MakeImageDl::jigdoFinished() {
   debug("jigdoFinished");
+}
+
+void Job::MakeImageDl::killAllChildren() {
+  debug("killAllChildren");
 }
 //======================================================================
 
@@ -281,10 +290,11 @@ void testSimple() {
     "FsGFXNwcbCdvWTamkRdp7g=X:part4\n"
     "H2-Rw7tuyjWdxVeqnS_vcw=X:part8\n"
     "gG64beTeh9nZWMVvv80zgw=X:part9\n"));
-  MakeImageDl m(0, "", "");
+  MakeImageDl m("", "");
   imgSectLogged.clear();
   Child* a = m.childFor("http://simple");
-  a->setChildIo(new JigdoIO(a, "http://simple", 0));
+  //x a->setChildIo(new JigdoIO(a, "http://simple", 0));
+  a->source()->io.addListener(*new JigdoIO(a, "http://simple"));
   while (a->source() != 0 && !memData(a)->finished()) { // Feed single bytes
     memData(a)->output(1);
     idle();
@@ -301,10 +311,11 @@ void testNoMD5() {
     "[Image]\n"
     "Filename=image\n"
     "Template=image.template\n"));
-  MakeImageDl m(0, "", "");
+  MakeImageDl m("", "");
   imgSectLogged.clear();
   Child* a = m.childFor("http://no-md5");
-  a->setChildIo(new JigdoIO(a, "http://no-md5", 0));
+  //x a->setChildIo(new JigdoIO(a, "http://no-md5", 0));
+  a->source()->io.addListener(*new JigdoIO(a, "http://no-md5"));
   memData(a)->output(); idle();
   msg("logged: \"%1\"", escapedString(imgSectLogged));
   Assert(imgSectLogged == "generateError: `Template-MD5Sum=...' line missing"
@@ -319,10 +330,11 @@ void testMinimal() {
     "Filename=image\n"
     "Template=image.template\n"
     "Template-MD5Sum=h5FAyHqEsvXSTuGUNdhzJw"));
-  MakeImageDl m(0, "", "");
+  MakeImageDl m("", "");
   imgSectLogged.clear();
   Child* a = m.childFor("http://minimal");
-  a->setChildIo(new JigdoIO(a, "http://minimal", 0));
+  //x a->setChildIo(new JigdoIO(a, "http://minimal", 0));
+  a->source()->io.addListener(*new JigdoIO(a, "http://minimal"));
   memData(a)->output();
   idle();
   msg("logged: \"%1\"", escapedString(imgSectLogged));
@@ -336,10 +348,11 @@ void testLoop() {
   www.insert(make_pair("http://loop",
     "\t[ Include   http://simple   ]\n"
     "[Include http://loop]\n"));
-  MakeImageDl m(0, "", "");
+  MakeImageDl m("", "");
   imgSectLogged.clear();
   Child* a = m.childFor("http://loop");
-  a->setChildIo(new JigdoIO(a, "http://loop", 0));
+  //x a->setChildIo(new JigdoIO(a, "http://loop", 0));
+  a->source()->io.addListener(*new JigdoIO(a, "http://loop"));
   memData(a)->output(1); // Feed include simple line
   idle();
   output(m, "http://simple");
@@ -387,7 +400,7 @@ void testFork() {
   {
     msg("---------------------------------------- testFork a");
     imgSectLogged.clear();
-    MakeImageDl m(0, "http://fork", "");
+    MakeImageDl m("http://fork", "");
     output(m, "http://fork");
     output(m, "http://fork2");
     output(m, "http://fork21");
@@ -417,7 +430,7 @@ void testFork() {
   {
     msg("---------------------------------------- testFork b");
     imgSectLogged.clear();
-    MakeImageDl m(0, "http://fork", "");
+    MakeImageDl m("http://fork", "");
     output(m, "http://fork", 1);
     output(m, "http://fork1");
     output(m, "http://fork", 1);
@@ -457,7 +470,7 @@ void testBetween() {
 
   msg("---------------------------------------- testBetween");
   imgSectLogged.clear();
-  MakeImageDl m(0, "http://between", "");
+  MakeImageDl m("http://between", "");
   output(m, "http://between");
   output(m, "http://fork1");
   output(m, "http://fork2");

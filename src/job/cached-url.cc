@@ -43,10 +43,9 @@ namespace {
 
 }
 
-CachedUrl::CachedUrl(DataSource::IO* ioPtr, const string& filename,
-                     uint64 prio)
-  : DataSource(ioPtr), filenameVal(filename), priority(prio), progressVal(),
-    file(0) {
+CachedUrl::CachedUrl(const string& filename, uint64 prio)
+    : DataSource(), filenameVal(filename), priority(prio), progressVal(),
+      file(0) {
   struct stat fileInfo;
   int status = stat(filename.c_str(), &fileInfo);
   Assert (status == 0); // Should be ensured by creator of object
@@ -63,7 +62,9 @@ const Progress* CachedUrl::progress() const { return &progressVal; }
 const string& CachedUrl::location() const { return filenameVal; }
 
 void CachedUrl::run() {
-  if (io) io->dataSource_dataSize(progressVal.dataSize());
+  IOSOURCE_SEND(DataSource::IO, io,
+                dataSource_dataSize, (progressVal.dataSize()));
+  //x if (io) io->dataSource_dataSize(progressVal.dataSize());
   cont();
 }
 
@@ -124,7 +125,7 @@ gboolean CachedUrl::spoolDataCallback(gpointer) {
   unsigned left = MAX_CALLBACK_DURATION; // usecs left before timeout
   while (true) {
     CachedUrl* x = *active.begin();
-    IOPtr<DataSource::IO>& io = x->io;
+    IOSource<DataSource::IO>& io = x->io;
 
     // Ensure file is open
     if (x->file == 0) {
@@ -132,7 +133,8 @@ gboolean CachedUrl::spoolDataCallback(gpointer) {
       if (!*x->file) {
         string err = subst(_("Could not open `%L1' for input: %L2"),
                            x->filenameVal, strerror(errno));
-        if (io) io->job_failed(&err);
+        //x if (io) io->job_failed(&err);
+        IOSOURCE_SEND(DataSource::IO, io, job_failed, (err));
         active.erase(x);
         break;
       }
@@ -150,17 +152,20 @@ gboolean CachedUrl::spoolDataCallback(gpointer) {
     // Pass data to consumer
     uint64 currentSize = x->progressVal.currentSize() + n;
     x->progressVal.setCurrentSize(currentSize);
-    if (io) io->dataSource_data(buf, n, currentSize);
+    //x if (io) io->dataSource_data(buf, n, currentSize);
+    IOSOURCE_SEND(DataSource::IO, io, dataSource_data, (buf, n, currentSize));
 
     if (x->file->eof()) {
-      if (io) io->job_succeeded();
+      //x if (io) io->job_succeeded();
+      IOSOURCE_SEND(DataSource::IO, io, job_succeeded, ());
       active.erase(x);
       break;
     }
     if (!*(x->file)) {
       string err = subst(_("Could not read from `%L1': %L2"),
                          x->filenameVal, strerror(errno));
-      if (io) io->job_failed(&err);
+      //x if (io) io->job_failed(&err);
+      IOSOURCE_SEND(DataSource::IO, io, job_failed, (err));
       active.erase(x);
       break;
     }

@@ -19,6 +19,7 @@
 #include <config.h>
 
 #include <debug.hh>
+#include <ilist.hh>
 
 #include <string>
 //______________________________________________________________________
@@ -28,14 +29,17 @@ namespace Job {
 }
 //______________________________________________________________________
 
+//#define _DEPRECATED __attribute__((deprecated))
+//#define _DEPRECATED
+
 /** Base class for interaction between the outside world and the job. For
     example, depending on the IO object you register with a job, you can
     control the job via a gtk app or from within a command line utility.
 
-    A note about the message strings passed to jobFailed() and jobMessage():
-    They are not const, and the IO child class can modify them in whatever
-    way it likes. The most useful action is to copy the contents away with
-    swap(), e.g. with myMessage.swap(*message);
+    An IO class is implemented by anyone interested in the information, and
+    an instance registered with IOSource::addListener(), which appends a
+    pointer to the instance to its list of listening objects. If the listener
+    is deleted, it is *automatically* removed from the list it is on.
 
     The messages are always in valid UTF-8. Their text is *never* "quoted",
     e.g. "<" is not replaced with "&lt;". Neither do they contain any markup.
@@ -44,62 +48,19 @@ namespace Job {
     Job::SomeClass::IO adds any further methods, their name starts with
     "someClass_". This makes it easy to see which methods are introduced
     where. */
-class Job::IO {
+class Job::IO : public IListBase {
 public:
 
   virtual ~IO() { }
 
-  /** Called from IOPtr.remove(), gets as argument the object that was passed
-      to it, returns the new pointer to store inside the IOPtr. Override the
-      default implementation like this to implement chained IOs:
+  //x inline virtual Job::IO* job_removeIo(Job::IO* rmIo) _DEPRECATED;
 
-      <pre>
-        IO* child;
-        virtual Job::IO* job_removeIo(Job::IO* rmIo) {
-          if (rmIo == this) {
-            IO* c = child;
-            child = 0;
-            delete this; // May of course omit this if not desired
-            return c;
-          } else if (child != 0) {
-            Job::IO* c = child->job_removeIo(rmIo);
-            Paranoid(c == 0 || dynamic_cast<IO*>(c) != 0);
-            child = static_cast<IO*>(c);
-          }
-          return this;
-        }
-        virtual void job_deleted() {
-          if (child != 0) child->job_deleted();
-          delete this; // May of course omit this if not desired
-        }
-      </pre>
+  /** Remove yourself from the IOSource you are listening to, if any. */
+  void removeListener() { iList_remove(); }
 
-      However, in the normal, simple case that there isn't a child, use:
-
-      <pre>
-        virtual Job::IO* job_removeIo(Job::IO* rmIo) {
-          if (rmIo != this) return this; // Or just: Paranoid(rmIo == this);
-          delete this; // May of course omit this if not desired
-          return 0;    // New value to be stored inside IOPtr
-        }
-      </pre>
-
-      *Constructing* chains of IOs is not handled here, you must provide some
-      way to do this in your derived class.
-
-      Important: If you return a non-null value, it must point to an object
-      of your *derived* class, even though it is just passed as a plain IO*.
-      There is a runtime check (if DEBUG=1) in the IOPtr code for this.
-
-      The default impl doesn't delete this: */
-  virtual Job::IO* job_removeIo(Job::IO* rmIo) {
-    if (rmIo != this) return this;
-    return 0;
-  }
-
-  /** Called by the IOPtr when it is deleted or when a different IO object is
-      registered with it. If the IO object considers itself owned by its job,
-      it can delete itself. */
+  /** Called by the IOSource when it is deleted or when a different IO object
+      is registered with it. If the IO object considers itself owned by its
+      job, it can delete itself. */
   virtual void job_deleted() = 0;
 
   /** Called when the job has successfully completed its task. */
@@ -107,29 +68,91 @@ public:
 
   /** Called when the job fails. The only remaining sensible action after
       getting this is probably to delete the job object. */
-  virtual void job_failed(string* message) = 0;
+  virtual void job_failed(const string& message) = 0;
 
   /** Informational message. */
-  virtual void job_message(string* message) = 0;
+  virtual void job_message(const string& message) = 0;
 };
+
+//x Job::IO* Job::IO::job_removeIo(Job::IO* rmIo) {
+//   if (rmIo != this) return this;
+//   return 0;
+// }
 //______________________________________________________________________
 
-/** For all classes which are "jobs", this provides easy, consistent
-    management of a pointer to an IO object. In your job class, use the
-    template to generate a public member:<pre>
+// For IOSource<SomeIO> io, use
+// IOSOURCE_SEND(SomeIO, io, job_failed, ("it failed"));
+// It is OK if any called object deletes itself in response to the call
+#define IOSOURCE_SEND(_ioClass, _ioObj, _functionName, _args) \
+  do { \
+    IList<_ioClass>& _listeners = (_ioObj).listeners(); \
+    IList<_ioClass>::iterator _i = _listeners.begin(), _e = _listeners.end(); \
+    while (_i != _e) { \
+      _ioClass* _listObj = &*_i; ++_i; _listObj->_functionName _args; \
+    } \
+  } while (false)
+// #define IOSOURCE_SEND(_ioClass, _ioObj, _functionName, _args)
+//   do {
+//     IList<_ioClass>& _listeners = (_ioObj).listeners();
+//     for (IList<_ioClass>::iterator _i = _listeners.begin(),
+//          _e = _listeners.end(); _i != _e; ++_i) {
+//       _i->_functionName _args;
+//     }
+//   } while (false)
+// Same thing, but const:
+#define IOSOURCE_SENDc(_ioClass, _ioObj, _functionName, _args) \
+  do { \
+    const IList<_ioClass>& _listeners = (_ioObj).listeners(); \
+    IList<_ioClass>::const_iterator _i = _listeners.begin(), \
+                                    _e = _listeners.end(); \
+    while (_i != _e) { \
+      _ioClass* _listObj = &*_i; ++_i; _listObj->_functionName _args; \
+    } \
+  } while (false)
+// Same thing, but for template function
+#define IOSOURCE_SENDt(_ioClass, _ioObj, _functionName, _args) \
+  do { \
+    IList<_ioClass>& _listeners = (_ioObj).listeners(); \
+    typename IList<_ioClass>::iterator _i = _listeners.begin(), \
+                                       _e = _listeners.end(); \
+    while (_i != _e) { \
+      _ioClass* _listObj = &*_i; ++_i; _listObj->_functionName _args; \
+    } \
+  } while (false)
+//________________________________________
+
+/** In your job class, use the template to generate a public member:<pre>
 
     class MyJob {
     public:
       class IO { ... };
-      IOPtr<IO> io;
-      MyJob(IO* ioPtr, ...) : io(ioPtr), ... { ... }
+      IOSource<IO> io;
+      MyJob(IO* ioPtr, ...) : io(), ... { io.addListener(ioPtr); ... }
     };
 
     </pre>*/
 template<class SomeIO>
+class IOSource : NoCopy {
+public:
+  IOSource() : list() { }
+  /** Does not delete the listeners. */
+  //~IOSource() { typename IList<SomeIO>::const_iterator _i; }
+  ~IOSource() { IOSOURCE_SENDt(SomeIO, *this, job_deleted, ()); }
+  void addListener(SomeIO& l) { Assert(&l != 0); list.push_back(l); }
+  const IList<SomeIO>& listeners() const { return list; };
+  IList<SomeIO>& listeners() { return list; };
+  bool empty() const { return list.empty(); }
+
+private:
+  IList<SomeIO> list;
+};
+//______________________________________________________________________
+
+#if 0
+template<class SomeIO>
 class IOPtr {
 public:
-  IOPtr(SomeIO* io) : ptr(io) { }
+  inline IOPtr(SomeIO* io) _DEPRECATED;
   ~IOPtr() { if (ptr != 0) ptr->job_deleted(); }
 
   SomeIO& operator*()  { return *ptr; }
@@ -156,5 +179,9 @@ public:
 private:
   SomeIO* ptr;
 };
+
+template<class SomeIO>
+IOPtr<SomeIO>::IOPtr(SomeIO* io) : ptr(io) { }
+#endif
 
 #endif

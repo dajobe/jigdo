@@ -11,6 +11,8 @@
 
   Data (=downloaded bytes, status info) flows as follows:
 
+  INFO DEPRECATED:
+
   class:       Download ->    SingleUrl      -> JigdoIO -> GtkSingleUrl
   data member:             childDl->source()      this        frontend
 
@@ -56,10 +58,10 @@ public:
       master)
       @param download Gives the data of the .jigdo file to us
       @param childIo Provided by the frontend, e.g. a GtkSingleUrl object */
-  JigdoIO(MakeImageDl::Child* c, const string& url,
-          DataSource::IO* frontendIo);
+  JigdoIO(MakeImageDl::Child* c, const string& url/* IOPtr,
+          DataSource::IO* frontendIo*/);
   ~JigdoIO();
-  virtual Job::IO* job_removeIo(Job::IO* rmIo);
+  //x virtual Job::IO* job_removeIo(Job::IO* rmIo);
 
   inline MakeImageDl* master() const;
   inline DataSource* source() const;
@@ -69,7 +71,7 @@ private:
 
   /* Create object for an [Include]d file */
   JigdoIO(MakeImageDl::Child* c, const string& url,
-          DataSource::IO* frontendIo, JigdoIO* parentJigdo,
+          /*DataSource::IO* frontendIo,*/ JigdoIO* parentJigdo,
           int inclLine);
 
   /** @return Root object of the include tree */
@@ -96,7 +98,7 @@ private:
   void generateError(const string& msg);
   void generateError(const char* msg);
   // As above, but directly pass on error string, do not add URL/line
-  void generateError_plain(string* err);
+  void generateError_plain(const string& err);
   // True after above was called
   inline bool failed() const;
   // Called by gunzip_data(): New .jigdo line ready. Arg is empty on exit.
@@ -110,8 +112,8 @@ private:
   // Virtual methods from DataSource::IO
   virtual void job_deleted();
   virtual void job_succeeded();
-  virtual void job_failed(string* message);
-  virtual void job_message(string* message);
+  virtual void job_failed(const string& message);
+  virtual void job_message(const string& message);
   virtual void dataSource_dataSize(uint64 n);
   virtual void dataSource_data(const byte* data, unsigned size,
                                uint64 currentSize);
@@ -124,7 +126,7 @@ private:
 
   MakeImageDl::Child* childDl;
   string urlVal; // Absolute URL of this .jigdo file
-  DataSource::IO* frontend; // Object provided by frontend for this download
+  //x DataSource::IO* frontend; // Object provided by frontend for this download
 
   /* Representation of the tree of [Include] directives. Most of the time,
      the order of data in the .jigdo files is not relevant, with one
@@ -153,8 +155,8 @@ private:
   /* When an error happens inside gunzip_data(), cannot immediately tell the
      master about it, because it would delete the DataSource => the Download
      would be deleted from within download_data(). */
-  static gboolean childFailed_callback(gpointer data);
-  int childFailedId;
+//x   static gboolean childFailed_callback(gpointer data);
+//   int childFailedId;
 
   /* Transparent gunzipping of .jigdo file. GUNZIP_BUF_SIZE is also the max
      size a single line in the .jigdo is allowed to have */

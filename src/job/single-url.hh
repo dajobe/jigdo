@@ -64,7 +64,7 @@ public:
 
   /** Create object, but don't start the download yet - use run() to do that.
       @param uri URI to download */
-  SingleUrl(DataSource::IO* ioPtr, const string& uri);
+  SingleUrl(/*IOPtr DataSource::IO* ioPtr, */const string& uri);
   virtual ~SingleUrl();
 
   /** Set offset to resume from - download must not yet have been started,

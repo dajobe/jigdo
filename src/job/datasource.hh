@@ -45,9 +45,8 @@ public:
     // Not overriding here:
     // virtual IO* job_removeIo(IO* rmIo);
 
-    /** Called by the job when it is deleted or when a different IO object is
-        registered with it. If the IO object considers itself owned by its
-        job, it can delete itself. */
+    /** Called by the job when it is deleted. If the IO object considers
+        itself owned by its job, it can delete itself. */
     virtual void job_deleted() = 0;
 
     /** Called when the job has successfully completed its task. */
@@ -55,10 +54,10 @@ public:
 
     /** Called when the job fails. The only remaining action after getting
         this is to delete the job object. */
-    virtual void job_failed(string* message) = 0;
+    virtual void job_failed(const string& message) = 0;
 
     /** Informational message. */
-    virtual void job_message(string* message) = 0;
+    virtual void job_message(const string& message) = 0;
 
     /** Called as soon as the size of the downloaded data is known. May not
         be called at all if the size is unknown. Problem with libwww: Returns
@@ -74,10 +73,10 @@ public:
   };
   //____________________
 
-  IOPtr<IO> io;
+  IOSource<IO> io;
 
-  inline DataSource(IO* ioPtr);
-  virtual ~DataSource();
+  DataSource() : io() { };
+  virtual ~DataSource() { }
 
   /** Start delivering data. */
   virtual void run() = 0;
@@ -95,8 +94,5 @@ public:
   /** Return the URL used to download the data, or its filename on disc */
   virtual const string& location() const = 0;
 };
-//______________________________________________________________________
-
-Job::DataSource::DataSource(IO* ioPtr) : io(ioPtr) { }
 
 #endif

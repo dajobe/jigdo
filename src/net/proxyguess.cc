@@ -15,6 +15,26 @@
 
 */
 
+// This is what libcurl says about env vars (url.c:2326):
+    /* If proxy was not specified, we check for default proxy environment
+     * variables, to enable i.e Lynx compliance:
+     *
+     * http_proxy=http://some.server.dom:port/
+     * https_proxy=http://some.server.dom:port/
+     * ftp_proxy=http://some.server.dom:port/
+     * gopher_proxy=http://some.server.dom:port/
+     * no_proxy=domain1.dom,host.domain2.dom
+     *   (a comma-separated list of hosts which should
+     *   not be proxied, or an asterisk to override
+     *   all proxy variables)
+     * all_proxy=http://some.server.dom:port/
+     *   (seems to exist for the CERN www lib. Probably
+     *   the first to check for.)
+     *
+     * For compatibility, the all-uppercase versions of these variables are
+     * checked if the lowercase versions don't exist.
+     */
+
 #include <config.h>
 
 #include <fstream>

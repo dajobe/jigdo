@@ -35,6 +35,7 @@
 //______________________________________________________________________
 
 string Download::userAgent;
+struct curl_slist* Download::extraHeaders = 0;
 
 DEBUG_UNIT("download")
 
@@ -46,12 +47,17 @@ namespace {
 
 // CURLSH* Download::shHandle = 0;
 
-// Initialize (g)libwww
+// Initialize (g)libcurl
 void Download::init() {
   glibcurl_init();
 //   shHandle = curl_share_init();
 //   curl_share_setopt(shHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
   glibcurl_set_callback(glibcurlCallback, 0);
+
+  if (extraHeaders == 0) {
+    // Do not send "Pragma: no-cache" header
+    extraHeaders = curl_slist_append(extraHeaders, "Pragma:");
+  }
 
   if (userAgent.empty()) {
     userAgent = "jigdo/" JIGDO_VERSION;
@@ -88,8 +94,8 @@ void Download::init() {
     //userAgent += curl_version();
     const char* p = curl_version();
     while (*p != ' ' && *p != '\0') userAgent += *p++;
-    userAgent += '\0';
     debug("User-Agent: %1", userAgent);
+    userAgent += '\0';
   }
 }
 
@@ -98,6 +104,10 @@ void Download::cleanup() {
   // Dumps core when called - wish I knew why:
   //curl_share_cleanup(shHandle);
   glibcurl_cleanup();
+
+  if (extraHeaders != 0) curl_slist_free_all(extraHeaders);
+
+  userAgent.erase();
 }
 //______________________________________________________________________
 
@@ -173,6 +183,8 @@ void Download::run() {
   curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, curlWriter);
   curl_easy_setopt(handle, CURLOPT_WRITEDATA, this);
   curl_easy_setopt(handle, CURLOPT_PRIVATE, this);
+
+  curl_easy_setopt(handle, CURLOPT_HTTPHEADER, extraHeaders);
 
   //curl_easy_setopt(handle, CURLOPT_SHARE, shHandle);
   glibcurl_add(handle);
@@ -399,16 +411,11 @@ gboolean Download::stopLater_callback(gpointer data) {
 
 // Call output->error() with appropriate string taken from request object
 /* If this is called, the Download is assumed to have failed in a
-   non-recoverable way. cc is a CURLcode */
+   non-recoverable way. cc is a CURLcode. Note that outputVal may decide to
+   delete us when called. */
 void Download::generateError(State newState, int cc) {
   if (state == ERROR || state == INTERRUPTED || state == SUCCEEDED) return;
   string s;
-//   if (strcmp("client_error", libwwwErrors[errIndex].type) == 0
-//       || strcmp("server_error", libwwwErrors[errIndex].type) == 0) {
-//     // Include error code with HTTP errors
-//     append(s, libwwwErrors[errIndex].code);
-//     s += ' ';
-//   }
   state = newState;
   /* libcurl is not internationalized, so the string always ought to be
      UTF-8. Oh well, check just to be sure. */
@@ -452,6 +459,6 @@ void Download::generateError(State newState, int cc) {
     s = toupper(curlError[0]);
     s += (curlError + 1);
   }
-  outputVal->download_failed(&s);
   curlError[0] = '\0';
+  outputVal->download_failed(&s);
 }

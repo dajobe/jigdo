@@ -67,6 +67,11 @@ void JobList::finalize() {
     g_object_unref(store());
     storeVal = 0;
   }
+
+  for (vector<GdkPixbuf*>::iterator i = progressGfx.begin(),
+         e = progressGfx.end(); i != e; ++i)
+    g_object_unref(*i);
+  progressGfx.clear();
 }
 
 JobList::~JobList() {
@@ -141,17 +146,21 @@ void JobList::pixbufForJobLine_init() {
   memset(&progressValue, 0, sizeof(progressValue));
   g_value_init(&progressValue, G_TYPE_FROM_INSTANCE(progressImage));
 
-  int width = gdk_pixbuf_get_width(progressImage);
-  int height = gdk_pixbuf_get_height(progressImage);
+  unsigned width = gdk_pixbuf_get_width(progressImage);
+  unsigned height = gdk_pixbuf_get_height(progressImage);
   // height must be evenly divisible by PROGRESS_SUBDIV
   Assert(height % PROGRESS_SUBDIV == 0);
-  int subHeight = height / PROGRESS_SUBDIV;
+  unsigned subHeight = height / PROGRESS_SUBDIV;
 
-  for (int y = 0; y < height; y += subHeight) {
+  for (unsigned y = 0; y < height; y += subHeight) {
     GdkPixbuf* sub = gdk_pixbuf_new_subpixbuf(progressImage, 0, y,
                                               width, subHeight);
     progressGfx.push_back(sub);
   }
+  Paranoid(progressGfx.size() == PROGRESS_SUBDIV);
+  /* progressImage shares pixels with the subpixbufs, so will not be deleted
+     immediately: */
+  g_object_unref(progressImage);
 }
 //________________________________________
 

@@ -7,7 +7,11 @@
   under the terms of the GNU General Public License, version 2. See the file
   COPYING for details.
 
-  Intrusive list, i.e. every list member needs to derive from IListBase
+  Intrusive list, i.e. every list member needs to derive publically from
+  IListBase
+
+  A speciality is that list members will remove themselves from their list
+  automatically from their dtor.
 
 */
 
@@ -34,6 +38,7 @@ public:
   /** May use this to unlink this object from its list, if any */
   void iList_remove() {
     if (iListBase_prev == 0) return;
+    Paranoid(iListBase_next != 0);
     iListBase_prev->iListBase_next = iListBase_next;
     iListBase_next->iListBase_prev = iListBase_prev;
     iListBase_prev = iListBase_next = 0;
@@ -66,6 +71,7 @@ public:
       p->iListBase_prev = p->iListBase_next = 0;
       p = q;
     }
+    e.iListBase_prev = e.iListBase_next = 0;
   }
   bool empty() const { return e.iListBase_next == &e; }
   void push_back(T& x) {
@@ -120,6 +126,8 @@ public:
   bool operator==(const iterator i) const { return p == i.p; }
   bool operator!=(const iterator i) const { return p != i.p; }
 private:
+  //T* getT() { return reinterpret_cast<T*>(p); }
+  // Will not work if IListBase is an inaccessible base of T:
   T* getT() { return static_cast<T*>(p); }
   IListBase* p;
 };
@@ -142,6 +150,8 @@ public:
   bool operator==(const const_iterator i) const { return p == i.p; }
   bool operator!=(const const_iterator i) const { return p != i.p; }
 private:
+  //const T* getT() const { return reinterpret_cast<const T*>(p); }
+  // Will not work if IListBase is an inaccessible base of T:
   const T* getT() const { return static_cast<const T*>(p); }
   const IListBase* p;
 };

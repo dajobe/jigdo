@@ -15,6 +15,4 @@
 
 using namespace Job;
 
-DataSource::~DataSource() {
-  if (io) io->job_deleted();
-}
+//DataSource::~DataSource() { }

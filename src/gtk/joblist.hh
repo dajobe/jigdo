@@ -152,7 +152,7 @@ private:
 
   /* Used by initAfterGtk(): Nr of pixbufs to subdivide the progress XPM
      into, filename to load from. */
-  static const int PROGRESS_SUBDIV = 61;
+  static const unsigned PROGRESS_SUBDIV = 61;
   static const char* const PROGRESS_IMAGE_FILE;
   static GdkPixbuf* progressImage; // Pixel data
   static vector<GdkPixbuf*> progressGfx; // sub-GdkPixbufs of progressImage

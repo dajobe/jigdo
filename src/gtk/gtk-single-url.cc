@@ -37,22 +37,20 @@ GtkSingleUrl::GtkSingleUrl(const string& uriStr, const string& destDesc,
                            Job::DataSource* download)
   : childMode(true), uri(uriStr), dest(destDesc), progress(), status(),
     treeViewStatus(), destStream(0), messageBox(), job(download),
-    singleUrl(0) { }
+    singleUrl(0), state(CREATED) { }
 
 GtkSingleUrl::~GtkSingleUrl() {
+  debug("~GtkSingleUrl %1", childMode);
   callRegularly(0);
   if (jobList()->isWindowOwner(this))
     setNotebookPage(GUI::window.pageOpen);
   if (!childMode) {
     // Only delete if job owned, i.e. if we're not a child of another job
+    debug("Deleting job %1", job);
     delete job;
     Paranoid(job == 0); // Was set to 0 during above stmt by job_deleted()
   }
-  if (job != 0) {
-    // Ensure we're no longer called if anything happens to the download
-    job->io.remove(this);
-    Paranoid(job->io.get() != this); // Check whether remove() really worked
-  }
+  debug("~GtkSingleUrl done");
 }
 //______________________________________________________________________
 
@@ -125,7 +123,8 @@ void GtkSingleUrl::openOutputAndRun(/*bool pragmaNoCache*/) {
 
   // Allocate job and run it
   status = _("Waiting...");
-  if (job == 0) job = singleUrl = new Job::SingleUrl(this, uri);
+  if (job == 0) job = singleUrl = new Job::SingleUrl(uri);
+  singleUrl->io.addListener(*this);
   singleUrl->setDestination(destStream.get(), 0, 0);
   //singleUrl->setPragmaNoCache(pragmaNoCache);
   singleUrl->run();
@@ -148,7 +147,8 @@ void GtkSingleUrl::openOutputAndResume() {
       status = subst(_("Resuming download - overlap is %1kB"),
                      Job::SingleUrl::RESUME_SIZE / 1024);
       updateWindow();
-      if (job == 0) job = singleUrl = new Job::SingleUrl(this, uri);
+      if (job == 0) job = singleUrl = new Job::SingleUrl(uri);
+      singleUrl->io.addListener(*this);
       singleUrl->setResumeOffset(fileInfo.st_size);
       singleUrl->setDestination(destStream.get(), 0, 0);
       singleUrl->run();
@@ -375,6 +375,7 @@ void GtkSingleUrl::resumeResponse(GtkDialog*, int r, gpointer data) {
 
 /* The job whose io ptr references us is being deleted. */
 void GtkSingleUrl::job_deleted() {
+  debug("job_deleted");
   job = singleUrl = 0;
   return;
 }
@@ -382,6 +383,7 @@ void GtkSingleUrl::job_deleted() {
 
 // Called when download succeeds
 void GtkSingleUrl::job_succeeded() {
+  debug("job_succeeded");
   callRegularly(0);
 
   // Can't see the same problem as with job_failed(), but just to be safe...
@@ -394,7 +396,7 @@ void GtkSingleUrl::job_succeeded() {
   if (state != STOPPED) state = SUCCEEDED;
   updateWindow();
   s = subst(_("Finished - fetched %1"), s);
-  job_message(&s);
+  job_message(s);
 }
 //______________________________________________________________________
 
@@ -413,7 +415,7 @@ void GtkSingleUrl::failedPermanently(string* message) {
 }
 //______________________________________________________________________
 
-void GtkSingleUrl::job_failed(string* message) {
+void GtkSingleUrl::job_failed(const string& message) {
   /* Important: close the file here. Otherwise, the following can happen: 1)
      Download aborts with an error, old JobLine still displays error message,
      isn't deleted yet; its stream stays open. 2) User restarts download, a
@@ -439,7 +441,7 @@ void GtkSingleUrl::job_failed(string* message) {
     treeViewStatus = subst(_("<b>%E1</b>"), message);
   }
   //debug("job_failed: %1", message);
-  status.swap(*message);
+  status = message;
   if (progress.empty()) progress = _("Failed:");
   updateWindow();
   gtk_tree_store_set(jobList()->store(), row(), JobList::COLUMN_STATUS,
@@ -450,8 +452,8 @@ void GtkSingleUrl::job_failed(string* message) {
 }
 //______________________________________________________________________
 
-void GtkSingleUrl::job_message(string* message) {
-  treeViewStatus.swap(*message);
+void GtkSingleUrl::job_message(const string& message) {
+  treeViewStatus = message;
   gtk_tree_store_set(jobList()->store(), row(),
                      JobList::COLUMN_STATUS, treeViewStatus.c_str(),
                      -1);
@@ -736,5 +738,6 @@ void GtkSingleUrl::restart() {
 }
 
 void GtkSingleUrl::deleteThis() {
+  debug("deleteThis %1", this);
   delete this;
 }

@@ -24,7 +24,8 @@ GtkMakeImage::GtkMakeImage(const string& uriStr, const string& destDir)
   : progress(), status(), treeViewStatus(), dest(),
     imageInfo(_("\nDownloading .jigdo data - please wait...")),
     imageShortInfo(),
-    mid(this, uriStr, destDir) {
+    mid(uriStr, destDir) {
+  mid.io.addListener(*this);
   // Remove all trailing '/' from dest dir, even if result empty
   unsigned destLen = destDir.length();
   while (destLen > 0 && destDir[destLen - 1] == DIRSEP) --destLen;
@@ -158,23 +159,23 @@ void GtkMakeImage::updateWindow() {
 void GtkMakeImage::job_deleted() { }
 void GtkMakeImage::job_succeeded() { }
 
-void GtkMakeImage::job_failed(string* message) {
+void GtkMakeImage::job_failed(const string& message) {
   treeViewStatus = subst(_("<b>%E1</b>"), message);
-  status.swap(*message);
+  status = message;
   progress = _("Failed:");
   updateWindow();
   gtk_tree_store_set(jobList()->store(), row(), JobList::COLUMN_STATUS,
                      treeViewStatus.c_str(), -1);
 }
 
-void GtkMakeImage::job_message(string* message) {
-  treeViewStatus.swap(*message);
+void GtkMakeImage::job_message(const string& message) {
+  treeViewStatus = message;
   gtk_tree_store_set(jobList()->store(), row(),
                      JobList::COLUMN_STATUS, treeViewStatus.c_str(),
                      -1);
 }
 
-Job::DataSource::IO* GtkMakeImage::makeImageDl_new(
+void GtkMakeImage::makeImageDl_new(
     Job::DataSource* childDownload, const string& uri,
     const string& destDesc) {
 // # if DEBUG
@@ -186,15 +187,21 @@ Job::DataSource::IO* GtkMakeImage::makeImageDl_new(
   /* NB run() cannot result in "delete child;" for child mode, so we always
      return a valid pointer here. */
   Assert(status == SUCCESS);
-  return child;
+  //x return child;
+  childDownload->io.addListener(*child);
 }
 
-void GtkMakeImage::makeImageDl_finished(Job::DataSource* /*childDownload*/,
-                                        Job::DataSource::IO* yourIo) {
-  GtkSingleUrl* child = dynamic_cast<GtkSingleUrl*>(yourIo);
-  Assert(child != 0);
-  debug("Child finished");
-  child->childIsFinished();
+void GtkMakeImage::makeImageDl_finished(Job::DataSource* src) {
+  debug("makeImageDl_finished");
+  // mid.io.listeners()
+  for (IList<Job::DataSource::IO>::iterator i = src->io.listeners().begin(),
+         e = src->io.listeners().end(); i != e; ++i) {
+    GtkSingleUrl* child = dynamic_cast<GtkSingleUrl*>(&*i);
+    if (child != 0) {
+      debug("Child finished");
+      child->childIsFinished();
+    }
+  }
 }
 
 void GtkMakeImage::makeImageDl_haveImageSection() {

@@ -31,8 +31,8 @@ using namespace Job;
 
 DEBUG_UNIT("single-url")
 
-SingleUrl::SingleUrl(DataSource::IO* ioPtr, const string& uri)
-  : DataSource(ioPtr), download(uri, this), progressVal(),
+SingleUrl::SingleUrl(/*IOPtr DataSource::IO* ioPtr, */const string& uri)
+  : DataSource(/*ioPtr*/), download(uri, this), progressVal(),
     destStreamVal(0), destOff(0), destEndOff(0), resumeLeft(0),
     haveResumeOffset(false), haveDestination(false),
     /*havePragmaNoCache(false),*/ tries(0) {
@@ -96,7 +96,8 @@ void SingleUrl::resumeFailed() {
   debug("resumeFailed");
   setNoResumePossible();
   string error(_("Resume failed"));
-  if (io) io->job_failed(&error);
+  //x if (io) io->job_failed(&error);
+  IOSOURCE_SEND(DataSource::IO, io, job_failed, (error));
   download.stop();
   progressVal.setAutoTick(false);
   return;
@@ -111,7 +112,8 @@ void SingleUrl::download_dataSize(uint64 n) {
     if (n > 0 && n != progressVal.dataSize()) resumeFailed();
   }
   if (!resuming()) {
-    if (io) io->dataSource_dataSize(n);
+    //x if (io) io->dataSource_dataSize(n);
+    IOSOURCE_SEND(DataSource::IO, io, dataSource_dataSize, (n));
     return;
   }
 }
@@ -132,10 +134,9 @@ bool SingleUrl::writeToDestStream(uint64 off, const byte* data,
   destStream()->seekp(off, ios::beg);
   writeBytes(*destStream(), data, realSize);
   if (!*destStream()) {
-    if (io) {
-      string error = subst("%L1", strerror(errno));
-      io->job_failed(&error);
-    }
+    string error = subst("%L1", strerror(errno));
+    //x io->job_failed(&error);
+    IOSOURCE_SEND(DataSource::IO, io, job_failed, (error));
     download.stop();
     //stopLater();
     progressVal.setAutoTick(false);
@@ -143,10 +144,9 @@ bool SingleUrl::writeToDestStream(uint64 off, const byte* data,
   }
   if (realSize < size) {
     // Server sent more than we expected; error
-    if (io) {
-      string error = _("Server sent more data than expected");
-      io->job_failed(&error);
-    }
+    string error = _("Server sent more data than expected");
+    //x io->job_failed(&error);
+    IOSOURCE_SEND(DataSource::IO, io, job_failed, (error));
     download.stop();
     //stopLater();
     progressVal.setAutoTick(false);
@@ -179,7 +179,9 @@ void SingleUrl::download_data(const byte* data, unsigned size,
     progressVal.setCurrentSize(currentSize);
     if (writeToDestStream(destOff + currentSize - size, data, size)
         == FAILURE) return;
-    if (io) io->dataSource_data(data, size, currentSize);
+    //x if (io) io->dataSource_data(data, size, currentSize);
+    IOSOURCE_SEND(DataSource::IO, io,
+                  dataSource_data, (data, size, currentSize));
     return;
   }
   //____________________
@@ -221,7 +223,8 @@ void SingleUrl::download_data(const byte* data, unsigned size,
   }
 
   string info = subst(_("Resuming... %1kB"), resumeLeft / 1024);
-  if (io) io->job_message(&info);
+  //x if (io) io->job_message(&info);
+  IOSOURCE_SEND(DataSource::IO, io, job_message, (info));
 
   if (resumeLeft > 0) return;
 
@@ -233,25 +236,30 @@ void SingleUrl::download_data(const byte* data, unsigned size,
     progressVal.setCurrentSize(currentSize);
     if (writeToDestStream(destOff + currentSize - size, data, size)
         == FAILURE) return;
-    if (io) io->dataSource_data(data, size, currentSize);
+    //x if (io) io->dataSource_data(data, size, currentSize);
+    IOSOURCE_SEND(DataSource::IO, io,
+                  dataSource_data, (data, size, currentSize));
   }
 }
 //______________________________________________________________________
 
 void SingleUrl::download_succeeded() {
   progressVal.setAutoTick(false);
-  if (io) io->job_succeeded();
+  //x if (io) io->job_succeeded();
+  IOSOURCE_SEND(DataSource::IO, io, job_succeeded, ());
 }
 //______________________________________________________________________
 
 void SingleUrl::download_failed(string* message) {
   progressVal.setAutoTick(false);
-  if (io) io->job_failed(message);
+  //x if (io) io->job_failed(message);
+  IOSOURCE_SEND(DataSource::IO, io, job_failed, (*message));
 }
 //______________________________________________________________________
 
 void SingleUrl::download_message(string* message) {
-  if (io) io->job_message(message);
+  //x if (io) io->job_message(message);
+  IOSOURCE_SEND(DataSource::IO, io, job_message, (*message));
 }
 //______________________________________________________________________
 

@@ -100,8 +100,8 @@ private:
   // From Job::DataSource:IO
   virtual void job_deleted();
   virtual void job_succeeded();
-  virtual void job_failed(string* message);
-  virtual void job_message(string* message);
+  virtual void job_failed(const string& message);
+  virtual void job_message(const string& message);
   virtual void dataSource_dataSize(uint64 n);
   virtual void dataSource_data(const byte* data, unsigned size,
                               uint64 currentSize);

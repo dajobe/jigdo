@@ -40,7 +40,7 @@ public:
       @param filename File to spool from
       @param prio "Priority" - if >1 CachedUrls are running, the ones with
       lower prio get spooled first. */
-  CachedUrl(DataSource::IO* ioPtr, const string& filename, uint64 prio);
+  CachedUrl(const string& filename, uint64 prio);
   virtual ~CachedUrl();
 
   virtual void run();

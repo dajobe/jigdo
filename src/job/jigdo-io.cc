@@ -45,23 +45,23 @@ namespace {
 }
 
 // Root object
-JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url,
-                 DataSource::IO* frontendIo)
-  : childDl(c), urlVal(url), frontend(frontendIo), parent(0), includeLine(0),
+JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url/*,
+                 DataSource::IO* frontendIo*/)
+  : childDl(c), urlVal(url),/*frontend(frontendIo),*/parent(0), includeLine(0),
     firstChild(0), next(0), rootAndImageSectionCandidate(this), line(0),
     section(), imageSectionLine(0), imageName(), imageInfo(),
-    imageShortInfo(), templateUrl(), templateMd5(0), childFailedId(0),
+    imageShortInfo(), templateUrl(), templateMd5(0), /*childFailedId(0),*/
     gunzip(this) { }
 
 // Non-root, i.e. [Include]d object
 JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url,
-                 DataSource::IO* frontendIo, JigdoIO* parentJigdo,
+                 /*DataSource::IO* frontendIo,*/ JigdoIO* parentJigdo,
                  int inclLine)
-  : childDl(c), urlVal(url), frontend(frontendIo), parent(parentJigdo),
+  : childDl(c), urlVal(url), /*frontend(frontendIo),*/ parent(parentJigdo),
     includeLine(inclLine), firstChild(0), next(0),
     rootAndImageSectionCandidate(parent->root()), line(0), section(),
     imageSectionLine(0), imageName(), imageInfo(), imageShortInfo(),
-    templateUrl(), templateMd5(0), childFailedId(0), gunzip(this) {
+    templateUrl(), templateMd5(0), /*childFailedId(0),*/ gunzip(this) {
   //debug("JigdoIO: Parent of %1 is %2", url, parent->urlVal);
 }
 //______________________________________________________________________
@@ -69,49 +69,45 @@ JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url,
 JigdoIO::~JigdoIO() {
   debug("~JigdoIO");
 
-  if (childFailedId != 0) {
-    g_source_remove(childFailedId);
-    childFailedId = 0;
-    master()->childFailed(childDl, this, frontend);
-  }
-
-  /* Don't delete children; master will do this! If we deleted them here,
-     MakeImageDl::Child::childIoVal would be left dangling. */
-//   // Delete all our children
-//   JigdoIO* x = firstChild;
-//   while (x != 0) {
-//     JigdoIO* y = x->next;
-//     delete x;
-//     x = y;
+//x   if (childFailedId != 0) {
+//     g_source_remove(childFailedId);
+//     childFailedId = 0;
+//     master()->childFailed(childDl, this);
 //   }
 
-  delete templateMd5;
-
-  if (source() != 0) {
-    source()->io.remove(this);
-    Paranoid(source()->io.get() != this);
+//   /* Don't delete children; master will do this! If we deleted them here,
+//      MakeImageDl::Child::childIoVal would be left dangling. */
+  // Delete all our children
+  JigdoIO* x = firstChild;
+  while (x != 0) {
+    JigdoIO* y = x->next;
+    debug("~JigdoIO: deleting child %1", x);
+    delete x;
+    x = y;
   }
+
+  delete templateMd5;
 }
 //______________________________________________________________________
 
-Job::IO* JigdoIO::job_removeIo(Job::IO* rmIo) {
-  debug("job_removeIo %1", rmIo);
-  if (rmIo == this) {
-    // Do not "delete this" - this is called from ~JigdoIO above
-    DataSource::IO* c = frontend;
-    frontend = 0;
-    return c;
-  } else if (frontend != 0) {
-    Job::IO* c = frontend->job_removeIo(rmIo);
-    Paranoid(c == 0 || dynamic_cast<DataSource::IO*>(c) != 0);
-    debug("job_removeIo frontend=%1", c);
-    frontend = static_cast<DataSource::IO*>(c);
-  }
-  return this;
-}
+// Job::IO* JigdoIO::job_removeIo(Job::IO* rmIo) {
+//   debug("job_removeIo %1", rmIo);
+//   if (rmIo == this) {
+//     // Do not "delete this" - this is called from ~JigdoIO above
+//     DataSource::IO* c = frontend;
+//     frontend = 0;
+//     return c;
+//   } else if (frontend != 0) {
+//     Job::IO* c = frontend->job_removeIo(rmIo);
+//     Paranoid(c == 0 || dynamic_cast<DataSource::IO*>(c) != 0);
+//     debug("job_removeIo frontend=%1", c);
+//     frontend = static_cast<DataSource::IO*>(c);
+//   }
+//   return this;
+// }
 
 void JigdoIO::job_deleted() {
-  if (frontend != 0) frontend->job_deleted();
+  //x if (frontend != 0) frontend->job_deleted();
   // Do not "delete this" - childDl owns us
 }
 
@@ -133,38 +129,39 @@ void JigdoIO::job_succeeded() {
   setFinished();
   XStatus st = imgSect_eof();
   if (st.xfailed()) return;
-  if (frontend != 0) frontend->job_succeeded();
-  master()->childSucceeded(childDl, this, frontend);
+  //x if (frontend != 0) frontend->job_succeeded();
+  master()->childSucceeded(childDl, this);
   if (st.returned(1)) master()->jigdoFinished(); // Causes "delete this"
 }
 
-void JigdoIO::job_failed(string* message) {
-  Paranoid(!failed());
+void JigdoIO::job_failed(const string&) {
   if (failed()) return;
-  if (frontend != 0) frontend->job_failed(message);
+  //x if (frontend != 0) frontend->job_failed(message);
   string err = _("Download of .jigdo file failed");
-  master()->generateError(&err);
-  /* We cannot call this right now:
-     master()->childFailed(childDl, this, frontend);
-     so schedule a callback to call it later. */
-  childFailedId = g_idle_add_full(G_PRIORITY_HIGH_IDLE,&childFailed_callback,
-                                  (gpointer)this, NULL);
-  Paranoid(childFailedId != 0);
+  master()->generateError(err);
+//x   /* We cannot call this right now:
+//      master()->childFailed(childDl, this, frontend);
+//      so schedule a callback to call it later. */
+//   childFailedId = g_idle_add_full(G_PRIORITY_HIGH_IDLE, &childFailed_callback,
+//                                   (gpointer)this, NULL);
+//   Paranoid(childFailedId != 0);
   imageName.assign("", 1); Paranoid(failed());
+
+  master()->childFailed(childDl, this);
+  //master()->killAllChildren(); //x
 }
 
-void JigdoIO::job_message(string* message) {
-  if (failed()) return;
-  if (frontend != 0) frontend->job_message(message);
+void JigdoIO::job_message(const string&) {
+  //if (failed()) return;
+  //x if (frontend != 0) frontend->job_message(message);
 }
 
-void JigdoIO::dataSource_dataSize(uint64 n) {
-  if (failed()) return;
-  if (frontend != 0) frontend->dataSource_dataSize(n);
+void JigdoIO::dataSource_dataSize(uint64) {
+  //if (failed()) return;
+  //x if (frontend != 0) frontend->dataSource_dataSize(n);
 }
 
-void JigdoIO::dataSource_data(const byte* data, unsigned size,
-                              uint64 currentSize) {
+void JigdoIO::dataSource_data(const byte* data, unsigned size, uint64) {
   Assert(!finished());
   if (/*master()->finalState() ||*/ failed()) {
     debug("Got %1 bytes, ignoring", size);
@@ -179,7 +176,7 @@ void JigdoIO::dataSource_data(const byte* data, unsigned size,
     generateError(e.message);
     return;
   }
-  if (frontend != 0) frontend->dataSource_data(data, size, currentSize);
+  //x if (frontend != 0) frontend->dataSource_data(data, size, currentSize);
 }
 //______________________________________________________________________
 
@@ -263,7 +260,7 @@ void JigdoIO::generateError(const string& msg) {
                      _("%1 (at end of %3)") : _("%1 (line %2 in %3)"));
   err = subst(fmt, msg, line,
               (source() != 0 ? source()->location().c_str() : "?") );
-  generateError_plain(&err);
+  generateError_plain(err);
 }
 
 void JigdoIO::generateError(const char* msg) {
@@ -272,35 +269,39 @@ void JigdoIO::generateError(const char* msg) {
                      _("%1 (at end of %3)") : _("%1 (line %2 in %3)"));
   err = subst(fmt, msg, line,
               (source() != 0 ? source()->location().c_str() : "?") );
-  generateError_plain(&err);
+  generateError_plain(err);
 }
 
-void JigdoIO::generateError_plain(string* err) {
+void JigdoIO::generateError_plain(const string& err) {
   debug("generateError: %1", err);
   Paranoid(!failed());
   if (failed()) return;
-  if (frontend != 0) frontend->job_failed(err);
-  *err = _("Error processing .jigdo file contents");
-  master()->generateError(err);
+  //x if (frontend != 0) frontend->job_failed(err);
+  IOSOURCE_SEND(Job::DataSource::IO, source()->io, job_failed, (err));
+  string merr = _("Error processing .jigdo file contents");
+  master()->generateError(merr);
 
-  /* We cannot call this right now:
-     master()->childFailed(childDl, this, frontend);
-     so schedule a callback to call it later. */
-  childFailedId = g_idle_add_full(G_PRIORITY_HIGH_IDLE,&childFailed_callback,
-                                  (gpointer)this, NULL);
-  Paranoid(childFailedId != 0);
+//x   /* We cannot call this right now:
+//      master()->childFailed(childDl, this, frontend);
+//      so schedule a callback to call it later. */
+//   childFailedId = g_idle_add_full(G_PRIORITY_HIGH_IDLE,&childFailed_callback,
+//                                   (gpointer)this, NULL);
+//   Paranoid(childFailedId != 0);
   imageName.assign("", 1); Paranoid(failed());
+
+  master()->childFailed(childDl, this);
+  //master()->killAllChildren(); //x
 }
 
-gboolean JigdoIO::childFailed_callback(gpointer data) {
-  JigdoIO* self = static_cast<JigdoIO*>(data);
-  debug("childFailed_callback for %1",
-        (self->source() != 0 ? self->source()->location().c_str() : "?") );
-  self->childFailedId = 0;
-  self->master()->childFailed(self->childDl, self, self->frontend);
-  self->master()->jigdoFinished(); // "delete self"
-  return FALSE; // "Don't call me again"
-}
+// gboolean JigdoIO::childFailed_callback(gpointer data) {
+//   JigdoIO* self = static_cast<JigdoIO*>(data);
+//   debug("childFailed_callback for %1",
+//         (self->source() != 0 ? self->source()->location().c_str() : "?") );
+//   self->childFailedId = 0;
+//   self->master()->childFailed(self->childDl, self);
+//   self->master()->jigdoFinished(); // "delete self"
+//   return FALSE; // "Don't call me again"
+// }
 //______________________________________________________________________
 
 // Finding the first [Image] section
@@ -544,22 +545,29 @@ void JigdoIO::include(string* url) {
   } while (p != 0);
 
   string leafname;
+  // childDl->source() is the source of the included .jigdo file's data
   auto_ptr<MakeImageDl::Child> childDl(
       master()->childFor(includeUrl, 0, &leafname));
   if (childDl.get() != 0) {
-    MakeImageDl::IO* mio = master()->io.get();
-    string info = _("Retrieving .jigdo data");
-    string destDesc = subst(Job::MakeImageDl::destDescTemplate(),
-                            leafname, info);
-    auto_ptr<DataSource::IO> frontend(0);
-    if (mio != 0)
-      frontend.reset(mio->makeImageDl_new(childDl->source(), includeUrl,
-                                          destDesc) );
-    JigdoIO* jio = new JigdoIO(childDl.get(), includeUrl, frontend.get(),
+    //x MakeImageDl::IO* mio = master()->io.get();
+//     string info = _("Retrieving .jigdo");
+//     string destDesc = subst(Job::MakeImageDl::destDescTemplate(),
+//                             leafname, info);
+    // auto_ptr<DataSource::IO> frontend(0);
+    //x if (mio != 0)
+    //x frontend.reset(mio->makeImageDl_new(childDl->source(), includeUrl,
+    //x destDesc) );
+    // ...and jio is the destination of above data
+    JigdoIO* jio = new JigdoIO(childDl.get(), includeUrl, /*frontend.get(),*/
                                this, line);
-    childDl->setChildIo(jio);
-    frontend.release();
-    if (mio != 0) mio->job_message(&info);
+    //x childDl->setChildIo(jio);
+    childDl->source()->io.addListener(*jio);
+    //x frontend.release();
+    //x if (mio != 0) mio->job_message(&info);
+
+    // Let frontend(s) register its/their visualisation for this download
+//     IOSOURCE_SEND(Job::MakeImageDl::IO, master()->io,
+//                   makeImageDl_new, (childDl->source(), includeUrl, destDesc));
 
     // Add new child
     JigdoIO** jiop = &firstChild;

@@ -25,9 +25,9 @@
 
 using namespace Job;
 
-MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
+MakeImageDl::MakeImageDl(/*IO* ioPtr,*/ const string& jigdoUri,
                          const string& destination)
-    : io(ioPtr), stateVal(DOWNLOADING_JIGDO),
+    : io(/*ioPtr*/), stateVal(DOWNLOADING_JIGDO),
       jigdoUrl(jigdoUri), childrenVal(), dest(destination),
       tmpDirVal(), mi(),
       imageNameVal(), imageInfoVal(), imageShortInfoVal(), templateUrlVal(),
@@ -44,7 +44,8 @@ void MakeImageDl::setImageSection(string* imageName, string* imageInfo,
   templateUrlVal.swap(*templateUrl);
   templateMd5Val = *templateMd5; *templateMd5 = 0;
 
-  if (io) io->makeImageDl_haveImageSection();
+  //x if (io) io->makeImageDl_haveImageSection();
+  IOSOURCE_SEND(IO, io, makeImageDl_haveImageSection, ());
 }
 //======================================================================
 
@@ -84,7 +85,7 @@ string testImageInfo(const char* subst[], bool escapedText,
   string templateUrl;
   MD5* templateMd5 = 0;
 
-  MakeImageDl m(0, "http://url/", "");
+  MakeImageDl m("http://url/", "");
   string imageName = "image.iso";
   string imageInfo = text;
   m.setImageSection(&imageName, &imageInfo, &imageShortInfo, &templateUrl,
