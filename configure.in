@@ -48,6 +48,18 @@ if test "$GXX" = "yes"; then
     CFLAGS="-Wall $CFLAGS -W"
     CXXFLAGS="$CXXFLAGS -Wall -W -Wpointer-arith -Wconversion -Wmissing-prototypes -Woverloaded-virtual"
 fi
+if test "$GXX" = yes; then
+    AC_MSG_CHECKING(for GCC version)
+    gccver=`$CXX -dumpversion`
+    AC_MSG_RESULT($gccver);
+    case "$gccver" in
+        3.3|3.3.*)
+        AC_MSG_RESULT([   * Big file support is broken in GCC 3.3! If you])
+        AC_MSG_RESULT([   * compile jigdo using GCC 3.3 on Linux (and])
+        AC_MSG_RESULT([   * possibly other OSes), it will not be able to])
+        AC_MSG_RESULT([   * create files bigger than 2GB, such as DVD images.])
+    esac
+fi
 AC_PROG_INSTALL
 dnl ____________________
 
