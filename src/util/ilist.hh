@@ -20,32 +20,32 @@
 #include <log.hh>
 //______________________________________________________________________
 
-/** Never use this type or its members in your code apart from deriving
-    publicly from it. */
-struct IListBase {
+class IListBase {
+  template<class T> friend class IList;
+public:
   IListBase() : iListBase_prev(0), iListBase_next(0) {
     //msg("IListBase %1", this);
   }
   ~IListBase() {
     //msg("~IListBase %1", this);
-    iListBase_remove();
+    iList_remove();
   }
   /** May use this to unlink this object from its list, if any */
-  void iListBase_remove() {
+  void iList_remove() {
     if (iListBase_prev == 0) return;
     iListBase_prev->iListBase_next = iListBase_next;
     iListBase_next->iListBase_prev = iListBase_prev;
     iListBase_prev = iListBase_next = 0;
   }
-/*private:*/
+
+private:
   IListBase* iListBase_prev;
   IListBase* iListBase_next;
 };
 
-template <class T>
+template<class T>
 class IList {
 public:
-
   typedef unsigned size_type;
   typedef T value_type;
   class iterator;
@@ -73,10 +73,16 @@ public:
   inline iterator end() const { return iterator(const_cast<IListBase*>(&e));}
 
 private:
+  // For the iterator class, which cannot be a friend of IListBase
+  static inline IListBase* next(const IListBase* ilb) {
+    return ilb->iListBase_next; }
+  static inline IListBase* prev(const IListBase* ilb) {
+    return ilb->iListBase_prev; }
+
   IListBase e;
 };
 
-template <class T>
+template<class T>
 class IList<T>::iterator {
 public:
   iterator(IListBase* pp) : p(pp) { }
@@ -84,8 +90,8 @@ public:
   const T& operator*() const { return *getT(); }
   T* operator->() { return getT(); }
   const T* operator->() const { return getT(); }
-  iterator& operator++() { p = p->iListBase_next; return *this; }
-  iterator& operator--() { p = p->iListBase_prev; return *this; }
+  iterator& operator++() { p = IList<T>::next(p); return *this; }
+  iterator& operator--() { p = IList<T>::prev(p); return *this; }
   bool operator==(const iterator i) const { return p == i.p; }
   bool operator!=(const iterator i) const { return p != i.p; }
 private:
@@ -93,7 +99,7 @@ private:
   IListBase* p;
 };
 
-// template <class T>
+// template<class T>
 // class IList::iterator {
 // public:
 // private:
