@@ -535,51 +535,36 @@
 		  <property name="spacing">4</property>
 
 		  <child>
-		    <widget class="GtkHBox" id="hbox52">
+		    <widget class="GtkScrolledWindow" id="scrolledwindow24">
 		      <property name="visible">True</property>
-		      <property name="homogeneous">False</property>
-		      <property name="spacing">16</property>
+		      <property name="can_focus">True</property>
+		      <property name="hscrollbar_policy">GTK_POLICY_NEVER</property>
+		      <property name="vscrollbar_policy">GTK_POLICY_ALWAYS</property>
+		      <property name="shadow_type">GTK_SHADOW_NONE</property>
+		      <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
 
 		      <child>
-			<widget class="GtkLabel" id="label156">
+			<widget class="GtkViewport" id="viewport6">
 			  <property name="visible">True</property>
-			  <property name="label" translatable="yes">Please specify files/directories on the local filesystem to scan. Any files needed by jigdo templates that are found this way will not have to be downloaded again.</property>
-			  <property name="use_underline">False</property>
-			  <property name="use_markup">False</property>
-			  <property name="justify">GTK_JUSTIFY_CENTER</property>
-			  <property name="wrap">True</property>
-			  <property name="selectable">False</property>
-			  <property name="xalign">0.5</property>
-			  <property name="yalign">0.5</property>
-			  <property name="xpad">0</property>
-			  <property name="ypad">0</property>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">True</property>
-			  <property name="fill">False</property>
-			</packing>
-		      </child>
+			  <property name="shadow_type">GTK_SHADOW_NONE</property>
 
-		      <child>
-			<widget class="GtkLabel" id="label157">
-			  <property name="visible">True</property>
-			  <property name="label" translatable="yes">Note that any directory to be scanned must contain single files which would otherwise be downloaded - in the case of CD images, you must supply the directory where the CD is mounted, NOT the name of an .iso file.</property>
-			  <property name="use_underline">False</property>
-			  <property name="use_markup">False</property>
-			  <property name="justify">GTK_JUSTIFY_CENTER</property>
-			  <property name="wrap">True</property>
-			  <property name="selectable">False</property>
-			  <property name="xalign">0.5</property>
-			  <property name="yalign">0.5</property>
-			  <property name="xpad">0</property>
-			  <property name="ypad">0</property>
+			  <child>
+			    <widget class="GtkLabel" id="label156">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">Please specify files/directories on the local filesystem to scan. Any files needed by jigdo templates that are found this way will not have to be downloaded again.
+Note that any directory to be scanned must contain single files which would otherwise be downloaded - in the case of CD images, you must supply the directory where the CD is mounted, NOT the name of an .iso file.</property>
+			      <property name="use_underline">False</property>
+			      <property name="use_markup">False</property>
+			      <property name="justify">GTK_JUSTIFY_CENTER</property>
+			      <property name="wrap">True</property>
+			      <property name="selectable">False</property>
+			      <property name="xalign">0.5</property>
+			      <property name="yalign">0.5</property>
+			      <property name="xpad">0</property>
+			      <property name="ypad">0</property>
+			    </widget>
+			  </child>
 			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">True</property>
-			  <property name="fill">False</property>
-			</packing>
 		      </child>
 		    </widget>
 		    <packing>
@@ -746,71 +731,16 @@
 		  <property name="spacing">0</property>
 
 		  <child>
-		    <widget class="GtkHBox" id="hbox83">
+		    <widget class="GtkHBox" id="hbox96">
 		      <property name="visible">True</property>
 		      <property name="homogeneous">False</property>
-		      <property name="spacing">6</property>
+		      <property name="spacing">0</property>
 
 		      <child>
-			<widget class="GtkButton" id="download_closeButton">
+			<widget class="GtkLabel" id="2lineshighlabelforsettingminimumheight">
 			  <property name="visible">True</property>
-			  <property name="can_focus">True</property>
-			  <property name="relief">GTK_RELIEF_NORMAL</property>
-			  <signal name="enter" handler="on_download_closeButton_enter" last_modification_time="Tue, 25 Feb 2003 22:09:53 GMT"/>
-			  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:10:02 GMT"/>
-			  <signal name="clicked" handler="on_download_closeButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:45 GMT"/>
-
-			  <child>
-			    <widget class="GtkImage" id="image14">
-			      <property name="visible">True</property>
-			      <property name="pixbuf">close.png</property>
-			      <property name="xalign">0.5</property>
-			      <property name="yalign">0.5</property>
-			      <property name="xpad">0</property>
-			      <property name="ypad">0</property>
-			    </widget>
-			  </child>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">False</property>
-			  <property name="fill">False</property>
-			  <property name="pack_type">GTK_PACK_END</property>
-			</packing>
-		      </child>
-
-		      <child>
-			<widget class="GtkButton" id="download_restartButton">
-			  <property name="visible">True</property>
-			  <property name="can_focus">True</property>
-			  <property name="relief">GTK_RELIEF_NORMAL</property>
-			  <signal name="enter" handler="on_download_restartButton_enter" last_modification_time="Mon, 03 Mar 2003 16:05:10 GMT"/>
-			  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:46 GMT"/>
-			  <signal name="clicked" handler="on_download_restartButton_clicked" last_modification_time="Mon, 03 Mar 2003 16:05:21 GMT"/>
-
-			  <child>
-			    <widget class="GtkImage" id="image15">
-			      <property name="visible">True</property>
-			      <property name="pixbuf">restart.png</property>
-			      <property name="xalign">0.5</property>
-			      <property name="yalign">0.5</property>
-			      <property name="xpad">0</property>
-			      <property name="ypad">0</property>
-			    </widget>
-			  </child>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">False</property>
-			  <property name="fill">False</property>
-			  <property name="pack_type">GTK_PACK_END</property>
-			</packing>
-		      </child>
-
-		      <child>
-			<widget class="GtkLabel" id="label211">
-			  <property name="visible">True</property>
-			  <property name="label" translatable="yes"></property>
+			  <property name="label" translatable="yes">
+</property>
 			  <property name="use_underline">False</property>
 			  <property name="use_markup">False</property>
 			  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -822,94 +752,9 @@
 			  <property name="ypad">0</property>
 			</widget>
 			<packing>
-			  <property name="padding">3</property>
-			  <property name="expand">False</property>
-			  <property name="fill">False</property>
-			  <property name="pack_type">GTK_PACK_END</property>
-			</packing>
-		      </child>
-
-		      <child>
-			<widget class="GtkButton" id="download_stopButton">
-			  <property name="visible">True</property>
-			  <property name="can_focus">True</property>
-			  <property name="relief">GTK_RELIEF_NORMAL</property>
-			  <signal name="enter" handler="on_download_stopButton_enter" last_modification_time="Tue, 25 Feb 2003 22:09:15 GMT"/>
-			  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:26 GMT"/>
-			  <signal name="clicked" handler="on_download_stopButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:33 GMT"/>
-
-			  <child>
-			    <widget class="GtkImage" id="image10">
-			      <property name="visible">True</property>
-			      <property name="pixbuf">stop.png</property>
-			      <property name="xalign">0.5</property>
-			      <property name="yalign">0.5</property>
-			      <property name="xpad">0</property>
-			      <property name="ypad">0</property>
-			    </widget>
-			  </child>
-			</widget>
-			<packing>
 			  <property name="padding">0</property>
 			  <property name="expand">False</property>
 			  <property name="fill">False</property>
-			  <property name="pack_type">GTK_PACK_END</property>
-			</packing>
-		      </child>
-
-		      <child>
-			<widget class="GtkButton" id="download_pauseButton">
-			  <property name="visible">True</property>
-			  <property name="can_focus">True</property>
-			  <property name="relief">GTK_RELIEF_NORMAL</property>
-			  <signal name="enter" handler="on_download_pauseButton_enter" last_modification_time="Tue, 25 Feb 2003 18:23:27 GMT"/>
-			  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 18:23:57 GMT"/>
-			  <signal name="clicked" handler="on_download_pauseButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:22 GMT"/>
-
-			  <child>
-			    <widget class="GtkImage" id="image11">
-			      <property name="visible">True</property>
-			      <property name="pixbuf">pause.png</property>
-			      <property name="xalign">0.5</property>
-			      <property name="yalign">0.5</property>
-			      <property name="xpad">0</property>
-			      <property name="ypad">0</property>
-			    </widget>
-			  </child>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">False</property>
-			  <property name="fill">False</property>
-			  <property name="pack_type">GTK_PACK_END</property>
-			</packing>
-		      </child>
-
-		      <child>
-			<widget class="GtkButton" id="download_startButton">
-			  <property name="visible">True</property>
-			  <property name="can_focus">True</property>
-			  <property name="relief">GTK_RELIEF_NORMAL</property>
-			  <signal name="enter" handler="on_download_startButton_enter" last_modification_time="Tue, 25 Feb 2003 22:08:55 GMT"/>
-			  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:06 GMT"/>
-			  <signal name="clicked" handler="on_download_startButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:10:43 GMT"/>
-
-			  <child>
-			    <widget class="GtkImage" id="image13">
-			      <property name="visible">True</property>
-			      <property name="pixbuf">start.png</property>
-			      <property name="xalign">0.5</property>
-			      <property name="yalign">0.5</property>
-			      <property name="xpad">0</property>
-			      <property name="ypad">0</property>
-			    </widget>
-			  </child>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">False</property>
-			  <property name="fill">False</property>
-			  <property name="pack_type">GTK_PACK_END</property>
 			</packing>
 		      </child>
 
@@ -931,6 +776,195 @@
 			  <property name="padding">0</property>
 			  <property name="expand">True</property>
 			  <property name="fill">True</property>
+			</packing>
+		      </child>
+
+		      <child>
+			<widget class="GtkVBox" id="vbox42">
+			  <property name="visible">True</property>
+			  <property name="homogeneous">False</property>
+			  <property name="spacing">0</property>
+
+			  <child>
+			    <widget class="GtkHBox" id="hbox83">
+			      <property name="visible">True</property>
+			      <property name="homogeneous">False</property>
+			      <property name="spacing">6</property>
+
+			      <child>
+				<widget class="GtkButton" id="download_closeButton">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <signal name="enter" handler="on_download_closeButton_enter" last_modification_time="Tue, 25 Feb 2003 22:09:53 GMT"/>
+				  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:10:02 GMT"/>
+				  <signal name="clicked" handler="on_download_closeButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:45 GMT"/>
+
+				  <child>
+				    <widget class="GtkImage" id="image14">
+				      <property name="visible">True</property>
+				      <property name="pixbuf">close.png</property>
+				      <property name="xalign">0.5</property>
+				      <property name="yalign">0.5</property>
+				      <property name="xpad">0</property>
+				      <property name="ypad">0</property>
+				    </widget>
+				  </child>
+				</widget>
+				<packing>
+				  <property name="padding">0</property>
+				  <property name="expand">False</property>
+				  <property name="fill">False</property>
+				  <property name="pack_type">GTK_PACK_END</property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkButton" id="download_restartButton">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <signal name="enter" handler="on_download_restartButton_enter" last_modification_time="Mon, 03 Mar 2003 16:05:10 GMT"/>
+				  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:46 GMT"/>
+				  <signal name="clicked" handler="on_download_restartButton_clicked" last_modification_time="Mon, 03 Mar 2003 16:05:21 GMT"/>
+
+				  <child>
+				    <widget class="GtkImage" id="image15">
+				      <property name="visible">True</property>
+				      <property name="pixbuf">restart.png</property>
+				      <property name="xalign">0.5</property>
+				      <property name="yalign">0.5</property>
+				      <property name="xpad">0</property>
+				      <property name="ypad">0</property>
+				    </widget>
+				  </child>
+				</widget>
+				<packing>
+				  <property name="padding">0</property>
+				  <property name="expand">False</property>
+				  <property name="fill">False</property>
+				  <property name="pack_type">GTK_PACK_END</property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkLabel" id="label211">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes"></property>
+				  <property name="use_underline">False</property>
+				  <property name="use_markup">False</property>
+				  <property name="justify">GTK_JUSTIFY_LEFT</property>
+				  <property name="wrap">False</property>
+				  <property name="selectable">False</property>
+				  <property name="xalign">0.5</property>
+				  <property name="yalign">0.5</property>
+				  <property name="xpad">0</property>
+				  <property name="ypad">0</property>
+				</widget>
+				<packing>
+				  <property name="padding">3</property>
+				  <property name="expand">False</property>
+				  <property name="fill">False</property>
+				  <property name="pack_type">GTK_PACK_END</property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkButton" id="download_stopButton">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <signal name="enter" handler="on_download_stopButton_enter" last_modification_time="Tue, 25 Feb 2003 22:09:15 GMT"/>
+				  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:26 GMT"/>
+				  <signal name="clicked" handler="on_download_stopButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:33 GMT"/>
+
+				  <child>
+				    <widget class="GtkImage" id="image10">
+				      <property name="visible">True</property>
+				      <property name="pixbuf">stop.png</property>
+				      <property name="xalign">0.5</property>
+				      <property name="yalign">0.5</property>
+				      <property name="xpad">0</property>
+				      <property name="ypad">0</property>
+				    </widget>
+				  </child>
+				</widget>
+				<packing>
+				  <property name="padding">0</property>
+				  <property name="expand">False</property>
+				  <property name="fill">False</property>
+				  <property name="pack_type">GTK_PACK_END</property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkButton" id="download_pauseButton">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <signal name="enter" handler="on_download_pauseButton_enter" last_modification_time="Tue, 25 Feb 2003 18:23:27 GMT"/>
+				  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 18:23:57 GMT"/>
+				  <signal name="clicked" handler="on_download_pauseButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:22 GMT"/>
+
+				  <child>
+				    <widget class="GtkImage" id="image11">
+				      <property name="visible">True</property>
+				      <property name="pixbuf">pause.png</property>
+				      <property name="xalign">0.5</property>
+				      <property name="yalign">0.5</property>
+				      <property name="xpad">0</property>
+				      <property name="ypad">0</property>
+				    </widget>
+				  </child>
+				</widget>
+				<packing>
+				  <property name="padding">0</property>
+				  <property name="expand">False</property>
+				  <property name="fill">False</property>
+				  <property name="pack_type">GTK_PACK_END</property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkButton" id="download_startButton">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <signal name="enter" handler="on_download_startButton_enter" last_modification_time="Tue, 25 Feb 2003 22:08:55 GMT"/>
+				  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:06 GMT"/>
+				  <signal name="clicked" handler="on_download_startButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:10:43 GMT"/>
+
+				  <child>
+				    <widget class="GtkImage" id="image13">
+				      <property name="visible">True</property>
+				      <property name="pixbuf">start.png</property>
+				      <property name="xalign">0.5</property>
+				      <property name="yalign">0.5</property>
+				      <property name="xpad">0</property>
+				      <property name="ypad">0</property>
+				    </widget>
+				  </child>
+				</widget>
+				<packing>
+				  <property name="padding">0</property>
+				  <property name="expand">False</property>
+				  <property name="fill">False</property>
+				  <property name="pack_type">GTK_PACK_END</property>
+				</packing>
+			      </child>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
+			      <property name="pack_type">GTK_PACK_END</property>
+			    </packing>
+			  </child>
+			</widget>
+			<packing>
+			  <property name="padding">0</property>
+			  <property name="expand">False</property>
+			  <property name="fill">False</property>
 			  <property name="pack_type">GTK_PACK_END</property>
 			</packing>
 		      </child>
@@ -968,54 +1002,6 @@
 			      <property name="column_spacing">4</property>
 
 			      <child>
-				<widget class="GtkLabel" id="label131">
-				  <property name="visible">True</property>
-				  <property name="label" translatable="yes">&lt;b&gt;URL  &lt;/b&gt;</property>
-				  <property name="use_underline">False</property>
-				  <property name="use_markup">True</property>
-				  <property name="justify">GTK_JUSTIFY_CENTER</property>
-				  <property name="wrap">False</property>
-				  <property name="selectable">False</property>
-				  <property name="xalign">0</property>
-				  <property name="yalign">0.5</property>
-				  <property name="xpad">0</property>
-				  <property name="ypad">0</property>
-				</widget>
-				<packing>
-				  <property name="left_attach">0</property>
-				  <property name="right_attach">1</property>
-				  <property name="top_attach">0</property>
-				  <property name="bottom_attach">1</property>
-				  <property name="x_options">fill</property>
-				  <property name="y_options"></property>
-				</packing>
-			      </child>
-
-			      <child>
-				<widget class="GtkLabel" id="label133">
-				  <property name="visible">True</property>
-				  <property name="label" translatable="yes">&lt;b&gt;Saving to  &lt;/b&gt;</property>
-				  <property name="use_underline">False</property>
-				  <property name="use_markup">True</property>
-				  <property name="justify">GTK_JUSTIFY_CENTER</property>
-				  <property name="wrap">False</property>
-				  <property name="selectable">False</property>
-				  <property name="xalign">0</property>
-				  <property name="yalign">0.5</property>
-				  <property name="xpad">0</property>
-				  <property name="ypad">0</property>
-				</widget>
-				<packing>
-				  <property name="left_attach">0</property>
-				  <property name="right_attach">1</property>
-				  <property name="top_attach">1</property>
-				  <property name="bottom_attach">2</property>
-				  <property name="x_options">fill</property>
-				  <property name="y_options"></property>
-				</packing>
-			      </child>
-
-			      <child>
 				<widget class="GtkLabel" id="download_dest">
 				  <property name="visible">True</property>
 				  <property name="can_focus">True</property>
@@ -1035,30 +1021,6 @@
 				  <property name="right_attach">2</property>
 				  <property name="top_attach">1</property>
 				  <property name="bottom_attach">2</property>
-				  <property name="x_options">fill</property>
-				  <property name="y_options"></property>
-				</packing>
-			      </child>
-
-			      <child>
-				<widget class="GtkLabel" id="label149">
-				  <property name="visible">True</property>
-				  <property name="label" translatable="yes">&lt;b&gt;Progress  &lt;/b&gt;</property>
-				  <property name="use_underline">False</property>
-				  <property name="use_markup">True</property>
-				  <property name="justify">GTK_JUSTIFY_CENTER</property>
-				  <property name="wrap">False</property>
-				  <property name="selectable">False</property>
-				  <property name="xalign">0</property>
-				  <property name="yalign">0.5</property>
-				  <property name="xpad">0</property>
-				  <property name="ypad">0</property>
-				</widget>
-				<packing>
-				  <property name="left_attach">0</property>
-				  <property name="right_attach">1</property>
-				  <property name="top_attach">2</property>
-				  <property name="bottom_attach">3</property>
 				  <property name="x_options">fill</property>
 				  <property name="y_options"></property>
 				</packing>
@@ -1158,6 +1120,78 @@
 				  <property name="right_attach">2</property>
 				  <property name="top_attach">0</property>
 				  <property name="bottom_attach">1</property>
+				  <property name="x_options">fill</property>
+				  <property name="y_options"></property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkLabel" id="label131">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">&lt;b&gt;URL  &lt;/b&gt;</property>
+				  <property name="use_underline">False</property>
+				  <property name="use_markup">True</property>
+				  <property name="justify">GTK_JUSTIFY_CENTER</property>
+				  <property name="wrap">False</property>
+				  <property name="selectable">False</property>
+				  <property name="xalign">0</property>
+				  <property name="yalign">0.5</property>
+				  <property name="xpad">0</property>
+				  <property name="ypad">0</property>
+				</widget>
+				<packing>
+				  <property name="left_attach">0</property>
+				  <property name="right_attach">1</property>
+				  <property name="top_attach">0</property>
+				  <property name="bottom_attach">1</property>
+				  <property name="x_options">fill</property>
+				  <property name="y_options"></property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkLabel" id="label133">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">&lt;b&gt;Saving to  &lt;/b&gt;</property>
+				  <property name="use_underline">False</property>
+				  <property name="use_markup">True</property>
+				  <property name="justify">GTK_JUSTIFY_CENTER</property>
+				  <property name="wrap">False</property>
+				  <property name="selectable">False</property>
+				  <property name="xalign">0</property>
+				  <property name="yalign">0.5</property>
+				  <property name="xpad">0</property>
+				  <property name="ypad">0</property>
+				</widget>
+				<packing>
+				  <property name="left_attach">0</property>
+				  <property name="right_attach">1</property>
+				  <property name="top_attach">1</property>
+				  <property name="bottom_attach">2</property>
+				  <property name="x_options">fill</property>
+				  <property name="y_options"></property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkLabel" id="label149">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">&lt;b&gt;Progress  &lt;/b&gt;</property>
+				  <property name="use_underline">False</property>
+				  <property name="use_markup">True</property>
+				  <property name="justify">GTK_JUSTIFY_CENTER</property>
+				  <property name="wrap">False</property>
+				  <property name="selectable">False</property>
+				  <property name="xalign">0</property>
+				  <property name="yalign">0.5</property>
+				  <property name="xpad">0</property>
+				  <property name="ypad">0</property>
+				</widget>
+				<packing>
+				  <property name="left_attach">0</property>
+				  <property name="right_attach">1</property>
+				  <property name="top_attach">2</property>
+				  <property name="bottom_attach">3</property>
 				  <property name="x_options">fill</property>
 				  <property name="y_options"></property>
 				</packing>
@@ -1756,7 +1790,7 @@ just click Next...</property>
 			  <child>
 			    <widget class="GtkLabel" id="label239">
 			      <property name="visible">True</property>
-			      <property name="label" translatable="yes">&lt;b&gt;Select servers to download data for %1 from:&lt;/b&gt;</property>
+			      <property name="label" translatable="yes">&lt;b&gt;Select servers to download data from:&lt;/b&gt;</property>
 			      <property name="use_underline">False</property>
 			      <property name="use_markup">True</property>
 			      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -1777,7 +1811,7 @@ just click Next...</property>
 			  <child>
 			    <widget class="GtkRadioButton" id="radiobutton1">
 			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">_Automatic selection: Use &quot;netselect&quot; to find the fastest servers</property>
+			      <property name="label" translatable="yes">_Automatic selection: Use &quot;netselect&quot; to find the best servers</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="active">False</property>
@@ -2241,71 +2275,16 @@ just click Next...</property>
 		      <property name="spacing">0</property>
 
 		      <child>
-			<widget class="GtkHBox" id="hbox87">
+			<widget class="GtkHBox" id="hbox97">
 			  <property name="visible">True</property>
 			  <property name="homogeneous">False</property>
-			  <property name="spacing">6</property>
+			  <property name="spacing">0</property>
 
 			  <child>
-			    <widget class="GtkButton" id="jigdo_closeButton">
+			    <widget class="GtkLabel" id="2lineshighforsettingminheight">
 			      <property name="visible">True</property>
-			      <property name="can_focus">True</property>
-			      <property name="relief">GTK_RELIEF_NORMAL</property>
-			      <signal name="enter" handler="on_jigdo_closeButton_enter" last_modification_time="Sat, 17 May 2003 21:36:14 GMT"/>
-			      <signal name="leave" handler="on_jigdo_button_leave" last_modification_time="Sat, 17 May 2003 21:36:20 GMT"/>
-			      <signal name="clicked" handler="on_jigdo_closeButton_clicked" last_modification_time="Sat, 17 May 2003 21:36:26 GMT"/>
-
-			      <child>
-				<widget class="GtkImage" id="image18">
-				  <property name="visible">True</property>
-				  <property name="pixbuf">close.png</property>
-				  <property name="xalign">0.5</property>
-				  <property name="yalign">0.5</property>
-				  <property name="xpad">0</property>
-				  <property name="ypad">0</property>
-				</widget>
-			      </child>
-			    </widget>
-			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">False</property>
-			      <property name="fill">False</property>
-			      <property name="pack_type">GTK_PACK_END</property>
-			    </packing>
-			  </child>
-
-			  <child>
-			    <widget class="GtkButton" id="jigdo_reloadButton">
-			      <property name="visible">True</property>
-			      <property name="can_focus">True</property>
-			      <property name="relief">GTK_RELIEF_NORMAL</property>
-			      <signal name="enter" handler="on_jigdo_restartButton_enter" last_modification_time="Sat, 17 May 2003 21:35:50 GMT"/>
-			      <signal name="leave" handler="on_jigdo_button_leave" last_modification_time="Sat, 17 May 2003 21:35:56 GMT"/>
-			      <signal name="clicked" handler="on_jigdo_restartButton_clicked" last_modification_time="Sat, 17 May 2003 21:36:01 GMT"/>
-
-			      <child>
-				<widget class="GtkImage" id="image19">
-				  <property name="visible">True</property>
-				  <property name="pixbuf">restart.png</property>
-				  <property name="xalign">0.5</property>
-				  <property name="yalign">0.5</property>
-				  <property name="xpad">0</property>
-				  <property name="ypad">0</property>
-				</widget>
-			      </child>
-			    </widget>
-			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">False</property>
-			      <property name="fill">False</property>
-			      <property name="pack_type">GTK_PACK_END</property>
-			    </packing>
-			  </child>
-
-			  <child>
-			    <widget class="GtkLabel" id="label225">
-			      <property name="visible">True</property>
-			      <property name="label" translatable="yes"></property>
+			      <property name="label" translatable="yes">
+</property>
 			      <property name="use_underline">False</property>
 			      <property name="use_markup">False</property>
 			      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -2317,94 +2296,9 @@ just click Next...</property>
 			      <property name="ypad">0</property>
 			    </widget>
 			    <packing>
-			      <property name="padding">3</property>
-			      <property name="expand">False</property>
-			      <property name="fill">False</property>
-			      <property name="pack_type">GTK_PACK_END</property>
-			    </packing>
-			  </child>
-
-			  <child>
-			    <widget class="GtkButton" id="jigdo_stopButton">
-			      <property name="visible">True</property>
-			      <property name="can_focus">True</property>
-			      <property name="relief">GTK_RELIEF_NORMAL</property>
-			      <signal name="enter" handler="on_jigdo_stopButton_enter" last_modification_time="Sat, 17 May 2003 21:35:13 GMT"/>
-			      <signal name="leave" handler="on_jigdo_button_leave" last_modification_time="Sat, 17 May 2003 21:35:19 GMT"/>
-			      <signal name="clicked" handler="on_jigdo_stopButton_clicked" last_modification_time="Sat, 17 May 2003 21:35:25 GMT"/>
-
-			      <child>
-				<widget class="GtkImage" id="image20">
-				  <property name="visible">True</property>
-				  <property name="pixbuf">stop.png</property>
-				  <property name="xalign">0.5</property>
-				  <property name="yalign">0.5</property>
-				  <property name="xpad">0</property>
-				  <property name="ypad">0</property>
-				</widget>
-			      </child>
-			    </widget>
-			    <packing>
 			      <property name="padding">0</property>
 			      <property name="expand">False</property>
 			      <property name="fill">False</property>
-			      <property name="pack_type">GTK_PACK_END</property>
-			    </packing>
-			  </child>
-
-			  <child>
-			    <widget class="GtkButton" id="jigdo_pauseButton">
-			      <property name="visible">True</property>
-			      <property name="can_focus">True</property>
-			      <property name="relief">GTK_RELIEF_NORMAL</property>
-			      <signal name="enter" handler="on_jigdo_pauseButton_enter" last_modification_time="Sat, 17 May 2003 21:34:45 GMT"/>
-			      <signal name="leave" handler="on_jigdo_button_leave" last_modification_time="Sat, 17 May 2003 21:34:52 GMT"/>
-			      <signal name="clicked" handler="on_jigdo_pauseButton_clicked" last_modification_time="Sat, 17 May 2003 21:34:58 GMT"/>
-
-			      <child>
-				<widget class="GtkImage" id="image21">
-				  <property name="visible">True</property>
-				  <property name="pixbuf">pause.png</property>
-				  <property name="xalign">0.5</property>
-				  <property name="yalign">0.5</property>
-				  <property name="xpad">0</property>
-				  <property name="ypad">0</property>
-				</widget>
-			      </child>
-			    </widget>
-			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">False</property>
-			      <property name="fill">False</property>
-			      <property name="pack_type">GTK_PACK_END</property>
-			    </packing>
-			  </child>
-
-			  <child>
-			    <widget class="GtkButton" id="jigdo_startButton">
-			      <property name="visible">True</property>
-			      <property name="can_focus">True</property>
-			      <property name="relief">GTK_RELIEF_NORMAL</property>
-			      <signal name="enter" handler="on_jigdo_startButton_enter" last_modification_time="Sat, 17 May 2003 21:34:11 GMT"/>
-			      <signal name="leave" handler="on_jigdo_button_leave" last_modification_time="Sat, 17 May 2003 21:34:20 GMT"/>
-			      <signal name="clicked" handler="on_jigdo_startButton_clicked" last_modification_time="Sat, 17 May 2003 21:34:27 GMT"/>
-
-			      <child>
-				<widget class="GtkImage" id="image26">
-				  <property name="visible">True</property>
-				  <property name="pixbuf">start.png</property>
-				  <property name="xalign">0.5</property>
-				  <property name="yalign">0.5</property>
-				  <property name="xpad">0</property>
-				  <property name="ypad">0</property>
-				</widget>
-			      </child>
-			    </widget>
-			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">False</property>
-			      <property name="fill">False</property>
-			      <property name="pack_type">GTK_PACK_END</property>
 			    </packing>
 			  </child>
 
@@ -2426,6 +2320,195 @@ just click Next...</property>
 			      <property name="padding">0</property>
 			      <property name="expand">True</property>
 			      <property name="fill">True</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkVBox" id="vbox43">
+			      <property name="visible">True</property>
+			      <property name="homogeneous">False</property>
+			      <property name="spacing">0</property>
+
+			      <child>
+				<widget class="GtkHBox" id="hbox98">
+				  <property name="visible">True</property>
+				  <property name="homogeneous">False</property>
+				  <property name="spacing">6</property>
+
+				  <child>
+				    <widget class="GtkButton" id="jigdo_closeButton">
+				      <property name="visible">True</property>
+				      <property name="can_focus">True</property>
+				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <signal name="enter" handler="on_download_closeButton_enter" last_modification_time="Tue, 25 Feb 2003 22:09:53 GMT"/>
+				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:10:02 GMT"/>
+				      <signal name="clicked" handler="on_download_closeButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:45 GMT"/>
+
+				      <child>
+					<widget class="GtkImage" id="image28">
+					  <property name="visible">True</property>
+					  <property name="pixbuf">close.png</property>
+					  <property name="xalign">0.5</property>
+					  <property name="yalign">0.5</property>
+					  <property name="xpad">0</property>
+					  <property name="ypad">0</property>
+					</widget>
+				      </child>
+				    </widget>
+				    <packing>
+				      <property name="padding">0</property>
+				      <property name="expand">False</property>
+				      <property name="fill">False</property>
+				      <property name="pack_type">GTK_PACK_END</property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkButton" id="jigdo_restartButton">
+				      <property name="visible">True</property>
+				      <property name="can_focus">True</property>
+				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <signal name="enter" handler="on_download_restartButton_enter" last_modification_time="Mon, 03 Mar 2003 16:05:10 GMT"/>
+				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:46 GMT"/>
+				      <signal name="clicked" handler="on_download_restartButton_clicked" last_modification_time="Mon, 03 Mar 2003 16:05:21 GMT"/>
+
+				      <child>
+					<widget class="GtkImage" id="image29">
+					  <property name="visible">True</property>
+					  <property name="pixbuf">restart.png</property>
+					  <property name="xalign">0.5</property>
+					  <property name="yalign">0.5</property>
+					  <property name="xpad">0</property>
+					  <property name="ypad">0</property>
+					</widget>
+				      </child>
+				    </widget>
+				    <packing>
+				      <property name="padding">0</property>
+				      <property name="expand">False</property>
+				      <property name="fill">False</property>
+				      <property name="pack_type">GTK_PACK_END</property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkLabel" id="label251">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes"></property>
+				      <property name="use_underline">False</property>
+				      <property name="use_markup">False</property>
+				      <property name="justify">GTK_JUSTIFY_LEFT</property>
+				      <property name="wrap">False</property>
+				      <property name="selectable">False</property>
+				      <property name="xalign">0.5</property>
+				      <property name="yalign">0.5</property>
+				      <property name="xpad">0</property>
+				      <property name="ypad">0</property>
+				    </widget>
+				    <packing>
+				      <property name="padding">3</property>
+				      <property name="expand">False</property>
+				      <property name="fill">False</property>
+				      <property name="pack_type">GTK_PACK_END</property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkButton" id="jigdo_stopButton">
+				      <property name="visible">True</property>
+				      <property name="can_focus">True</property>
+				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <signal name="enter" handler="on_download_stopButton_enter" last_modification_time="Tue, 25 Feb 2003 22:09:15 GMT"/>
+				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:26 GMT"/>
+				      <signal name="clicked" handler="on_download_stopButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:33 GMT"/>
+
+				      <child>
+					<widget class="GtkImage" id="image30">
+					  <property name="visible">True</property>
+					  <property name="pixbuf">stop.png</property>
+					  <property name="xalign">0.5</property>
+					  <property name="yalign">0.5</property>
+					  <property name="xpad">0</property>
+					  <property name="ypad">0</property>
+					</widget>
+				      </child>
+				    </widget>
+				    <packing>
+				      <property name="padding">0</property>
+				      <property name="expand">False</property>
+				      <property name="fill">False</property>
+				      <property name="pack_type">GTK_PACK_END</property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkButton" id="jigdo_pauseButton">
+				      <property name="visible">True</property>
+				      <property name="can_focus">True</property>
+				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <signal name="enter" handler="on_download_pauseButton_enter" last_modification_time="Tue, 25 Feb 2003 18:23:27 GMT"/>
+				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 18:23:57 GMT"/>
+				      <signal name="clicked" handler="on_download_pauseButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:22 GMT"/>
+
+				      <child>
+					<widget class="GtkImage" id="image31">
+					  <property name="visible">True</property>
+					  <property name="pixbuf">pause.png</property>
+					  <property name="xalign">0.5</property>
+					  <property name="yalign">0.5</property>
+					  <property name="xpad">0</property>
+					  <property name="ypad">0</property>
+					</widget>
+				      </child>
+				    </widget>
+				    <packing>
+				      <property name="padding">0</property>
+				      <property name="expand">False</property>
+				      <property name="fill">False</property>
+				      <property name="pack_type">GTK_PACK_END</property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkButton" id="jigdo_startButton">
+				      <property name="visible">True</property>
+				      <property name="can_focus">True</property>
+				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <signal name="enter" handler="on_download_startButton_enter" last_modification_time="Tue, 25 Feb 2003 22:08:55 GMT"/>
+				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:06 GMT"/>
+				      <signal name="clicked" handler="on_download_startButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:10:43 GMT"/>
+
+				      <child>
+					<widget class="GtkImage" id="image32">
+					  <property name="visible">True</property>
+					  <property name="pixbuf">start.png</property>
+					  <property name="xalign">0.5</property>
+					  <property name="yalign">0.5</property>
+					  <property name="xpad">0</property>
+					  <property name="ypad">0</property>
+					</widget>
+				      </child>
+				    </widget>
+				    <packing>
+				      <property name="padding">0</property>
+				      <property name="expand">False</property>
+				      <property name="fill">False</property>
+				      <property name="pack_type">GTK_PACK_END</property>
+				    </packing>
+				  </child>
+				</widget>
+				<packing>
+				  <property name="padding">0</property>
+				  <property name="expand">False</property>
+				  <property name="fill">False</property>
+				  <property name="pack_type">GTK_PACK_END</property>
+				</packing>
+			      </child>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
 			      <property name="pack_type">GTK_PACK_END</property>
 			    </packing>
 			  </child>

@@ -61,7 +61,7 @@ public:
   //bool other() const { return code != 0 && code != -1; }
   bool returned(int x) const { return code == x; }
   /* Default dtor */
-  /* Intentionally no operator bool() - should write ok() or failed()
+  /* Intentionally no operator bool() - should write xok/xfailed/returned()
      explicitly in if() conditions! */
   int code;
 };
