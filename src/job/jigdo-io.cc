@@ -43,29 +43,32 @@ namespace {
   }
 }
 
+// Root object
 JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url,
                  DataSource::IO* frontendIo)
   : childDl(c), urlVal(url), frontend(frontendIo), parent(0), includeLine(0),
-    firstChild(0), next(0), rootAndImageSectionCandidate(0), line(0),
+    firstChild(0), next(0), rootAndImageSectionCandidate(this), line(0),
     section(), imageSectionLine(0), imageName(), imageInfo(),
     imageShortInfo(), templateUrl(), templateMd5(0), childFailedId(0),
     gunzip(this) { }
 
+// Non-root, i.e. [Include]d object
 JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url,
                  DataSource::IO* frontendIo, JigdoIO* parentJigdo,
                  int inclLine)
   : childDl(c), urlVal(url), frontend(frontendIo), parent(parentJigdo),
     includeLine(inclLine), firstChild(0), next(0),
-    rootAndImageSectionCandidate(0), line(0), section(), imageSectionLine(0),
-    imageName(), imageInfo(), imageShortInfo(), templateUrl(),
-    templateMd5(0), childFailedId(0), gunzip(this) { }
+    rootAndImageSectionCandidate(parent->root()), line(0), section(),
+    imageSectionLine(0), imageName(), imageInfo(), imageShortInfo(),
+    templateUrl(), templateMd5(0), childFailedId(0), gunzip(this) {
+  //debug("JigdoIO: Parent of %1 is %2", url, parent->urlVal);
+}
 //______________________________________________________________________
 
 JigdoIO::~JigdoIO() {
   debug("~JigdoIO");
 
   if (childFailedId != 0) {
-    Assert(false); // Situation untested
     g_source_remove(childFailedId);
     childFailedId = 0;
     master()->childFailed(childDl, this, frontend);
@@ -113,6 +116,18 @@ void JigdoIO::job_deleted() {
 
 void JigdoIO::job_succeeded() {
   if (failed()) return;
+
+  if (gunzip.nextOut() > gunzipBuf) {
+    debug("job_succeeded: No newline at end");
+    ++line;
+    const char* lineChars = reinterpret_cast<const char*>(gunzipBuf);
+    if (g_utf8_validate(lineChars, gunzip.nextOut()-gunzipBuf, NULL) != TRUE)
+      return generateError(_("Input .jigdo data is not valid UTF-8"));
+    string line(lineChars, gunzip.nextOut() - gunzipBuf);
+    jigdoLine(&line);
+    if (failed()) return;
+  }
+
   if (sectionEnd() == FAILURE) return;
   setFinished();
   if (imgSect_eof() == FAILURE) return;
@@ -179,8 +194,6 @@ void JigdoIO::gunzip_needOut(Gunzip*) {
    gunzipBuf (if it contains valid data) is always the first char of a line
    in the config file. */
 void JigdoIO::gunzip_data(Gunzip*, byte* decompressed, unsigned size) {
-//   // If an error happened earlier, ignore this call to gunzip_data()
-//   if (gunzipBuf == 0) return;
   if (failed()) return;
 
   // Look for end of line.
@@ -244,7 +257,7 @@ void JigdoIO::gunzip_failed(string* message) {
 void JigdoIO::generateError(const string& msg) {
   string err;
   const char* fmt = (finished() ?
-                     _("%1 (line %2 in %3)") : _("%1 (at end of %3)"));
+                     _("%1 (at end of %3)") : _("%1 (line %2 in %3)"));
   err = subst(fmt, msg, line,
               (source() != 0 ? source()->location().c_str() : "?") );
   generateError_plain(&err);
@@ -253,7 +266,7 @@ void JigdoIO::generateError(const string& msg) {
 void JigdoIO::generateError(const char* msg) {
   string err;
   const char* fmt = (finished() ?
-                     _("%1 (line %2 in %3)") : _("%1 (at end of %3)"));
+                     _("%1 (at end of %3)") : _("%1 (line %2 in %3)"));
   err = subst(fmt, msg, line,
               (source() != 0 ? source()->location().c_str() : "?") );
   generateError_plain(&err);
@@ -317,27 +330,29 @@ gboolean JigdoIO::childFailed_callback(gpointer data) {
 
 // New child created due to [Include] in current .jigdo data
 void JigdoIO::imgSect_newChild(JigdoIO* child) {
-  if (master()->finalState() || master()->haveImageInfo()
+  if (master()->finalState() || master()->haveImageSection()
       || imgSectCandidate() != this) return;
-  debug("imgSect_newChild: To child %1", child->urlVal);
+  debug("imgSect_newChild: From %1:%2 to child %3",
+        urlVal, line, child->urlVal);
   setImgSectCandidate(child);
 }
 
 // An [Image] section just ended - maybe it was the first one?
-void JigdoIO::imgSect_parsed() {
-  if (master()->finalState() || master()->haveImageInfo()
-      || imgSectCandidate() != this) return;
-  debug("imgSect_parsed: Found");
-  master()->setImageInfo(&imageName, &imageInfo, &imageShortInfo,
-                         &templateUrl, &templateMd5);
-  Paranoid(master()->haveImageInfo());
+bool JigdoIO::imgSect_parsed() {
+  //debug("imgSect_parsed: %1 %2 %3", imgSectCandidate(), this, master()->finalState());
+  if (master()->finalState() || master()->haveImageSection()
+      || imgSectCandidate() != this) return SUCCESS;
+  debug("imgSect_parsed: %1:%2", urlVal, line - 1);
+  return master()->setImageSection(&imageName, &imageInfo, &imageShortInfo,
+                                &templateUrl, &templateMd5);
 }
 
 // The end of the file was hit without any [Image] section being found
 bool JigdoIO::imgSect_eof() {
-  Paranoid(imageSectionLine == 0); // "No [Image] found"
-  if (master()->finalState() || master()->haveImageInfo()
+  if (master()->finalState() || master()->haveImageSection()
       || imgSectCandidate() != this) return SUCCESS;
+
+  Paranoid(imageSectionLine == 0); // "No [Image] found"
 
   JigdoIO* x = parent; // Current position in tree
   int l = includeLine; // Line number in x, 0 if at start
@@ -350,7 +365,7 @@ bool JigdoIO::imgSect_eof() {
     JigdoIO* ii = x;
     while (ii != 0) { indent -= 2; ii = ii->parent; }
     if (indent < indentStr) indent = indentStr;
-    debug("imgSect_eof: %1Now at line %2 of %3", indent, l, x->urlVal);
+    debug("imgSect_eof: %1Now at %2:%3", indent, x->urlVal, l);
 #   endif
     JigdoIO* nextChild;
     if (l == 0) nextChild = x->firstChild; else nextChild = child->next;
@@ -361,13 +376,12 @@ bool JigdoIO::imgSect_eof() {
       if (l < x->imageSectionLine
           && x->imageSectionLine < nextChild->includeLine) {
         debug("imgSect_eof: %1Found before [Include]", indent);
-        master()->setImageInfo(&x->imageName, &x->imageInfo,
+        return master()->setImageSection(&x->imageName, &x->imageInfo,
             &x->imageShortInfo, &x->templateUrl, &x->templateMd5);
-        return SUCCESS;
       }
       // No [Image] inbetween - move on, descend into [Include]
-      debug("imgSect_eof: %1Now at line %2 of %3, descending",
-            indent, nextChild->includeLine, x->urlVal);
+      debug("imgSect_eof: %1Now at %2:%3, descending",
+            indent, x->urlVal, nextChild->includeLine);
       x = nextChild;
       l = 0;
       child = 0;
@@ -378,9 +392,8 @@ bool JigdoIO::imgSect_eof() {
     if (x->imageSectionLine != 0) {
       debug("imgSect_eof: %1Found after last [Include], if any", indent);
       Paranoid(l < x->imageSectionLine);
-      master()->setImageInfo(&x->imageName, &x->imageInfo,
+      return master()->setImageSection(&x->imageName, &x->imageInfo,
           &x->imageShortInfo, &x->templateUrl, &x->templateMd5);
-      return SUCCESS;
     }
 
     // Nothing found. If x not yet fully downloaded, stop here
@@ -426,9 +439,10 @@ void JigdoIO::jigdoLine(string* l) {
       return generateError(_("No `=' after first word"));
     ++x; // Skip '='
     advanceWhitespace(x, end);
-    vector<string> value;
-    ConfigFile::split(value, s, x - s.begin());
-    entry(&labelName, &value);
+//     vector<string> value;
+//     ConfigFile::split(value, s, x - s.begin());
+//     entry(&labelName, &value);
+    entry(&labelName, &s, x - s.begin());
     return;
   }
   //____________________
@@ -478,10 +492,8 @@ bool JigdoIO::sectionEnd() {
   if (templateMd5 == 0) valueName = "Template-MD5Sum";
   if (templateUrl.empty()) valueName = "Template";
   if (imageName.empty()) valueName = "Filename";
-  if (valueName == 0) {
-    imgSect_parsed();
-    return SUCCESS;
-  }
+  if (valueName == 0)
+    return imgSect_parsed();
   // Error: Not all required fields found
   --line;
   string s = subst(_("`%1=...' line missing in [Image] section"), valueName);
@@ -494,30 +506,34 @@ bool JigdoIO::sectionEnd() {
 void JigdoIO::include(string* url) {
   string includeUrl;
   Download::uriJoin(&includeUrl, urlVal, *url);
-  debug("[Include %1]", includeUrl);
+  debug("%1:[Include %2]", line, includeUrl);
 
-  JigdoIO* p = parent;
-  while (p != 0) {
+  JigdoIO* p = this;
+  do {
+    //debug("include: Parent of %1 is %2", p->urlVal,
+    //      (p->parent ? p->parent->urlVal : "none"));
     if (p->urlVal == includeUrl)
       return generateError(_("Loop of [Include] directives"));
     p = p->parent;
-  }
+  } while (p != 0);
 
   string leafname;
   auto_ptr<MakeImageDl::Child> childDl(
       master()->childFor(includeUrl, 0, &leafname));
   if (childDl.get() != 0) {
+    MakeImageDl::IO* mio = master()->io.get();
     string info = _("Retrieving .jigdo data");
     string destDesc = subst(Job::MakeImageDl::destDescTemplate(),
                             leafname, info);
-    auto_ptr<DataSource::IO> frontend(
-        master()->io->makeImageDl_new(childDl->source(), includeUrl,
-                                      destDesc) );
+    auto_ptr<DataSource::IO> frontend(0);
+    if (mio != 0)
+      frontend.reset(mio->makeImageDl_new(childDl->source(), includeUrl,
+                                          destDesc) );
     JigdoIO* jio = new JigdoIO(childDl.get(), includeUrl, frontend.get(),
                                this, line);
     childDl->setChildIo(jio);
     frontend.release();
-    master()->io->job_message(&info);
+    if (mio != 0) mio->job_message(&info);
 
     // Add new child
     JigdoIO** jiop = &firstChild;
@@ -542,13 +558,20 @@ namespace {
     byte* cur; byte* end;
   };
 }
+//____________________
 
-void JigdoIO::entry(string* label, vector<string>* value) {
+/* @param label Pointer to word before the '='
+   @param data Pointer to string containing whole input line
+   @param valueOff Offset of value (part after '=') in data */
+void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
+  vector<string> value;
+  ConfigFile::split(value, *data, valueOff);
 # if DEBUG
   string s;
-  for (vector<string>::iterator i = value->begin(), e = value->end();
-       i != e; ++i) { s += ConfigFile::quote(*i); s += ' '; }
-  debug("[%1] %2=%3", section, label, s);
+  for (vector<string>::iterator i = value.begin(), e = value.end();
+       i != e; ++i) { s += '>'; s += *i; s += "< "; }
+  // { s += ConfigFile::quote(*i); s += ' '; }
+  debug("%1:[%2] %3=%4", line, section, label, s);
 # endif
   //____________________
 
@@ -559,10 +582,10 @@ void JigdoIO::entry(string* label, vector<string>* value) {
 
   } else if (section == "Jigdo") {
     if (*label == "Version") {
-      if (value->size() < 1) return generateError(_("Missing argument"));
+      if (value.empty()) return generateError(_("Missing argument"));
       int ver = 0;
-      string::const_iterator i = value->front().begin();
-      string::const_iterator e = value->front().end();
+      string::const_iterator i = value.front().begin();
+      string::const_iterator e = value.front().end();
       while (i != e && *i >= '0' && *i <= '9') {
         ver = 10 * ver + *i - '0';
         ++i;
@@ -576,27 +599,29 @@ void JigdoIO::entry(string* label, vector<string>* value) {
   } else if (section == "Image") {
 
     /* Only called for first [Image] section in file - for further sections,
-       section=="Image(ignored)" */
+       section=="Image(ignored)". Does some sanity checks on the supplied
+       data. */
     if (*label == "Filename") {
       if (!imageName.empty()) return generateError(_("Value redefined"));
-      if (value->size() < 1) return generateError(_("Missing argument"));
-      string::size_type lastSlash = value->front().find_last_of('/');
-      string::size_type lastSep = value->front().find_last_of(DIRSEP);
+      if (value.empty()) return generateError(_("Missing argument"));
+      // Only use leaf name, ignore dirname delimiters, max 100 chars
+      string::size_type lastSlash = value.front().find_last_of('/');
+      string::size_type lastSep = value.front().find_last_of(DIRSEP);
       if (lastSlash > lastSep) lastSep = lastSlash;
-      imageName.assign(value->front(), lastSep + 1, string::npos);
+      imageName.assign(value.front(), lastSep + 1, 100);
       if (imageName.empty()) return generateError(_("Invalid image name"));
     } else if (*label == "Template") {
       if (!templateUrl.empty()) return generateError(_("Value redefined"));
-      if (value->size() < 1) return generateError(_("Missing argument"));
-      templateUrl = value->front();
+      if (value.empty()) return generateError(_("Missing argument"));
+      templateUrl = value.front();
     } else if (*label == "Template-MD5Sum") {
       if (templateMd5 != 0) return generateError(_("Value redefined"));
-      if (value->size() < 1) return generateError(_("Missing argument"));
+      if (value.empty()) return generateError(_("Missing argument"));
       templateMd5 = new MD5();
       // Helper class places decoded bytes into MD5 object
       Base64In<ArrayOut> decoder;
       decoder.result().set(templateMd5->sum);
-      decoder << value->front();
+      decoder << value.front();
       if (decoder.result().cur == 0
           || decoder.result().cur != decoder.result().end) {
         delete templateMd5; templateMd5 = 0;
@@ -605,14 +630,16 @@ void JigdoIO::entry(string* label, vector<string>* value) {
 #     if DEBUG
       Base64String b64;
       b64.write(*templateMd5, 16).flush();
-      Paranoid(b64.result() == value->front());
+      Paranoid(b64.result() == value.front());
 #     endif
     } else if (*label == "ShortInfo") {
+      // ShortInfo is 200 chars max
       if(!imageShortInfo.empty()) return generateError(_("Value redefined"));
-      if (value->size() > 0) imageShortInfo.assign(value->front(), 0, 200);
+      imageShortInfo.assign(*data, valueOff, 200);
     } else if (*label == "Info") {
+      // ImageInfo is 5000 chars max
       if (!imageInfo.empty()) return generateError(_("Value redefined"));
-      if (value->size() > 0) imageInfo = value->front();
+      imageInfo.assign(*data, valueOff, 5000);
     }
 
   } // endif (section == "Something")

@@ -39,31 +39,36 @@ programs =	jigdo-file@exe@ @IF_GUI@ jigdo@exe@
 debug-programs = @IF_DEBUG@ torture@exe@
 libwww-hacks =	@IF_LIBWWW_HACKS@ net/libwww-HTFTP.o net/libwww-HTHost.o
 windows-res =	@IF_WINDOWS@ jigdo.res
-test-programs =	net/proxyguess-test@exe@ util/gunzip-test@exe@ \
-		util/log-test@exe@ util/string-utf-test@exe@
+test-programs =	job/jigdo-io-test@exe@ job/makeimagedl-info-test@exe@ \
+		net/proxyguess-test@exe@ \
+		util/rsyncsum-test@exe@ util/gunzip-test@exe@ \
+		util/log-test@exe@ util/md5sum-test@exe@ \
+		util/mimestream-test@exe@ util/string-utf-test@exe@
 
 # fmt -s -w1|sed 's%[^a-zA-Z0-9./-]\+%%g'|sort|fmt -w60|sed 's%$% \\%'
-objects-jigdo =	configfile.o glibc-md5.o gtk/gtk-makeimage.o \
-		gtk/gtk-single-url.o gtk/gui.o gtk/interface.o gtk/jigdo.o \
-		gtk/jobline.o gtk/joblist.o gtk/messagebox.o gtk/support.o \
-		gtk/treeiter.o jigdoconfig.o job/cached-url.o \
-		job/datasource.o job/jigdo-io.o job/makeimage.o \
-		job/makeimagedl.o job/single-url.o md5sum.o net/download.o \
-		net/glibwww-callbacks.o net/glibwww-init.o net/proxyguess.o \
-		util/glibc-getopt.o util/glibc-getopt1.o util/gunzip.o \
-		util/log.o util/progress.o util/string-utf.o \
+objects-jigdo =	gtk/gtk-makeimage.o gtk/gtk-single-url.o gtk/gui.o \
+		gtk/interface.o gtk/jigdo.o gtk/jobline.o gtk/joblist.o \
+		gtk/messagebox.o gtk/support.o gtk/treeiter.o jigdoconfig.o \
+		job/cached-url.o job/datasource.o job/jigdo-io.o \
+		job/makeimage.o job/makeimagedl.o job/makeimagedl-info.o \
+		job/single-url.o \
+		net/download.o net/glibwww-callbacks.o net/glibwww-init.o \
+		net/proxyguess.o util/configfile.o util/glibc-getopt.o \
+		util/glibc-getopt1.o util/glibc-md5.o util/gunzip.o \
+		util/log.o util/md5sum.o util/progress.o util/string-utf.o \
 		$(libwww-hacks) $(windows-res) \
 		util/debug.o # this must come last!
-objects-jigdo-file = cachefile.o compat.o configfile.o glibc-md5.o \
-		jigdo-file-cmd.o jigdo-file.o jigdoconfig.o md5sum.o \
-		mkimage.o mkjigdo.o mktemplate.o partialmatch.o \
-		recursedir.o rsyncsum.o scan.o util/glibc-getopt.o \
-		util/glibc-getopt1.o util/log.o util/string.o zstream.o \
+objects-jigdo-file = cachefile.o compat.o jigdo-file-cmd.o jigdo-file.o \
+		jigdoconfig.o mkimage.o mkjigdo.o mktemplate.o \
+		partialmatch.o recursedir.o scan.o util/configfile.o \
+		util/glibc-getopt.o util/glibc-getopt1.o util/glibc-md5.o \
+		util/log.o util/md5sum.o util/rsyncsum.o util/string.o \
+		zstream.o \
 		util/debug.o # this must come last!
-objects-torture = cachefile.o compat.o configfile.o glibc-md5.o \
-		jigdoconfig.o md5sum.o mkimage.o mkjigdo.o mktemplate.o \
-		partialmatch.o rsyncsum.o recursedir.o scan.o torture.o \
-		util/log.o util/string.o zstream.o \
+objects-torture = cachefile.o compat.o jigdoconfig.o mkimage.o mkjigdo.o \
+		mktemplate.o partialmatch.o recursedir.o scan.o torture.o \
+		util/configfile.o util/glibc-md5.o util/log.o util/md5sum.o \
+		util/rsyncsum.o util/string.o zstream.o \
 		util/debug.o # this must come last!
 #______________________________
 
@@ -78,9 +83,9 @@ objects-torture = cachefile.o compat.o configfile.o glibc-md5.o \
 #______________________________________________________________________
 
 .PHONY:         all all-msg clean distclean mostlyclean maintainer-clean \
-                dep depend doc strip unittest unittest-v
+                dep depend doc strip test test-v test-c
 all:		all-msg Makefile $(programs) $(debug-programs) \
-		@IF_DEBUG@ unittest
+		@IF_DEBUG@ test
 all-msg:
 		-@if test "$$EMACS" != t; then \
 		    echo "export cpp='$(CPPFLAGS)'"; \
@@ -147,18 +152,22 @@ strip:
 TEST-DEFAULTOBJS = util/log.o util/string-utf.o util/debug.o
 TEST-LDFLAGS =	$(LDFLAGS) $(GTKLIBS) # $(LIBWWWLIBS)
 EXE =@exe@
-unittest:	$(test-programs)
+# Compile only
+test-c:		$(test-programs)
+# Compile and run
+test:		$(test-programs)
 		@echo "Running unit tests..."; \
 		for p in $(test-programs); do \
 		    if "$$p"; then continue; fi; \
 		    echo "$$p failed, for details enter: $$p all"; exit 1; \
 		done; \
 		set $(test-programs); echo "All $$# tests succeeded"
-unittest-v:	$(test-programs)
+# Compile and run, re-run in verbose mode after error
+test-v:		$(test-programs)
 		@echo "Running unit tests..."; \
 		for p in $(test-programs); do \
-		    if "$$p" all; then echo "OK: $$p"; continue; fi; \
-		    echo "$$p failed"; exit 1; \
+		    if "$$p"; then echo "OK: $$p"; continue; fi; \
+		    echo "$$p failed"; "$$p" all; exit 1; \
 		done; \
 		set $(test-programs); echo "All $$# tests succeeded"
 

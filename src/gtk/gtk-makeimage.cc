@@ -20,9 +20,16 @@
 
 DEBUG_UNIT("gtk-makeimage")
 
-GtkMakeImage::GtkMakeImage(const string& uriStr, const string& destination)
-  : progress(), status(), treeViewStatus(),
-    mid(this, uriStr, destination) { }
+GtkMakeImage::GtkMakeImage(const string& uriStr, const string& destDir)
+  : progress(), status(), treeViewStatus(), dest(),
+    imageInfo(_("\nDownloading .jigdo data - please wait...")),
+    imageShortInfo(),
+    mid(this, uriStr, destDir) {
+  // Remove all trailing '/' from dest dir, even if result empty
+  unsigned destLen = destDir.length();
+  while (destLen > 0 && destDir[destLen - 1] == DIRSEP) --destLen;
+  dest.assign(destDir, 0, destLen);
+}
 
 GtkMakeImage::~GtkMakeImage() {
   /* Delete all children. A simpler frontend would always delete them
@@ -108,11 +115,16 @@ void GtkMakeImage::percentDone(uint64* cur, uint64* total) {
 void GtkMakeImage::updateWindow() {
   if (!jobList()->isWindowOwner(this)) return;
 
+  // Image description
+  gtk_label_set_markup(GTK_LABEL(GUI::window.jigdo_ShortInfo),
+                       imageShortInfo.c_str());
+  gtk_label_set_markup(GTK_LABEL(GUI::window.jigdo_Info), imageInfo.c_str());
+
   // URL and destination lines
   gtk_label_set_text(GTK_LABEL(GUI::window.jigdo_URL),
                      mid.jigdoUri().c_str());
   gtk_label_set_text(GTK_LABEL(GUI::window.jigdo_dest),
-                     mid.tmpDir().c_str());
+                     dest.c_str());
 
   // Progress and status lines
 //   if (!mid.paused() && !mid.failed()) {
@@ -180,6 +192,33 @@ void GtkMakeImage::makeImageDl_finished(Job::DataSource* /*childDownload*/,
   Assert(child != 0);
   debug("Child finished");
   child->childIsFinished();
+}
+
+void GtkMakeImage::makeImageDl_haveImageSection() {
+  dest += DIRSEP;
+  dest += mid.imageName();
+  gtk_tree_store_set(jobList()->store(), row(),
+                     JobList::COLUMN_OBJECT, mid.imageName().c_str(),
+                     -1);
+  imageInfo.clear();
+  const char* gtk[] = {
+    "<b>", "</b>", // <b>, </b>
+    "<i>", "</i>", // <i>, </i>
+    "<tt>", "</tt>", // <tt>, </tt>
+    "<u>", "</u>", // <u>, </u>
+    "<span size=\"large\">", "</span>", // <big>, </big>
+    "<span size=\"small\">", "</span>", // <small>, </small>
+    "\n" // <br/>
+  };
+  mid.imageInfo(&imageInfo, true, gtk);
+  /* Problem: GtkLabels have a certain default width which cannot be influenced AFAICT. The only way to make them wider is to include a word whose length exceeds the default width */
+  //  imageInfo += "\n\xa0\x62";
+
+  const char* format = (mid.imageShortInfo().empty()
+                        ? "<b>%EF2</b>" : _("<b>%EF1</b> (%EF2)"));
+  imageShortInfo = subst(format, mid.imageShortInfo(), mid.imageName());
+
+  updateWindow();
 }
 //______________________________________________________________________
 

@@ -92,7 +92,7 @@ void glibwww_add_noproxy(const gchar *host) {
 }
 //______________________________________________________________________
 
-#define TESTING
+#define TESTING_PROXYGUESS
 #include <proxyguess.cc>
 //______________________________________________________________________
 

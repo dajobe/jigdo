@@ -193,7 +193,7 @@ namespace {
 
 namespace {
 
-# ifndef TESTING
+# ifndef TESTING_PROXYGUESS
   // Return the last modification date of the file in question, 0 on error
   inline time_t fileModTime(const char* path) {
     struct stat fileInfo;

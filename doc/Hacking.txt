@@ -295,9 +295,10 @@ supposedly tests the code in subdir/foobar.cc):
  - "make depend" - this reads the above "#test-deps" directive and
    creates an appropriate Makefile entry for the unit test.
 
- - "make unittest" to run all tests, in quiet mode, or "make
-   unittest-v" in very verbose mode. If --enable-debug was passed to
-   the configure script, the unit tests are also run by "make all"
+ - "make test" to run all tests, in quiet mode, or "make test-v" in
+   verbose mode (if "dir/prog" failed, re-executes it as "dir/prog
+   all" to enable debug info). If --enable-debug was passed to the
+   configure script, the unit tests are also run by "make all"
 
 When linking the tests, $(TEST-LDFLAGS) is added to the link command.
 
@@ -310,8 +311,8 @@ int main(int argc, char* argv[]) {
   if (argc == 2) Logger::scanOptions(argv[1], argv[0]);
   ...
 
-This is useful while testing the unit test: Whereas "make unittest"
-will call the test as "subdir/foobar-test", you can execute it as
+This is useful while testing the unit test: Whereas "make test" will
+call the test as "subdir/foobar-test", you can execute it as
 "subdir/foobar-test all" to enable debug output.
 
 

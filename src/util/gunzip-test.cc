@@ -51,10 +51,11 @@ namespace {
   };
 
   const char* const hexDigits = "0123456789abcdef";
-  void toHex(string* o, byte c) {
+  void escapedChar(string* o, byte c) {
     switch (c) {
     case 0: *o += "\\0"; break;
     case '\n': *o += "\\n"; break;
+    case '\t': *o += "\\t"; break;
     case '"': case '\\': *o += '\\'; *o += c; break;
     default:
       if (c >= ' ' && c <= '~') {
@@ -70,14 +71,14 @@ namespace {
   inline string escapedString(const string& s) {
     string result;
     for (unsigned i = 0; i < s.length(); ++i)
-      toHex(&result, s[i]);
+      escapedChar(&result, s[i]);
     return result;
   }
 
   inline string escapedString(const byte* s, unsigned ssize) {
     string result;
     for (unsigned i = 0; i < ssize; ++i)
-      toHex(&result, s[i]);
+      escapedChar(&result, s[i]);
     return result;
   }
 
@@ -179,7 +180,7 @@ int main(int argc, char* argv[]) {
       byte c;
       cin.read(reinterpret_cast<char*>(&c), 1);
       if (cin.gcount() == 0) continue;
-      toHex(&o, c);
+      escapedChar(&o, c);
       ++len;
     }
     cout << len << ", \"" << o << '"' << endl;

@@ -22,7 +22,7 @@
 //______________________________________________________________________
 
 Logger info("Log-test");
-Logger debug("Flame-fest");
+Logger debugg("Flame-fest");
 
 namespace {
 
@@ -46,9 +46,9 @@ int main() {
   Logger::setEnabled("Log-test");
   string c = " (correct)";
   info("The answer: %1%2", 42, c);
-  debug("yo");
+  debugg("yo");
   Logger::setEnabled("Flame-fest");
-  debug("boo");
+  debugg("boo");
 
   Assert(out.str() ==
     "Log-test:       The answer: 42 (correct)\n"

@@ -328,7 +328,7 @@
 
       <varlistentry>
         <term><option>--debug</option><optional>=<literal>help</literal
-          >|<literal>all</literal>|<replaceable>UNIT,UNIT...</replaceable>
+          >|=<literal>all</literal>|=<replaceable>UNIT,~UNIT...</replaceable>
           </optional></term>
         <listitem>
           <para>Switch on or off debugging output. Just `--debug' is
@@ -526,9 +526,7 @@
             data which you want added to the output (for example, a
             `<literal>[Servers]</literal>' section with a list of your
             servers as entries), or it can be the jigdo file output by
-            an earlier run of <command>jigdo-file</command>, allowing
-            you to build up a file with multiple
-            `<literal>[Image]</literal>' sections.</para>
+            an earlier run of <command>jigdo-file</command>.</para>
 
             <para>It is possible to specify the same file for input
             with <option>--merge</option> and for output with
@@ -962,7 +960,8 @@ image-info   <replaceable>image-length  image-md5sum  rsyncsum-size</replaceable
     into sections, each of which is preceded by a line reading
     `<literal>[Sectionname]</literal>'. Within each section, lines
     have the form `Label=Value'. Such lines are also called `entries'
-    below.</para>
+    below. All `<filename>.jigdo</filename>' files use UTF-8 as their
+    character encoding.</para>
 
     <para>Comments are introduced with the `<literal>#</literal>'
     character and extend to the end of the line. Whitespace is ignored
@@ -993,15 +992,11 @@ image-info   <replaceable>image-length  image-md5sum  rsyncsum-size</replaceable
       <screen
 >[Jigdo]
 Version=1.1
-Generator=jigdo-file/1.0.0
-Info=<replaceable>long description</replaceable></screen>
+Generator=jigdo-file/1.0.0</screen>
 
       <para>Information about the version of the jigdo file format
-      used, and the program that generated it. The `Info' label can
-      contain a description of the contents of the jigdo file.</para>
-
-      <para>There should be one such section per
-      `<filename>.jigdo</filename>' file.</para>
+      used, and the program that generated it. There should be one
+      such section per `<filename>.jigdo</filename>' file.</para>
     </refsect2>
 
     <refsect2 id="image-section">
@@ -1012,14 +1007,12 @@ Info=<replaceable>long description</replaceable></screen>
 Filename=<replaceable>"filename for saving on user's disc"</replaceable>
 Template=<replaceable>"URI where to fetch template file"</replaceable>
 Template-MD5Sum=OQ8riqT1BuyzsrT9964A7g
-ShortInfo=<replaceable>single-line description (max. 200 characters)
-of the image</replaceable>
-Info=<replaceable>long description</replaceable></screen>
+ShortInfo=<replaceable>single-line description of the image (200 characters max.)</replaceable>
+Info=<replaceable>long description (5000 characters max.)</replaceable></screen>
 
-      <para>Instead of an URI (which can be absolute or relative to
-      the URL of the jigdo file), the value for the `Template' entry
-      can also be a string of the form
-      `<replaceable>Label</replaceable>:<replaceable
+      <para>The value for the `Template' entry can be either an URL
+      (absolute or relative to the URL of the jigdo file) or a string
+      of the form `<replaceable>Label</replaceable>:<replaceable
       >pathname</replaceable>' (<emphasis>UNIMPLEMENTED</emphasis>),
       as described below.</para>
 
@@ -1030,8 +1023,37 @@ Info=<replaceable>long description</replaceable></screen>
       template data is corrupted or belongs to a different
       image.</para>
 
-      <para>This section may occur multiple times, there is one such
-      section for each image in the jigdo file.</para>
+      <para>Unlike other entry values, the values of the
+      `<literal>ShortInfo</literal>' and `<literal>Info</literal>'
+      entries are <emphasis>not</emphasis> split up into words,
+      instead all quoting is preserved.</para>
+
+      <para>The value of the `<literal>Info</literal>' entry is
+      special in that <citerefentry>
+        <refentrytitle>jigdo</refentrytitle><manvolnum>1</manvolnum>
+      </citerefentry> can optionally parse XML markup it contains. If
+      the markup has errors such as unbalanced/unsupported tags, the
+      string is displayed literally, without XML parsing. Supported
+      tags are <literal>&lt;b&gt;&lt;/b&gt;</literal> (bold),
+      <literal>&lt;i&gt;&lt;/i&gt;</literal> (italic),
+      <literal>&lt;tt&gt;&lt;/tt&gt;</literal> (typewriter font),
+      <literal>&lt;u&gt;&lt;/u&gt;</literal> (underline),
+      <literal>&lt;big&gt;&lt;/big&gt;</literal> (larger font),
+      <literal>&lt;small&gt;&lt;/small&gt;</literal> (smaller font)
+      and <literal>&lt;br/&gt;</literal> (linebreak). Supported
+      entities include <literal>&amp;lt;</literal> (`&lt;'),
+      <literal>&amp;gt;</literal> (`&gt;') and
+      <literal>&amp;amp;</literal> (`&amp;'). Note that the whole
+      `<literal>Info</literal>' entry must be on one line in the jigdo
+      file.</para>
+
+      <para>This section may occur multiple times, but all except the
+      first one will be ignored. This is useful e.g. when creating a
+      `<filename>.jigdo</filename>' file for a DVD image when you
+      already have `<filename>.jigdo</filename>' files for CDs with
+      the same content: You can simply `<literal>[Include]</literal>'
+      (see below) the CDs' jigdo files at the end of the DVD jigdo
+      file, after its `<literal>[Image]</literal>' section.</para>
     </refsect2>
 
     <refsect2 id="parts-section">
@@ -1075,8 +1097,8 @@ kyfebwu6clbYqqWUdFIyaw=LabelB:some/path/part2
       it even rearranges any file specified with
       <option>--merge</option> to have only one such section at the
       end. This is done to allow <command>jigdo</command> to display
-      the list of images contained in a jigdo file while the rest of
-      that file is still being downloaded.</para>
+      the information from the `<literal>[Image]</literal>' section
+      while the rest of that file is still being downloaded.</para>
     </refsect2>
 
     <refsect2 id="servers-section">
@@ -1137,9 +1159,9 @@ Any text, except that lines must not begin with `['.</screen>
       file. The effect will be the same as copying the included file's
       contents into the file which contains the include directive.</para>
 
-      <para>The URL argument can be an absolute or relative URL.
-      Relative URLs are interpreted to be relative to the URL of the
-      jigdo file which contains the include directive. Includes can be
+      <para>The URL argument can be an absolute or relative URL. 
+      Relative URLs are assumed to be relative to the URL of the jigdo
+      file which contains the include directive. Includes can be
       nested, but it is an error to create a loop of include
       directives. It is <emphasis>not</emphasis> possible to use URLs
       of the form `<replaceable>Label</replaceable>:<replaceable

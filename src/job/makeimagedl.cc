@@ -31,9 +31,9 @@
 #include <md5sum.hh>
 #include <mimestream.hh>
 #include <string.hh>
+//______________________________________________________________________
 
 using namespace Job;
-//______________________________________________________________________
 
 DEBUG_UNIT("makeimagedl")
 
@@ -59,10 +59,10 @@ namespace {
 MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
                          const string& destination)
     : io(ioPtr), stateVal(DOWNLOADING_JIGDO),
-      jigdoUrl(jigdoUri), children(), dest(destination),
+      jigdoUrl(jigdoUri), childrenVal(), dest(destination),
       tmpDirVal(), mi(),
-      imageName(), imageInfo(), imageShortInfo(), templateUrl(),
-      templateMd5(0) {
+      imageNameVal(), imageInfoVal(), imageShortInfoVal(), templateUrlVal(),
+      templateMd5Val(0) {
   // Remove all trailing '/' from dest dir, even if result empty
   unsigned destLen = dest.length();
   while (destLen > 0 && dest[destLen - 1] == DIRSEP) --destLen;
@@ -91,14 +91,18 @@ MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
 Job::MakeImageDl::~MakeImageDl() {
   debug("~MakeImageDl");
   // Delete all our children. NB ~Child will remove child from the list
-  while (!children.empty()) {
-    Child* x = &children.front();
-    debug("~MakeImageDl: delete %1", x);
+  while (!childrenVal.empty()) {
+    Child* x = &childrenVal.front();
 #   if DEBUG
+    /* childFailed() or childSucceeded() MUST always be called for a Child.
+       Exception: May delete the MakeImageDl without calling this for its
+       children. */
     if (!x->childSuccFail)
       debug("childFailed()/Succeeded() not called for %1",
             x->source() ? x->source()->location() : "[deleted source]");
+    x->childSuccFail = true; // Avoid failed assert
 #   endif
+    debug("~MakeImageDl: delete %1", x);
     delete x;
   }
 }
@@ -128,13 +132,14 @@ void MakeImageDl::run() {
   if (childDl.get() != 0) {
     string info = _("Retrieving .jigdo data");
     string destDesc = subst(destDescTemplate(), leafname, info);
-    Assert(io);
-    auto_ptr<DataSource::IO> frontend(
-        io->makeImageDl_new(childDl->source(), jigdoUrl, destDesc) );
+    auto_ptr<DataSource::IO> frontend(0);
+    if (io)
+      frontend.reset(io->makeImageDl_new(childDl->source(), jigdoUrl,
+                                         destDesc) );
     JigdoIO* jio = new JigdoIO(childDl.get(), jigdoUrl, frontend.get());
     childDl->setChildIo(jio);
     frontend.release();
-    io->job_message(&info);
+    if (io) io->job_message(&info);
     (childDl.release())->source()->run();
   }
 }
@@ -256,7 +261,8 @@ MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md,
   }
   auto_ptr<SingleUrl> dl(new SingleUrl(0, url));
   dl->setDestination(f, 0, 0);
-  Child* c = new Child(this, &children, dl.get(), contentMdKnown, cacheMd);
+  Child* c = new Child(this, &childrenVal, dl.get(), contentMdKnown,
+                       cacheMd);
   dl.release();
   return c;
 }
@@ -283,7 +289,8 @@ MakeImageDl::Child* MakeImageDl::childForCompleted(
     // Data with that MD5 known - no need to go on the net, imm. return it
     debug("childFor: already have %L1", filename);
     auto_ptr<CachedUrl> dl(new CachedUrl(0, filename, 0));
-    Child* c = new Child(this, &children, dl.get(), contentMdKnown, cacheMd);
+    Child* c = new Child(this, &childrenVal, dl.get(), contentMdKnown,
+                         cacheMd);
     dl.release();
     return c;
   } else {
@@ -348,7 +355,9 @@ void MakeImageDl::childSucceeded(
     generateError(&err);
     return;
   }
-  delete childDl;
+
+  // No: Must not delete any part of JigdoIO tree before any other
+  //delete childDl;
 }
 
 void MakeImageDl::childFailed(
@@ -374,18 +383,7 @@ void MakeImageDl::childFailed(
 //   } else {
 //     debug("NO rm -f %1", name);
 //   }
-  delete childDl;
-}
-//______________________________________________________________________
 
-void MakeImageDl::setImageInfo(string* imageNam, string* imageInf,
-                               string* imageShortInf,
-                               string* templateUr, MD5** templateMd) {
-  debug("setImageInfo");
-  Paranoid(!haveImageInfo());
-  imageName.swap(*imageNam);
-  imageInfo.swap(*imageInf);
-  imageShortInfo.swap(*imageShortInf);
-  templateUrl.swap(*templateUr);
-  templateMd5 = *templateMd; *templateMd = 0;
+  // No: Must not delete any part of JigdoIO tree before any other
+  //delete childDl;
 }

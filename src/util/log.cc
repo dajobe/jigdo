@@ -43,15 +43,16 @@ bool Logger::setEnabled(const char* unitName, bool enable) {
     return true;
   }
 
-  // Only change one Logger
+  // Only change matching Loggers
+  bool result = false; // Not found
   while (l != 0) {
     if (strcmp(unitName, l->unitNameVal) == 0) {
       l->enabledVal = enable;
-      return true;
+      result = true;
     }
     l = l->next;
   }
-  return false; // Not found
+  return result;
 }
 
 void Logger::defaultPut(const string& unitName, unsigned char unitNameLen,

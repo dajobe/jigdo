@@ -9,13 +9,18 @@
 
   Access to Gnome/KDE/ini-style configuration files
 
+  #test-deps util/configfile.o
+
 */
 
+#include <config.h>
+
 #include <iostream>
+#include <fstream>
 #include <vector>
 
-#include <configfile.cc>
-#include <debug.cc>
+#include <configfile.hh>
+#include <debug.hh>
 //______________________________________________________________________
 
 int main(int argc, char* argv[]) {
@@ -81,7 +86,7 @@ int main(int argc, char* argv[]) {
       (*f.label())[off - 1] = '=';
       // Also split value into words
       vector<string> words;
-      ConfigFile::split(words, f.label(), off);
+      ConfigFile::split(words, *f.label(), off);
       cout << "         ";
       for (vector<string>::iterator i = words.begin(), e = words.end();
            i != e; ++i)

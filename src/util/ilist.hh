@@ -28,6 +28,7 @@ struct IListBase {
   }
   ~IListBase() {
     //msg("~IListBase %1", this);
+    if (iListBase_prev == 0) return;
     iListBase_prev->iListBase_next = iListBase_next;
     iListBase_next->iListBase_prev = iListBase_prev;
     iListBase_prev = iListBase_next = 0;
@@ -40,22 +41,51 @@ template <class T>
 class IList {
 public:
 
+  typedef unsigned size_type;
   typedef T value_type;
-//   class iterator;
+  class iterator;
+  //class const_iterator;
+  friend class iterator;
+  //friend class const_iterator;
+  typedef T& reference;
+  //typedef const T& const_reference;
 
   IList() { e.iListBase_prev = e.iListBase_next = &e; }
   bool empty() const { return e.iListBase_next == &e; }
-  T& front() { return *static_cast<T*>(e.iListBase_next); }
   void push_back(T& x) {
-    msg("IList::push_back %1", &x);
+    //msg("IList::push_back %1", &x);
     Assert(x.iListBase_prev == 0 && x.iListBase_next == 0);
     x.iListBase_prev = e.iListBase_prev;
     x.iListBase_next = &e;
     x.iListBase_prev->iListBase_next = &x;
     x.iListBase_next->iListBase_prev = &x;
   }
+
+  T& front() const { return *static_cast<T*>(e.iListBase_next); }
+  T& back() const { return *static_cast<T*>(e.iListBase_prev); }
+
+  inline iterator begin() const { return iterator(e.iListBase_next); }
+  inline iterator end() const { return iterator(const_cast<IListBase*>(&e));}
+
 private:
   IListBase e;
+};
+
+template <class T>
+class IList<T>::iterator {
+public:
+  iterator(IListBase* pp) : p(pp) { }
+  T& operator*() { return *getT(); }
+  const T& operator*() const { return *getT(); }
+  T* operator->() { return getT(); }
+  const T* operator->() const { return getT(); }
+  iterator& operator++() { p = p->iListBase_next; return *this; }
+  iterator& operator--() { p = p->iListBase_prev; return *this; }
+  bool operator==(const iterator i) const { return p == i.p; }
+  bool operator!=(const iterator i) const { return p != i.p; }
+private:
+  T* getT() { return static_cast<T*>(p); }
+  IListBase* p;
 };
 
 // template <class T>

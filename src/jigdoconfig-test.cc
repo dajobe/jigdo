@@ -9,15 +9,14 @@
 
   Representation for config data in a .jigdo file - based on ConfigFile
 
+  #test-deps jigdoconfig.o util/configfile.o
+
 */
 
 #include <iostream>
 
-#define JIGDOCONFIG_DEBUG 1
-#include <jigdoconfig.cc>
-#include <configfile.cc>
-#include <debug.cc>
-#include <string.cc>
+#include <jigdoconfig.hh>
+#include <debug.hh>
 //______________________________________________________________________
 
 struct PR : public JigdoConfig::ProgressReporter {

@@ -174,8 +174,8 @@ int main (int argc, char *argv[]) {
       string pixDir = packageDataDir; pixDir += "pixmaps";
       add_pixmap_directory(pixDir.c_str());
     }
-    GUI::create();
     cmdOptions(argc, argv);
+    GUI::create();
     gtk_widget_show(GUI::window.window);
 
     // Initialize networking code

@@ -85,7 +85,7 @@ private:
   inline void setImgSectCandidate(JigdoIO* c);
   // The methods below are called in various places to find 1st image section
   inline void imgSect_newChild(JigdoIO* child); // Child created after [Incl.
-  inline void imgSect_parsed(); // [Image] occurred in current .jigdo data
+  inline bool imgSect_parsed(); // [Image] occurred in current .jigdo data
   inline bool imgSect_eof(); // End of current file without any [Image]
 
   // Create error message with URL and line number
@@ -98,7 +98,7 @@ private:
   // Called by gunzip_data(): New .jigdo line ready. Arg is empty on exit.
   void jigdoLine(string* l);
   void include(string* url); // "[Include http://xxx]" found
-  void entry(string* label, vector<string>* value);
+  void entry(string* label, string* data, unsigned valueOff);
   /* Called at the end of a [Section] (=start of another section or EOF)
      Returns FAILURE if there is an error. */
   bool sectionEnd();

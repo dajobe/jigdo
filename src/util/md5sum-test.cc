@@ -9,6 +9,8 @@
 
   Quite secure 128-bit checksum
 
+  #test-deps util/glibc-md5.o util/md5sum.o
+
 */
 
 #include <config.h>
@@ -17,11 +19,15 @@
 #include <iostream>
 #include <fstream>
 
-#include <debug.cc>
-#include <glibc-md5.cc>
-#include <md5sum.cc>
+#include <bstream.hh>
+#include <log.hh>
+#include <md5sum.hh>
 #include <mimestream.hh>
 //______________________________________________________________________
+
+namespace {
+
+int returnCode = 0;
 
 // MD5 test suite (see end of RFC1321)
 
@@ -48,30 +54,34 @@ const byte s7[] =
 "\x57\xed\xf4\xa2\x2b\xe3\xc9\x55\xac\x49\xda\x2e\x21\x07\xb6\x7a";
 const byte sAll[] =
 "\x6f\xec\x75\xd4\xe7\xfc\xd7\xe9\x66\x46\xb4\xc7\xaf\x96\xbc\xe2";
+
+const char* const hexDigits = "0123456789abcdef";
+
+}
 //______________________________________________________________________
 
-void printSum(const byte* sum) {
-  for (int i = 0; i < 16; ++i)
-    cout << hex << setfill('0') << setw(2) << static_cast<unsigned>(sum[i]);
+string toHex(const byte* sum) {
+  string result;
+  for (int i = 0; i < 16; ++i) {
+    result += hexDigits[sum[i] >> 4];
+    result += hexDigits[sum[i] & 0xfU];
+  }
+  return result;
 }
 
 void compare(const byte* suite, const byte* mine) {
   for (int i = 0; i < 16; ++i) {
     if (suite[i] != mine[i]) {
-      cout << "ERROR: Expected ";
-      printSum(suite);
-      cout << "\n        but got ";
-      printSum(mine);
-      cout << endl;
+      msg("ERROR: Expected %1, but got %2", toHex(suite), toHex(mine));
+      returnCode = 1;
       return;
     }
   }
-  printSum(suite);
-  cout << " OK" << endl;
+  msg("OK: %1", toHex(suite));
 }
 
 void printBlockSums(size_t blockSize, const char* fileName) {
-  ifstream file(fileName, ios::binary);
+  bifstream file(fileName, ios::binary);
   byte buf[blockSize];
   byte* bufEnd = buf + blockSize;
 
@@ -79,7 +89,7 @@ void printBlockSums(size_t blockSize, const char* fileName) {
     // read another block
     byte* cur = buf;
     while (cur < bufEnd && file) {
-      file.read(cur, bufEnd - cur); // Fill buffer
+      readBytes(file, cur, bufEnd - cur); // Fill buffer
       cur += file.gcount();
     }
     MD5Sum sum;
@@ -90,6 +100,7 @@ void printBlockSums(size_t blockSize, const char* fileName) {
 }
 
 int main(int argc, char* argv[]) {
+  if (argc == 2) Logger::scanOptions(argv[1], argv[0]);
   if (argc == 3) {
     // 2 cmdline args, blocksize and filename. Print RsyncSums of all blocks
     printBlockSums(atoi(argv[1]), argv[2]);
@@ -130,5 +141,5 @@ int main(int argc, char* argv[]) {
   sum = all.finish().digest();
   compare(sAll, sum);
 
-  return 0;
+  return returnCode;
 }

@@ -1218,41 +1218,9 @@
 		      <property name="spacing">4</property>
 
 		      <child>
-			<widget class="GtkLabel" id="label222">
-			  <property name="visible">True</property>
-			  <property name="label" translatable="yes">&lt;b&gt;Note: Even though some data is already being downloaded, you
-need to complete step 2 before the actual file download can start!&lt;/b&gt;</property>
-			  <property name="use_underline">False</property>
-			  <property name="use_markup">True</property>
-			  <property name="justify">GTK_JUSTIFY_CENTER</property>
-			  <property name="wrap">False</property>
-			  <property name="selectable">False</property>
-			  <property name="xalign">0.5</property>
-			  <property name="yalign">0.5</property>
-			  <property name="xpad">0</property>
-			  <property name="ypad">0</property>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">False</property>
-			  <property name="fill">False</property>
-			</packing>
-		      </child>
-
-		      <child>
-			<widget class="GtkHSeparator" id="hseparator5">
-			  <property name="visible">True</property>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">False</property>
-			  <property name="fill">True</property>
-			</packing>
-		      </child>
-
-		      <child>
 			<widget class="GtkScrolledWindow" id="scrolledwindow20">
 			  <property name="visible">True</property>
+			  <property name="can_focus">True</property>
 			  <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
 			  <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
 			  <property name="shadow_type">GTK_SHADOW_NONE</property>
@@ -1264,20 +1232,54 @@ need to complete step 2 before the actual file download can start!&lt;/b&gt;</pr
 			      <property name="shadow_type">GTK_SHADOW_NONE</property>
 
 			      <child>
-				<widget class="GtkVBox" id="vbox35">
+				<widget class="GtkVBox" id="jigdo_InfoVbox">
 				  <property name="visible">True</property>
 				  <property name="homogeneous">False</property>
 				  <property name="spacing">8</property>
 
 				  <child>
-				    <widget class="GtkLabel" id="label220">
+				    <widget class="GtkLabel" id="label222">
 				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">&lt;b&gt;Note: Even though some data is already being downloaded, you
+need to complete step 2 before the actual file download can start!&lt;/b&gt;</property>
+				      <property name="use_underline">False</property>
+				      <property name="use_markup">True</property>
+				      <property name="justify">GTK_JUSTIFY_CENTER</property>
+				      <property name="wrap">False</property>
+				      <property name="selectable">False</property>
+				      <property name="xalign">0.5</property>
+				      <property name="yalign">0.5</property>
+				      <property name="xpad">0</property>
+				      <property name="ypad">0</property>
+				    </widget>
+				    <packing>
+				      <property name="padding">0</property>
+				      <property name="expand">False</property>
+				      <property name="fill">False</property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkHSeparator" id="hseparator5">
+				      <property name="visible">True</property>
+				    </widget>
+				    <packing>
+				      <property name="padding">0</property>
+				      <property name="expand">True</property>
+				      <property name="fill">True</property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkLabel" id="jigdo_ShortInfo">
+				      <property name="visible">True</property>
+				      <property name="can_focus">True</property>
 				      <property name="label" translatable="yes">#&lt;b&gt;ShortInfo&lt;/b&gt;</property>
 				      <property name="use_underline">False</property>
 				      <property name="use_markup">True</property>
 				      <property name="justify">GTK_JUSTIFY_LEFT</property>
 				      <property name="wrap">False</property>
-				      <property name="selectable">False</property>
+				      <property name="selectable">True</property>
 				      <property name="xalign">7.45058e-09</property>
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
@@ -1291,7 +1293,7 @@ need to complete step 2 before the actual file download can start!&lt;/b&gt;</pr
 				  </child>
 
 				  <child>
-				    <widget class="GtkLabel" id="label221">
+				    <widget class="GtkLabel" id="jigdo_Info">
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="label" translatable="yes">#Info
@@ -1304,8 +1306,8 @@ x
 x
 </property>
 				      <property name="use_underline">False</property>
-				      <property name="use_markup">False</property>
-				      <property name="justify">GTK_JUSTIFY_CENTER</property>
+				      <property name="use_markup">True</property>
+				      <property name="justify">GTK_JUSTIFY_LEFT</property>
 				      <property name="wrap">True</property>
 				      <property name="selectable">True</property>
 				      <property name="xalign">0.5</property>
@@ -1315,8 +1317,8 @@ x
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
-				      <property name="expand">False</property>
-				      <property name="fill">False</property>
+				      <property name="expand">True</property>
+				      <property name="fill">True</property>
 				    </packing>
 				  </child>
 				</widget>
@@ -1950,7 +1952,7 @@ just click Next...</property>
 					  <child>
 					    <widget class="GtkLabel" id="label244">
 					      <property name="visible">True</property>
-					      <property name="label" translatable="yes">&lt;b&gt;URL(s) for that server:&lt;/b&gt;</property>
+					      <property name="label" translatable="yes">&lt;b&gt;URL(s) for that server:&lt;/b&gt; (space-separated list, preferred URLs first)</property>
 					      <property name="use_underline">False</property>
 					      <property name="use_markup">True</property>
 					      <property name="justify">GTK_JUSTIFY_LEFT</property>

@@ -18,6 +18,7 @@
 
 #include <config.h>
 
+#include <glib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -127,14 +128,14 @@ public:
                    DataSource::IO* frontend);
 
   /** Is called by a child JigdoIO once the [Image] section has been seen.
-      The arguments are modified! */
-  void setImageInfo(string* imageNam, string* imageInf,
-                    string* imageShortInf, string* templateUr,
-                    MD5** templateMd);
-  /** Has setImageInfo() already been called? (=>is imageName non-empty?) */
-  inline bool haveImageInfo() const;
-
-//   inline bool isListEnd(const Child* c) const;
+      The arguments are modified!
+      @return SUCCESS or FAILURE (latter if ImageInfo parsing failed) */
+  bool setImageSection(string* imageName, string* imageInfo,
+                       string* imageShortInfo, string* templateUrl,
+                       MD5** templateMd5);
+  /** Has setImageSection() already been called? (=>is imageName
+      non-empty?) */
+  inline bool haveImageSection() const;
 
   /** Return child download object which contains a DataSource which produces
       the data of the requested URL. That returned object is usually a newly
@@ -148,6 +149,54 @@ public:
       dtor (unless it is deleted earlier). */
   Child* childFor(const string& url, const MD5* md = 0,
                   string* leafnameOut = 0);
+
+  typedef IList<Child> ChildList;
+  /** Return the list of Child objects owned by this MakeImageDl. */
+  inline const ChildList& children() const;
+
+  /** Return info about the first image section, or empty strings if none
+      encountered so far */
+  inline const string& imageName() const { return imageNameVal; }
+  inline const string& imageShortInfo() const { return imageShortInfoVal; }
+  inline const string& templateUrl() const { return templateUrlVal; }
+  inline const MD5* templateMd5() const { return templateMd5Val; }
+  /** This one is special: The contents of ImageInfo are an XML-style string,
+      with markup containing tags named: b i tt u big small br p. When
+      getting the string, the frontend must specify what strings the
+      respective begin and end tags should be replaced with. The default args
+      turn the string into plain UTF-8 without markup. This call is fairly
+      expensive, may want to cache returned string.
+
+      If there in an error parsing the XML, the string from the ImageInfo
+      entry is either returned unchanged (if !escapedText), or all
+      "dangerous" characters are escaped (if escapedText == true);
+
+      If there is no error, escapedText==true means that any "&lt;" in the
+      normal text should be kept escaped as "&lt;". escapedText=false will
+      unescape the "&lt;" to "<".
+
+      The subst argument is of the form:
+      {
+        "", "", // <b>, </b>
+        "", "", // <i>, </i>
+        "", "", // <tt>, </tt>
+        "", "", // <u>, </u>
+        "", "", // <big>, </big>
+        "", "", // <small>, </small>
+        "", "", // <br/>
+      };
+
+      @param output String to append image info to
+      @param escapedText true if the characters <>& should be escaped as
+      &lt;, &gt; &amp; */
+  void imageInfo(string* output, bool escapedText,
+                 const char* subst[13]) const;
+  /** Helper enum for the offsets above */
+  enum { B, B_, I, I_, TT, TT_, U, U_, BIG, BIG_, SMALL, SMALL_, BR };
+
+  /** Return ImageInfo as it appears in the .jigdo file. The value has *not*
+      been checked for validity (correct tag nesting etc). */
+  inline const string& imageInfoOrig() const { return imageInfoVal; }
 
 private: // Really private
   /** Methods from JigdoConfig::ProgressReporter */
@@ -175,7 +224,7 @@ private: // Really private
   State stateVal; // State, e.g. "downloading jigdo file", "error"
 
   string jigdoUrl; // URL of .jigdo file
-  IList<Child> children;
+  ChildList childrenVal;
 
   string dest; // Destination dir. No trailing '/', empty string for root dir
   string tmpDirVal; // Temporary dir, a subdir of dest
@@ -184,10 +233,10 @@ private: // Really private
   MakeImage mi;
 
   // Info about first image section of this .jigdo, if any
-  string imageName;
-  string imageInfo, imageShortInfo;
-  string templateUrl;
-  MD5* templateMd5;
+  string imageNameVal;
+  string imageInfoVal, imageShortInfoVal;
+  string templateUrlVal;
+  MD5* templateMd5Val;
 };
 //______________________________________________________________________
 
@@ -238,6 +287,11 @@ public:
       @param yourIo The value you returned from makeImageDl_new() */
   virtual void makeImageDl_finished(Job::DataSource* childDownload,
                                     Job::DataSource::IO* yourIo) = 0;
+
+  /** Called as soon as the first [Image] section in the .jigdo data has been
+      parsed. Call MakeImageDl::imageName() etc to get the info from the
+      image section. */
+  virtual void makeImageDl_haveImageSection() = 0;
 };
 //______________________________________________________________________
 
@@ -263,7 +317,6 @@ public:
   inline void deleteSource();
   /** @return The JigdoIO or similar owned by this object. null after init */
   inline DataSource::IO* childIo() const;
-
 
   /** Only to be called by MakeImageDl and its helper classes (JigdoIO)
       @param m Master MakeImageDl
@@ -315,13 +368,20 @@ void Job::MakeImageDl::toggleLeafname(string* s) {
   (*s)[off] ^= ('-' ^ '~');
 }
 
-bool Job::MakeImageDl::haveImageInfo() const { return !imageName.empty(); }
+bool Job::MakeImageDl::haveImageSection() const {
+  return !imageNameVal.empty();
+}
+
+const Job::MakeImageDl::ChildList& Job::MakeImageDl::children() const {
+  return childrenVal;
+}
 //____________________
 
 Job::MakeImageDl::Child::Child(MakeImageDl* m, IList<Child>* list,
     DataSource* src, bool contentMdKnown, const MD5& mdOfContentOrUrl)
   : masterVal(m), sourceVal(src), childIoVal(0),
     contentMd(contentMdKnown), md(mdOfContentOrUrl) {
+  Paranoid(list != 0);
   list->push_back(*this);
 # if DEBUG
   //msg("Child %1", this);
@@ -332,7 +392,6 @@ Job::MakeImageDl::Child::Child(MakeImageDl* m, IList<Child>* list,
 Job::MakeImageDl::Child::~Child() {
 # if DEBUG
   //msg("~Child %1", this);
-  // childFailed() or childSucceeded() MUST always be called for a Child
   Paranoid(childSuccFail);
 # endif
   deleteSource();
