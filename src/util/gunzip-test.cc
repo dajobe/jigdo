@@ -9,6 +9,8 @@
 
   In-memory, push-oriented decompression of .gz files
 
+  #test-deps util/gunzip.o
+
 */
 
 #include <config.h>
@@ -22,6 +24,7 @@
 
 #include <bstream.hh>
 #include <gunzip.hh>
+#include <log.hh>
 //______________________________________________________________________
 
 int returnCode = 0;
@@ -47,34 +50,35 @@ namespace {
     }
   };
 
-  ostream& toHex(ostream& o, byte c) {
-    o << hex;
-    o.fill('0');
+  const char* const hexDigits = "0123456789abcdef";
+  void toHex(string* o, byte c) {
     switch (c) {
-    case 0: o << "\\0"; break;
-    case '\n': o << "\\n"; break;
-    case '"': case '\\': o << '\\' << c; break;
+    case 0: *o += "\\0"; break;
+    case '\n': *o += "\\n"; break;
+    case '"': case '\\': *o += '\\'; *o += c; break;
     default:
       if (c >= ' ' && c <= '~') {
-        o << c;
+        *o += c;
       } else {
-        o << "\\x";
-        o.width(2);
-        o << unsigned(c);
+        *o += "\\x";
+        *o += hexDigits[unsigned(c) >> 4];
+        *o += hexDigits[unsigned(c) & 0xfU];
       }
     }
-    o << dec;
-    return o;
   }
 
-  void printEscapedString(ostream& o, const string& s) {
+  inline string escapedString(const string& s) {
+    string result;
     for (unsigned i = 0; i < s.length(); ++i)
-      toHex(o, s[i]);
+      toHex(&result, s[i]);
+    return result;
   }
 
-  void printEscapedString(ostream& o, const byte* s, unsigned ssize) {
+  inline string escapedString(const byte* s, unsigned ssize) {
+    string result;
     for (unsigned i = 0; i < ssize; ++i)
-      toHex(o, s[i]);
+      toHex(&result, s[i]);
+    return result;
   }
 
   struct ToString : Gunzip::IO {
@@ -133,17 +137,11 @@ namespace {
       cleft -= count;
     }
     if (unp == io.o) {
-      cout << "OK: cbs=" << cbs << " ubs=" << ubs << " \"";
-      printEscapedString(cout, unp);
-      cout << '"' << endl;
+      msg("OK: cbs=%1 ubs=%2 \"%3\"", cbs, ubs, escapedString(unp));
     } else {
-      cout << "FAILED: cbs=" << cbs << " ubs=" << ubs << '\n'
-         << "  expected \"";
-      printEscapedString(cout, unp);
-      cout << "\"\n";
-      cout << "  but got  \"";
-      printEscapedString(cout, io.o);
-      cout << "\"\n";
+      msg("FAILED: cbs=%1 ubs=%2", cbs, ubs);
+      msg("  expected \"%1\"", escapedString(unp));
+      msg("  but got  \"%1\"", escapedString(io.o));
       returnCode = 1;
     }
   }
@@ -151,9 +149,7 @@ namespace {
   void testCase(const byte* c, unsigned csize, const byte* u, unsigned usize,
                 int testNr) {
     string unp(reinterpret_cast<const char*>(u), usize);
-    cout << "Test case " << testNr << ": \"";
-    printEscapedString(cout, c, csize);
-    cout << '"' << endl;
+    msg("Test case %1: \"%2\"", testNr, escapedString(c, csize));
     testCase2(c, csize, unp, 1, 1);
     testCase2(c, csize, unp, 3, 1);
     testCase2(c, csize, unp, 1, 3);
@@ -168,31 +164,33 @@ namespace {
 } // namespace
 
 int main(int argc, char* argv[]) {
-  /* Special case, nothing to do with testing gunzip: Convert to C-style
-     string. */
+
+  if (argc == 3 && strcmp("decompress", argv[1]) == 0) {
+    decompressFile(argv[2]);
+    exit(0);
+  }
+
+  /* Special case, nothing to do with testing gunzip: Convert stdin to
+     C-style string. */
   if (argc == 2 && strcmp("tohex", argv[1]) == 0) {
-    ostringstream o;
+    string o;
     int len = 0;
     while (cin) {
       byte c;
       cin.read(reinterpret_cast<char*>(&c), 1);
       if (cin.gcount() == 0) continue;
-      toHex(o, c);
+      toHex(&o, c);
       ++len;
     }
-    cout << len << ", \"" << o.str() << '"' << endl;
+    cout << len << ", \"" << o << '"' << endl;
     return 0;
+  } else if (argc == 2) {
+    Logger::scanOptions(argv[1], argv[0]);
   }
 
-  if (argc == 2) {
-    decompressFile(argv[1]);
-    exit(0);
-  }
-
-  cerr << "Usage: `gunziptest FILENAME.gz' to decompress to stdout\n"
-          "       `gunziptest'             to test some built-in files\n"
-       << endl;
-
+  msg("Usage: `gunziptest decompress FILENAME.gz' to decompress to stdout\n"
+      "       `gunziptest' to test some built-in files\n"
+      "       `gunziptest tohex' to convert stdin to escaped string");
 
   // compressed size, compressed input, unc. size, uncompressed output
   struct Test { int csize; const char* c; int usize; const char* u; };
@@ -250,8 +248,8 @@ int main(int argc, char* argv[]) {
   }
 
   if (returnCode == 0)
-    cout << "OK - all tests succeeded!" << endl;
+    msg("OK - all tests succeeded!");
   else
-    cout << "FAILED - at least one test had an incorrect result!" << endl;
+    msg("FAILED - at least one test had an incorrect result!");
   return returnCode;
 }

@@ -119,7 +119,7 @@ public:
       @param destDir destination directory that the final image should be
       written to. Initially, MakeImage will create a temporary dir (name
       based on jigdoFile leafname) to store administrative data in. */
-  inline explicit MakeImage(const string& jigdoFile);
+  inline explicit MakeImage();
   inline ~MakeImage();
 
   /** Set where to report JigdoConfig errors, overwriting any value passed as
@@ -132,20 +132,11 @@ public:
       config.rescan() when done. */
 //   JigdoConfig config;
 //   ConfigFile& configFile() { return config.configFile(); }
-
-private:
-  // Don't copy
-  inline MakeImage& operator=(const MakeImage&);
 };
 //______________________________________________________________________
 
-MakeImage::MakeImage(const string& jigdoFile) //const string& destDir,
-  /*: config(jigdoFile, new ConfigFile(), *jigdoErrors)*/ { }
+MakeImage::MakeImage() { }
 
 MakeImage::~MakeImage() { }
-
-// void MakeImage::setReporter(JigdoConfig::ProgressReporter* jigdoErrors) {
-//   config.setReporter(*jigdoErrors);
-// }
 
 #endif

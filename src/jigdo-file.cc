@@ -370,10 +370,10 @@ inline void printUsage(bool detailed, size_t blockLength,
     "                   [make-template] When creating the jigdo file, do\n"
     "                   or do not add the sections `[Image]' or `[Servers]'\n"
     "  --debug[=all|=UNIT1,UNIT2...|=help]\n"
-    "                   [make-template] Print debugging information for\n"
-    "                   all units, or for specified units, or print list\n"
-    "                   of units. Can use `~', e.g. `all,~make-template'\n"
-    "  --no-debug       [make-template] No debugging info [default]\n"
+    "                   Print debugging information for all units, or for\n"
+    "                   specified units, or print list of units.\n"
+    "                   Can use `~', e.g. `all,~libwww'\n"
+    "  --no-debug       No debugging info [default]\n"
     "  --match-exec=CMD [make-template] Execute command when files match\n"
     "                   CMD is passed to a shell, with environment set up:\n"
     "                   LABEL, LABELPATH, MATCHPATH, LEAF, MD5SUM, FILE\n"
@@ -714,6 +714,8 @@ int main(int argc, char* argv[]) {
 # endif
 # if DEBUG
   Logger::setEnabled("general");
+# else
+  Debug::abortAfterFailedAssertion = false;
 # endif
 
   try {

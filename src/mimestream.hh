@@ -24,8 +24,10 @@
 
 #include <config.h>
 
+#include <string.h>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include <debug.hh>
 //______________________________________________________________________
@@ -46,36 +48,36 @@ public:
   Base64Out() : bits(0) { }
   typename Output::ResultType result() { return out.result(); }
 
-  /// Output operators
+  /** Output operators */
   Base64Out<Output>& operator<<(char x) { return put(x); }
   Base64Out<Output>& operator<<(signed char x) { return put(x); }
   Base64Out<Output>& operator<<(unsigned char x) { return put(x); }
-  /// Output the low 8 bits of an integer
+  /** Output the low 8 bits of an integer */
   Base64Out<Output>& operator<<(int x) { return put(x); }
-  /// Output 32 bit integer in little-endian order
+  /** Output 32 bit integer in little-endian order */
   Base64Out<Output>& operator<<(uint32 x) { return put(x); }
 
-  /// Output null-terminated string
+  /** Output null-terminated string */
   inline Base64Out<Output>& operator<<(const char* x);
   inline Base64Out<Output>& operator<<(const signed char* x);
   Base64Out<Output>& operator<<(const unsigned char* x);
   inline Base64Out<Output>& operator<<(const void* x);
 
-  /// Output 1 character
+  /** Output 1 character */
   inline Base64Out<Output>& put(unsigned char x);
   inline Base64Out<Output>& put(signed char x);
-  /// Output the low 8 bits of an integer
+  /** Output the low 8 bits of an integer */
   inline Base64Out<Output>& put(int x);
   inline Base64Out<Output>& put(char x);
-  /// Output 32 bit integer in little-endian order
+  /** Output 32 bit integer in little-endian order */
   Base64Out<Output>& put(uint32 x);
-  /// Output n characters
-  inline Base64Out<Output>& write(const char* x, size_t n);
-  inline Base64Out<Output>& write(const signed char* x, size_t n);
-  Base64Out<Output>& write(const unsigned char* x, size_t n);
-  inline Base64Out<Output>& write(const void* x, size_t n);
+  /** Output n characters */
+  inline Base64Out<Output>& write(const char* x, unsigned n);
+  inline Base64Out<Output>& write(const signed char* x, unsigned n);
+  Base64Out<Output>& write(const unsigned char* x, unsigned n);
+  inline Base64Out<Output>& write(const void* x, unsigned n);
 
-  /// This is *not* a no-op.
+  /** This is *not* a no-op. */
   Base64Out<Output>& flush();
   /** Output the appropriate number of '=' characters (0, 1 or 2)
       given how many bytes were fed into the Base64Out<Output> object. */
@@ -86,10 +88,9 @@ public:
   static bool hex;
 
 private:
-  /* The first line (commented out) is the correct string for MIME
-     base64 encoding. We use the second instead because b64 strings
-     might be used as filenames for jigdo at one point. Additionally,
-     "+" or "/" looks weird in the .jigdo file. */
+  /* String for MIME base64 encoding. Not entirely standard because b64
+     strings are used as filenames by jigdo. Additionally, "+" or "/" looks
+     weird in the .jigdo file. */
   static const char* const code;
   static const char* const hexCode;
   int bits;
@@ -157,9 +158,9 @@ Base64Out<Output>& Base64Out<Output>::put(unsigned char x) {
     return *this;
   }
   data = (data << 8) | x;
-  bits += 2;
+  bits += 2; // plus 8 new bits, less 6 which we output in next line
   out.put(code[(data >> bits) & 63U]);
-  if (bits >= 8) {
+  if (bits >= 6) { //8?
     bits -= 6;
     out.put(code[(data >> bits) & 63U]);
   }
@@ -179,15 +180,15 @@ Base64Out<Output>& Base64Out<Output>::put(int x) {
 }
 
 template <class Output>
-Base64Out<Output>& Base64Out<Output>::write(const char* x, size_t n) {
+Base64Out<Output>& Base64Out<Output>::write(const char* x, unsigned n) {
   return write(reinterpret_cast<const unsigned char*>(x), n);
 }
 template <class Output>
-Base64Out<Output>& Base64Out<Output>::write(const signed char* x, size_t n) {
+Base64Out<Output>& Base64Out<Output>::write(const signed char* x, unsigned n) {
   return write(reinterpret_cast<const unsigned char*>(x), n);
 }
 template <class Output>
-Base64Out<Output>& Base64Out<Output>::write(const void* x, size_t n) {
+Base64Out<Output>& Base64Out<Output>::write(const void* x, unsigned n) {
   return write(static_cast<const unsigned char*>(x), n);
 }
 
@@ -232,85 +233,113 @@ Base64Out<Output>& Base64Out<Output>::operator<<(const unsigned char* x) {
 // Output n characters
 template <class Output>
 Base64Out<Output>& Base64Out<Output>::write(const unsigned char* x,
-                                            size_t n) {
-  for (size_t i = 0; i < n; ++i)
+                                            unsigned n) {
+  for (unsigned i = 0; i < n; ++i)
     (*this) << static_cast<byte>(*x++);
   return *this;
 }
 //______________________________________________________________________
 
-#if 0
-/** Convert binary data to Base64 while outputting. Note that this
-    does *not* implement the RFC2045 requirement that lines of text be
-    no longer than 76 characters each. Furthermore, by default the
-    data is not terminated with any '='. */
-class Base64ostream { // Will not derive from ostream, just imitating it
+/** Convert a series of Base64 ASCII strings into binary data.
+
+    Output is a class offering the following:
+       void put(byte b); // Output one byte of binary data
+       typedef implementation_defined ResultType;
+       ResultType result(); // Is called by Base64In::result() */
+template <class Output>
+class Base64In {
 public:
-  Base64ostream() : stream(0) { }
-  ~Base64ostream() { flush(); }
-  explicit Base64ostream(ostream& s) : bits(0), stream(&s) { }
-  bool is_open() const { return stream != 0; }
-  void open(ostream& s) { Assert(!is_open()); bits = 0; stream = &s; }
-  void close();
+  Base64In() : bits(0) { }
+  typename Output::ResultType result() { return out.result(); }
 
-  /// Output operators
-  Base64ostream& operator<<(char x) { return put(x); }
-  Base64ostream& operator<<(signed char x) { return put(x); }
-  Base64ostream& operator<<(unsigned char x) { return put(x); }
-  /// Output the low 8 bits of an integer
-  Base64ostream& operator<<(int x) { return put(x); }
-  /// Output 32 bit integer in little-endian order
-  Base64ostream& operator<<(uint32 x) { return put(x); }
+  /** Output operators, for handing in the ASCII Base64 string. */
+  Base64In<Output>& operator<<(char x) { return put(x); }
+  /** Convert null-terminated string */
+  inline Base64In<Output>& operator<<(const char* x);
+  /** Convert string */
+  inline Base64In<Output>& operator<<(const string& x);
+  /** Output 1 character */
+  inline Base64In<Output>& put(char x);
+  /** Convert given number of characters */
+  Base64In<Output>& put(const char* x, unsigned n);
 
-  /// Output null-terminated string
-  inline Base64ostream& operator<<(const char* x);
-  inline Base64ostream& operator<<(const signed char* x);
-  Base64ostream& operator<<(const unsigned char* x);
-  inline Base64ostream& operator<<(const void* x);
-
-  /// Get reference to underlying ostream
-  ostream& getStream() { return *stream; }
-  /** Implicit conversion to the underlying ostream always flushes the
-      Base64ostream first */
-  operator ostream&() { flush(); return getStream(); }
-
-  /// Output 1 character
-  inline Base64ostream& put(unsigned char x);
-  inline Base64ostream& put(signed char x);
-  /// Output the low 8 bits of an integer
-  inline Base64ostream& put(int x);
-  inline Base64ostream& put(char x);
-  /// Output 32 bit integer in little-endian order
-  Base64ostream& put(uint32 x);
-  /// Output n characters
-  inline Base64ostream& write(const char* x, size_t n);
-  inline Base64ostream& write(const signed char* x, size_t n);
-  Base64ostream& write(const unsigned char* x, size_t n);
-  inline Base64ostream& write(const void* x, size_t n);
-
-  /** Standard ostream operations are forwarded to actual stream. NB:
-      This implementation is probably not 100% correct WRT the
-      semantic definition of these functions. */
-  bool good() const { return stream != 0 && stream->good(); }
-  bool eof() const { return stream != 0 && stream->eof(); }
-  bool fail() const { return stream != 0 && stream->fail(); }
-  bool bad() const { return stream != 0 && stream->bad(); }
-  operator void*() const {
-    return reinterpret_cast<void*>(fail() ? -1 : 0); }
-  bool operator!() const { return fail(); }
-  /** flush() is not forwarded. Instead, it terminates the Base64
-      string. NB: This is *not* a no-op. */
-  Base64ostream& flush();
-  /** Output the appropriate number of '=' characters (0, 1 or 2)
-      given how many bytes were fed into the Base64ostream object. */
-  Base64ostream& trailer(streamsize n);
+  /** Return the object to its initial state */
+  void reset() { bits = 0; }
 
 private:
-  static const byte code[];
+  static const byte table[];
   int bits;
   uint32 data;
-  ostream* stream;
+  Output out;
 };
-#endif /* 0 */
+//______________________________________________________________________
+
+class Base64StringIn {
+public:
+  void put(byte b) { val.push_back(b); }
+  typedef vector<byte>& ResultType;
+  vector<byte>& result() { return val; }
+private:
+  vector<byte> val;
+};
+
+typedef Base64In<Base64StringIn> Base64StringI;
+//______________________________________________________________________
+
+// Inverse mapping for both of these:
+//"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+//"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+#define x 255
+template <class Output>
+const byte Base64In<Output>::table[] = {
+  //    !   "   #   $   %   &   '   (   )   *   +   ,   -   .   /
+    x,  x,  x,  x,  x,  x,  x,  x,  x,  x,  x, 62,  x, 62,  x, 63,
+  //0   1   2   3   4   5   6   7   8   9   :   ;   <   =   >   ?
+   52, 53, 54, 55, 56, 57, 58, 59, 60, 61,  x,  x,  x,  x,  x,  x,
+  //@   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O
+    x,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
+  //P   Q   R   S   T   U   V   W   x   Y   Z   [   \   ]   ^   _
+   15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,  x,  x,  x,  x, 63,
+  //`   a   b   c   d   e   f   g   h   i   j   k   l   m   n   o
+    x, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+  //p   q   r   s   t   u   v   w   x   y   z   {   |   }   ~   DEL
+   41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,  x,  x,  x,  x,  x
+};
+#undef x
+
+template <class Output>
+Base64In<Output>& Base64In<Output>::operator<<(const char* x) {
+  unsigned len = strlen(x);
+  return put(x, len);
+}
+
+template <class Output>
+Base64In<Output>& Base64In<Output>::operator<<(const string& x) {
+  return put(x.data(), x.length());
+}
+
+template <class Output>
+Base64In<Output>& Base64In<Output>::put(char x) {
+  return put(&x, 1);
+}
+
+template <class Output>
+Base64In<Output>& Base64In<Output>::put(const char* x, unsigned n) {
+  --x;
+  while (n > 0) {
+    --n; ++x;
+    unsigned code = static_cast<byte>(*x);
+    if (code < 32 || code > 127) continue; // Just ignore invalid characters
+    code = table[code - 32];
+    if (code > 63) continue;
+    data = (data << 6) | code;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      out.put(static_cast<byte>((data >> bits) & 255U));
+    }
+  }
+  return *this;
+}
 
 #endif

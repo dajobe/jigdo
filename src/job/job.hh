@@ -61,6 +61,7 @@ public:
         virtual Job::IO* job_removeIo(Job::IO* rmIo) {
           if (rmIo == this) {
             IO* c = child;
+            child = 0;
             delete this; // May of course omit this if not desired
             return c;
           } else if (child != 0) {

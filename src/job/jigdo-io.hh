@@ -10,8 +10,8 @@
   IO object for .jigdo downloads; download, gunzip, interpret
 
   Data (=downloaded bytes, status info) flows as follows:
-  class:       Download -> SingleUrl -> JigdoIO -> GtkSingleUrl
-  data member:              source        this        frontend
+  class:       Download ->    SingleUrl      -> JigdoIO -> GtkSingleUrl
+  data member:             childDl->source()      this        frontend
 
   The JigdoIO owns the SingleUrl (and the Download *object* inside it), but
   it doesn't own the GtkSingleUrl.
@@ -35,6 +35,7 @@
 
 namespace Job {
   class JigdoIO;
+  struct JigdoIOTest;
 }
 
 class Job::JigdoIO : NoCopy, public Job::DataSource::IO, Gunzip::IO {
@@ -62,10 +63,12 @@ public:
   inline DataSource* source() const;
 
 private:
+  friend struct Job::JigdoIOTest;
+
   /* Create object for an [Include]d file */
   JigdoIO(MakeImageDl::Child* c, const string& url,
           DataSource::IO* frontendIo, JigdoIO* parentJigdo,
-          unsigned inclLine);
+          int inclLine);
 
   /** @return Root object of the include tree */
   inline JigdoIO* root();
@@ -80,20 +83,25 @@ private:
   inline JigdoIO* imgSectCandidate() const;
   /** Set the ptr to the image section candidate object */
   inline void setImgSectCandidate(JigdoIO* c);
+  // The methods below are called in various places to find 1st image section
+  inline void imgSect_newChild(JigdoIO* child); // Child created after [Incl.
+  inline void imgSect_parsed(); // [Image] occurred in current .jigdo data
+  inline bool imgSect_eof(); // End of current file without any [Image]
 
   // Create error message with URL and line number
+  void generateError(const string& msg);
   void generateError(const char* msg);
+  // As above, but directly pass on error string, do not add URL/line
+  void generateError_plain(string* err);
   // True after above was called
   inline bool failed() const;
   // Called by gunzip_data(): New .jigdo line ready. Arg is empty on exit.
   void jigdoLine(string* l);
   void include(string* url); // "[Include http://xxx]" found
   void entry(string* label, vector<string>* value);
-
-//   /* generateError() is called from within download_data(); must not delete
-//      source() by calling master->()generateError() immediately. */
-//   static gboolean generateError_callback(gpointer data);
-//   unsigned generateErrorId;
+  /* Called at the end of a [Section] (=start of another section or EOF)
+     Returns FAILURE if there is an error. */
+  bool sectionEnd();
 
   // Virtual methods from DataSource::IO
   virtual void job_deleted();
@@ -119,20 +127,23 @@ private:
      exception: We must interpret the first [Image] section only, and ignore
      all following ones. */
   JigdoIO* parent; // .jigdo file which [Include]d us, or null if top-level
-  unsigned includeLine; // If parent!=null, line num of [Include] in parent
+  int includeLine; // If parent!=null, line num of [Include] in parent
   JigdoIO* firstChild; // First file we [Include], or null if none
   JigdoIO* next; // Right sibling, or null if none
   /* For the root object, contains imgSectCandidate, else ptr to root object.
      Don't access directly, use accessor methods. */
   JigdoIO* rootAndImageSectionCandidate;
 
-  unsigned line; // Line number, for error messages
-  string section; // Section name, empty if none yet
+  int line; // Line number, for errors. 0 if no data yet, -1 if finished
+  bool finished() { return line < 0; }
+  void setFinished() { line = -1; }
+  string section; // Current section name, empty if none yet
 
   // Info about first image section of this .jigdo, if any
-  unsigned imageSectionLine; // 0 if no [Image] found yet
+  int imageSectionLine; // 0 if no [Image] found yet
   string imageName;
   string imageInfo, imageShortInfo;
+  string templateUrl;
   MD5* templateMd5;
 
   /* When an error happens inside gunzip_data(), cannot immediately tell the
@@ -176,7 +187,8 @@ Job::MakeImageDl* Job::JigdoIO::master() const { return childDl->master(); }
 Job::DataSource*  Job::JigdoIO::source() const { return childDl->source(); }
 
 bool Job::JigdoIO::failed() const {
-  return (childFailedId != 0);
+  return (imageName.length() == 1 && imageName[0] == '\0');
+  //return (childFailedId != 0);
 }
 
 #endif

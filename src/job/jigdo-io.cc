@@ -13,12 +13,15 @@
 
 #include <config.h>
 
+#include <memory>
+
 #include <configfile.hh>
 #include <debug.hh>
 #include <jigdo-io.hh>
 #include <log.hh>
 #include <makeimagedl.hh>
 #include <md5sum.hh>
+#include <mimestream.hh>
 //______________________________________________________________________
 
 DEBUG_UNIT("jigdo-io")
@@ -45,16 +48,17 @@ JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url,
   : childDl(c), urlVal(url), frontend(frontendIo), parent(0), includeLine(0),
     firstChild(0), next(0), rootAndImageSectionCandidate(0), line(0),
     section(), imageSectionLine(0), imageName(), imageInfo(),
-    imageShortInfo(), templateMd5(0), childFailedId(0), gunzip(this) { }
+    imageShortInfo(), templateUrl(), templateMd5(0), childFailedId(0),
+    gunzip(this) { }
 
 JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url,
                  DataSource::IO* frontendIo, JigdoIO* parentJigdo,
-                 unsigned inclLine)
+                 int inclLine)
   : childDl(c), urlVal(url), frontend(frontendIo), parent(parentJigdo),
     includeLine(inclLine), firstChild(0), next(0),
     rootAndImageSectionCandidate(0), line(0), section(), imageSectionLine(0),
-    imageName(), imageInfo(), imageShortInfo(), templateMd5(0),
-    childFailedId(0), gunzip(this) { }
+    imageName(), imageInfo(), imageShortInfo(), templateUrl(),
+    templateMd5(0), childFailedId(0), gunzip(this) { }
 //______________________________________________________________________
 
 JigdoIO::~JigdoIO() {
@@ -67,12 +71,21 @@ JigdoIO::~JigdoIO() {
     master()->childFailed(childDl, this, frontend);
   }
 
-  // Delete all our children
-  JigdoIO* x = firstChild;
-  while (x != 0) {
-    JigdoIO* y = x->next;
-    delete x;
-    x = y;
+  /* Bug: Don't delete children; master will do this! If we deleted them
+     here, Child::childIoVal would be left dangling. */
+//   // Delete all our children
+//   JigdoIO* x = firstChild;
+//   while (x != 0) {
+//     JigdoIO* y = x->next;
+//     delete x;
+//     x = y;
+//   }
+
+  delete templateMd5;
+
+  if (source() != 0) {
+    source()->io.remove(this);
+    Paranoid(source()->io.get() != this);
   }
 }
 //______________________________________________________________________
@@ -80,11 +93,9 @@ JigdoIO::~JigdoIO() {
 Job::IO* JigdoIO::job_removeIo(Job::IO* rmIo) {
   debug("job_removeIo %1", rmIo);
   if (rmIo == this) {
-    // Should never be called for jigdo
-    Assert(false);
-    master()->childFailed(childDl, this, frontend);
-    Job::IO* c = frontend;
-    // Do not "delete this" - childDl owns us and the SingleUrl
+    // Do not "delete this" - this is called from ~JigdoIO above
+    DataSource::IO* c = frontend;
+    frontend = 0;
     return c;
   } else if (frontend != 0) {
     Job::IO* c = frontend->job_removeIo(rmIo);
@@ -102,6 +113,9 @@ void JigdoIO::job_deleted() {
 
 void JigdoIO::job_succeeded() {
   if (failed()) return;
+  if (sectionEnd() == FAILURE) return;
+  setFinished();
+  if (imgSect_eof() == FAILURE) return;
   if (frontend != 0) frontend->job_succeeded();
   master()->childSucceeded(childDl, this, frontend);
 }
@@ -112,27 +126,39 @@ void JigdoIO::job_failed(string* message) {
   if (frontend != 0) frontend->job_failed(message);
   string err = _("Download of .jigdo file failed");
   master()->generateError(&err);
-  master()->childFailed(childDl, this, frontend);
+  /* We cannot call this right now:
+     master()->childFailed(childDl, this, frontend);
+     so schedule a callback to call it later. */
+  childFailedId = g_idle_add_full(G_PRIORITY_HIGH_IDLE,&childFailed_callback,
+                                  (gpointer)this, NULL);
+  Paranoid(childFailedId != 0);
+  imageName.assign("", 1); Paranoid(failed());
 }
 
 void JigdoIO::job_message(string* message) {
+  if (failed()) return;
   if (frontend != 0) frontend->job_message(message);
 }
 
 void JigdoIO::dataSource_dataSize(uint64 n) {
+  if (failed()) return;
   if (frontend != 0) frontend->dataSource_dataSize(n);
 }
 
 void JigdoIO::dataSource_data(const byte* data, size_t size,
                               uint64 currentSize) {
-  if (master()->finalState()) return;
-  Assert(master()->state() == MakeImageDl::DOWNLOADING_JIGDO);
-  debug("Got %1 bytes", size);
+  Assert(!finished());
+  if (/*master()->finalState() ||*/ failed()) {
+    debug("Got %1 bytes, ignoring", size);
+    return;
+  }
+  //Assert(master()->state() == MakeImageDl::DOWNLOADING_JIGDO);
+  debug("Got %1 bytes, processing", size);
   try {
     gunzip.inject(data, size);
   } catch (Error e) {
     ++line;
-    generateError(e.message.c_str());
+    generateError(e.message);
     return;
   }
   if (frontend != 0) frontend->dataSource_data(data, size, currentSize);
@@ -165,7 +191,7 @@ void JigdoIO::gunzip_data(Gunzip*, byte* decompressed, unsigned size) {
 
   while (p < end) {
     if (*p == '\n') {
-      // Add new line to ConfigFile
+      // Process new line
       Paranoid(static_cast<unsigned>(p - stringStart) <= GUNZIP_BUF_SIZE);
       Paranoid(line.empty());
       const char* lineChars = reinterpret_cast<const char*>(stringStart);
@@ -173,6 +199,7 @@ void JigdoIO::gunzip_data(Gunzip*, byte* decompressed, unsigned size) {
         throw Error(_("Input .jigdo data is not valid UTF-8"));
       line.append(lineChars, p - stringStart);
       jigdoLine(&line);
+      if (failed()) return;
       ++p;
       stringStart = p;
       continue;
@@ -193,6 +220,7 @@ void JigdoIO::gunzip_data(Gunzip*, byte* decompressed, unsigned size) {
       throw Error(_("Input .jigdo data is not valid UTF-8"));
     line.append(lineChars, p - stringStart);
     jigdoLine(&line);
+    if (failed()) return;
     // Trick: To ignore remainder of huge line, prepend a comment char '#'
     gunzipBuf[0] = '#';
     gunzip.setOut(gunzipBuf + 1, GUNZIP_BUF_SIZE - 1);
@@ -213,16 +241,31 @@ void JigdoIO::gunzip_failed(string* message) {
 }
 //______________________________________________________________________
 
+void JigdoIO::generateError(const string& msg) {
+  string err;
+  const char* fmt = (finished() ?
+                     _("%1 (line %2 in %3)") : _("%1 (at end of %3)"));
+  err = subst(fmt, msg, line,
+              (source() != 0 ? source()->location().c_str() : "?") );
+  generateError_plain(&err);
+}
+
 void JigdoIO::generateError(const char* msg) {
   string err;
-  err = subst(_("%1 (line %2 in %3)"), msg, line,
+  const char* fmt = (finished() ?
+                     _("%1 (line %2 in %3)") : _("%1 (at end of %3)"));
+  err = subst(fmt, msg, line,
               (source() != 0 ? source()->location().c_str() : "?") );
+  generateError_plain(&err);
+}
+
+void JigdoIO::generateError_plain(string* err) {
   debug("generateError: %1", err);
   Paranoid(!failed());
   if (failed()) return;
-  if (frontend != 0) frontend->job_failed(&err);
-  err = _("Error processing .jigdo file contents");
-  master()->generateError(&err);
+  if (frontend != 0) frontend->job_failed(err);
+  *err = _("Error processing .jigdo file contents");
+  master()->generateError(err);
 
   /* We cannot call this right now:
      master()->childFailed(childDl, this, frontend);
@@ -230,7 +273,7 @@ void JigdoIO::generateError(const char* msg) {
   childFailedId = g_idle_add_full(G_PRIORITY_HIGH_IDLE,&childFailed_callback,
                                   (gpointer)this, NULL);
   Paranoid(childFailedId != 0);
-  Paranoid(failed());
+  imageName.assign("", 1); Paranoid(failed());
 }
 
 gboolean JigdoIO::childFailed_callback(gpointer data) {
@@ -241,6 +284,122 @@ gboolean JigdoIO::childFailed_callback(gpointer data) {
   self->master()->childFailed(self->childDl, self, self->frontend);
   // Careful - self was probably deleted by above call
   return FALSE; // "Don't call me again"
+}
+//______________________________________________________________________
+
+// Finding the first [Image] section
+
+/* While scanning the tree of [Include]d .jigdo files, only the first [Image]
+   section is relevant. IOW, we do a depth-first search of the tree. However,
+   the .jigdo files are downloaded in parallel, and we want to pass on the
+   image info as soon as possible. For this reason, we maintain an "image
+   section candidate pointer", one for the whole include tree.
+
+   If during the scanning of jigdo data we encounter an [Image] section AND
+   imgSectCandidate()==this, then that section is the first such section in
+   depth-first-order in the whole tree.
+
+   If instead we encounter an [Include], that included file /might/ contain
+   an image section, so we descend by setting imgSectCandidate() to the newly
+   created child download. However, it can turn out the child does not
+   actually contain an image section. In this case, we go back up to its
+   parent.
+
+   This is where it gets more complicated: Of course, the parent's data
+   continued to be downloaded while we were wasting our time waiting for the
+   last lines of the child, to be sure those last lines didn't contain an
+   image section. After the point where we descended into the child, any
+   number of [Include]s and /maybe/ an [Image] somewhere inbetween the
+   [Include]s could have been downloaded. To find out whether this was the
+   case, a quick depth-first scan of the tree is now necessary, up to the
+   next point where we will "hang" again because some .jigdo file has not
+   been downloaded completely. */
+
+// New child created due to [Include] in current .jigdo data
+void JigdoIO::imgSect_newChild(JigdoIO* child) {
+  if (master()->finalState() || master()->haveImageInfo()
+      || imgSectCandidate() != this) return;
+  debug("imgSect_newChild: To child %1", child->urlVal);
+  setImgSectCandidate(child);
+}
+
+// An [Image] section just ended - maybe it was the first one?
+void JigdoIO::imgSect_parsed() {
+  if (master()->finalState() || master()->haveImageInfo()
+      || imgSectCandidate() != this) return;
+  debug("imgSect_parsed: Found");
+  master()->setImageInfo(&imageName, &imageInfo, &imageShortInfo,
+                         &templateUrl, &templateMd5);
+  Paranoid(master()->haveImageInfo());
+}
+
+// The end of the file was hit without any [Image] section being found
+bool JigdoIO::imgSect_eof() {
+  Paranoid(imageSectionLine == 0); // "No [Image] found"
+  if (master()->finalState() || master()->haveImageInfo()
+      || imgSectCandidate() != this) return SUCCESS;
+
+  JigdoIO* x = parent; // Current position in tree
+  int l = includeLine; // Line number in x, 0 if at start
+  JigdoIO* child = this; // child included at line l of x, null if l==0
+
+  while (x != 0) {
+#   if DEBUG
+    const char* indentStr = "                                        ";
+    const char* indent = indentStr + 40;
+    JigdoIO* ii = x;
+    while (ii != 0) { indent -= 2; ii = ii->parent; }
+    if (indent < indentStr) indent = indentStr;
+    debug("imgSect_eof: %1Now at line %2 of %3", indent, l, x->urlVal);
+#   endif
+    JigdoIO* nextChild;
+    if (l == 0) nextChild = x->firstChild; else nextChild = child->next;
+
+    if (nextChild != 0) {
+      /* Before moving l to the line of the next [Include], check whether the
+         area of the file that l moves over contains an [Image] */
+      if (l < x->imageSectionLine
+          && x->imageSectionLine < nextChild->includeLine) {
+        debug("imgSect_eof: %1Found before [Include]", indent);
+        master()->setImageInfo(&x->imageName, &x->imageInfo,
+            &x->imageShortInfo, &x->templateUrl, &x->templateMd5);
+        return SUCCESS;
+      }
+      // No [Image] inbetween - move on, descend into [Include]
+      debug("imgSect_eof: %1Now at line %2 of %3, descending",
+            indent, nextChild->includeLine, x->urlVal);
+      x = nextChild;
+      l = 0;
+      child = 0;
+      continue;
+    }
+
+    // x has no more children - but maybe an [Image] at the end?
+    if (x->imageSectionLine != 0) {
+      debug("imgSect_eof: %1Found after last [Include], if any", indent);
+      Paranoid(l < x->imageSectionLine);
+      master()->setImageInfo(&x->imageName, &x->imageInfo,
+          &x->imageShortInfo, &x->templateUrl, &x->templateMd5);
+      return SUCCESS;
+    }
+
+    // Nothing found. If x not yet fully downloaded, stop here
+    if (!x->finished()) {
+      debug("imgSect_eof: %1Not found yet, waiting for %2 to download",
+            indent, x->urlVal);
+      setImgSectCandidate(x);
+      return SUCCESS;
+    }
+
+    // Nothing found and finished - go back up in tree
+    debug("imgSect_eof: %1Now at end of %2, ascending",
+          indent, x->urlVal);
+    l = x->includeLine;
+    child = x;
+    x = x->parent;
+  }
+  generateError(_("No `[Image]' section found in .jigdo data"));
+  return FAILURE;
 }
 //______________________________________________________________________
 
@@ -275,6 +434,7 @@ void JigdoIO::jigdoLine(string* l) {
   //____________________
 
   // This is a "[Section]" line
+  if (sectionEnd() == FAILURE) return;
   ++x; // Advance beyond the '['
   if (advanceWhitespace(x, end)) // Skip space after '['
     return generateError(_("No closing `]' for section name"));
@@ -286,6 +446,14 @@ void JigdoIO::jigdoLine(string* l) {
     return generateError(_("No closing `]' for section name"));
   section.assign(s1, s2);
   //debug("Section `%1'", section);
+
+  // In special case of "Image", ignore 2nd and subsequent sections
+  if (section == "Image") {
+    if (imageSectionLine == 0)
+      imageSectionLine = line;
+    else
+      section += "(ignored)";
+  }
   // In special case of "Include", format differs: URL after section name
   if (section == "Include") {
     string url;
@@ -303,11 +471,37 @@ void JigdoIO::jigdoLine(string* l) {
 }
 //______________________________________________________________________
 
+bool JigdoIO::sectionEnd() {
+  if (section != "Image") return SUCCESS;
+  // Section that just ended was [Image]
+  const char* valueName = 0;
+  if (templateMd5 == 0) valueName = "Template-MD5Sum";
+  if (templateUrl.empty()) valueName = "Template";
+  if (imageName.empty()) valueName = "Filename";
+  if (valueName == 0) {
+    imgSect_parsed();
+    return SUCCESS;
+  }
+  // Error: Not all required fields found
+  --line;
+  string s = subst(_("`%1=...' line missing in [Image] section"), valueName);
+  generateError(s);
+  return FAILURE;
+}
+//______________________________________________________________________
+
 // "[Include url]" found - add
 void JigdoIO::include(string* url) {
   string includeUrl;
   Download::uriJoin(&includeUrl, urlVal, *url);
-  debug("Include `%1'", includeUrl);
+  debug("[Include %1]", includeUrl);
+
+  JigdoIO* p = parent;
+  while (p != 0) {
+    if (p->urlVal == includeUrl)
+      return generateError(_("Loop of [Include] directives"));
+    p = p->parent;
+  }
 
   string leafname;
   auto_ptr<MakeImageDl::Child> childDl(
@@ -324,10 +518,30 @@ void JigdoIO::include(string* url) {
     childDl->setChildIo(jio);
     frontend.release();
     master()->io->job_message(&info);
+
+    // Add new child
+    JigdoIO** jiop = &firstChild;
+    while (*jiop != 0) jiop = &(*jiop)->next;
+    *jiop = jio;
+
+    imgSect_newChild(jio);
+
     (childDl.release())->source()->run();
   }
 }
 //______________________________________________________________________
+
+namespace {
+  // For Base64In - put decoded bytes into 16-byte array
+  struct ArrayOut {
+    typedef ArrayOut& ResultType;
+    ArrayOut() { }
+    void set(byte* array) { cur = array; end = array + 16; }
+    void put(byte b) { if (cur == end) cur = end = 0; else *cur++ = b; }
+    ArrayOut& result() { return *this; }
+    byte* cur; byte* end;
+  };
+}
 
 void JigdoIO::entry(string* label, vector<string>* value) {
 # if DEBUG
@@ -336,8 +550,14 @@ void JigdoIO::entry(string* label, vector<string>* value) {
        i != e; ++i) { s += ConfigFile::quote(*i); s += ' '; }
   debug("[%1] %2=%3", section, label, s);
 # endif
+  //____________________
 
-  if (section == "Jigdo") {
+  if (section == "Include") {
+
+    return generateError(_("A new section must be started after [Include]"));
+    //____________________
+
+  } else if (section == "Jigdo") {
     if (*label == "Version") {
       if (value->size() < 1) return generateError(_("Missing argument"));
       int ver = 0;
@@ -348,9 +568,53 @@ void JigdoIO::entry(string* label, vector<string>* value) {
         ++i;
       }
       if (ver > SUPPORTED_FORMAT)
-        return generateError(_("Upgrade of jigdo required - this .jigdo file"
-                               " requires a newer version of the program"));
+        return generateError(_("Upgrade required - this .jigdo file needs "
+                               "a newer version of the jigdo program"));
     }
-  }
+    //____________________
+
+  } else if (section == "Image") {
+
+    /* Only called for first [Image] section in file - for further sections,
+       section=="Image(ignored)" */
+    if (*label == "Filename") {
+      if (!imageName.empty()) return generateError(_("Value redefined"));
+      if (value->size() < 1) return generateError(_("Missing argument"));
+      string::size_type lastSlash = value->front().find_last_of('/');
+      string::size_type lastSep = value->front().find_last_of(DIRSEP);
+      if (lastSlash > lastSep) lastSep = lastSlash;
+      imageName.assign(value->front(), lastSep + 1, string::npos);
+      if (imageName.empty()) return generateError(_("Invalid image name"));
+    } else if (*label == "Template") {
+      if (!templateUrl.empty()) return generateError(_("Value redefined"));
+      if (value->size() < 1) return generateError(_("Missing argument"));
+      templateUrl = value->front();
+    } else if (*label == "Template-MD5Sum") {
+      if (templateMd5 != 0) return generateError(_("Value redefined"));
+      if (value->size() < 1) return generateError(_("Missing argument"));
+      templateMd5 = new MD5();
+      // Helper class places decoded bytes into MD5 object
+      Base64In<ArrayOut> decoder;
+      decoder.result().set(templateMd5->sum);
+      decoder << value->front();
+      if (decoder.result().cur == 0
+          || decoder.result().cur != decoder.result().end) {
+        delete templateMd5; templateMd5 = 0;
+        return generateError(_("Invalid Template-MD5Sum argument"));
+      }
+#     if DEBUG
+      Base64String b64;
+      b64.write(*templateMd5, 16).flush();
+      Paranoid(b64.result() == value->front());
+#     endif
+    } else if (*label == "ShortInfo") {
+      if(!imageShortInfo.empty()) return generateError(_("Value redefined"));
+      if (value->size() > 0) imageShortInfo.assign(value->front(), 0, 200);
+    } else if (*label == "Info") {
+      if (!imageInfo.empty()) return generateError(_("Value redefined"));
+      if (value->size() > 0) imageInfo = value->front();
+    }
+
+  } // endif (section == "Something")
 
 }

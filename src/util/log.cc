@@ -54,11 +54,14 @@ bool Logger::setEnabled(const char* unitName, bool enable) {
   return false; // Not found
 }
 
-void Logger::put(const char* format, int args, const Subst arg[]) const {
-  cerr << unitNameVal << ':';
+void Logger::defaultPut(const string& unitName, unsigned char unitNameLen,
+                        const char* format, int args, const Subst arg[]) {
+  cerr << unitName << ':';
   if (unitNameLen < 15) cerr << "               " + unitNameLen;
   cerr << Subst::subst(format, args, arg) << endl;
 }
+
+Logger::OutputFunction* Logger::output = &defaultPut;
 //______________________________________________________________________
 
 /* The value of the --debug cmd line option is either missing (empty) or a

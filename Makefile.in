@@ -67,7 +67,7 @@ maintainer-clean: Makefile
 		cd $(srcdir) && autoconf
 
 install:	install-po install-jigdo-file install-jigdo-lite \
-		install-jigdo-mirror @INSTALL_TARGETS@
+		install-jigdo-mirror @IF_GUI@ install-jigdo
 install-jigdo-file:
 		$(INSTALL) -d $(DESTDIR)$(bindir)
 		$(INSTALL_EXE) src/jigdo-file $(DESTDIR)$(bindir)

@@ -126,6 +126,14 @@ public:
   void childFailed(Child* childDl, DataSource::IO* childIo,
                    DataSource::IO* frontend);
 
+  /** Is called by a child JigdoIO once the [Image] section has been seen.
+      The arguments are modified! */
+  void setImageInfo(string* imageNam, string* imageInf,
+                    string* imageShortInf, string* templateUr,
+                    MD5** templateMd);
+  /** Has setImageInfo() already been called? (=>is imageName non-empty?) */
+  inline bool haveImageInfo() const;
+
 //   inline bool isListEnd(const Child* c) const;
 
   /** Return child download object which contains a DataSource which produces
@@ -175,9 +183,11 @@ private: // Really private
   // Workhorse which actually generates the image from the data we feed it
   MakeImage mi;
 
-//   string imageName;
-//   string imageDesc;
-//   MD5 templateMd5;
+  // Info about first image section of this .jigdo, if any
+  string imageName;
+  string imageInfo, imageShortInfo;
+  string templateUrl;
+  MD5* templateMd5;
 };
 //______________________________________________________________________
 
@@ -304,6 +314,8 @@ void Job::MakeImageDl::toggleLeafname(string* s) {
   Paranoid((*s)[off] == '-' || (*s)[off] == '~');
   (*s)[off] ^= ('-' ^ '~');
 }
+
+bool Job::MakeImageDl::haveImageInfo() const { return !imageName.empty(); }
 //____________________
 
 Job::MakeImageDl::Child::Child(MakeImageDl* m, IList<Child>* list,
@@ -323,7 +335,7 @@ Job::MakeImageDl::Child::~Child() {
   // childFailed() or childSucceeded() MUST always be called for a Child
   Paranoid(childSuccFail);
 # endif
-  delete sourceVal;
+  deleteSource();
   delete childIoVal;
 }
 

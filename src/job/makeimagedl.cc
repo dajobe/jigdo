@@ -60,7 +60,9 @@ MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
                          const string& destination)
     : io(ioPtr), stateVal(DOWNLOADING_JIGDO),
       jigdoUrl(jigdoUri), children(), dest(destination),
-      tmpDirVal(), mi(jigdoUri) {
+      tmpDirVal(), mi(),
+      imageName(), imageInfo(), imageShortInfo(), templateUrl(),
+      templateMd5(0) {
   // Remove all trailing '/' from dest dir, even if result empty
   unsigned destLen = dest.length();
   while (destLen > 0 && dest[destLen - 1] == DIRSEP) --destLen;
@@ -373,4 +375,17 @@ void MakeImageDl::childFailed(
 //     debug("NO rm -f %1", name);
 //   }
   delete childDl;
+}
+//______________________________________________________________________
+
+void MakeImageDl::setImageInfo(string* imageNam, string* imageInf,
+                               string* imageShortInf,
+                               string* templateUr, MD5** templateMd) {
+  debug("setImageInfo");
+  Paranoid(!haveImageInfo());
+  imageName.swap(*imageNam);
+  imageInfo.swap(*imageInf);
+  imageShortInfo.swap(*imageShortInf);
+  templateUrl.swap(*templateUr);
+  templateMd5 = *templateMd; *templateMd = 0;
 }

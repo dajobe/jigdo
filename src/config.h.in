@@ -131,15 +131,6 @@
 // Do not change this
 #define PACKAGE "jigdo"
 
-/* By removing this you give up portability to early versions of GCC 2.95,
-   which did not come with any <sstream>, only a <strstream>, and even that
-   was so broken it was completely unusable. */
-#if DEBUG
-#  define stringstream Do_not_use_stringstream__See_config_h
-#  define istringstream Do_not_use_istringstream__See_config_h
-#  define ostringstream Do_not_use_ostringstream__See_config_h
-#endif
-
 // __attribute__ only present with GCC
 #ifndef __GNUC__
 #  define __attribute__(x)

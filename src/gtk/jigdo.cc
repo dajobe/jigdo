@@ -158,6 +158,8 @@ int main (int argc, char *argv[]) {
 # endif
 # if DEBUG
   Logger::setEnabled("general");
+# else
+  Debug::abortAfterFailedAssertion = false;
 # endif
 
   try {

@@ -263,6 +263,58 @@ of this file are then appended to the Makefile by the configure
 script. See also the comments in scripts/depend.awk.
 
 
+Unit tests
+~~~~~~~~~~
+I tried out cppunit and had a look at other things, but did not like
+any of the solutions, because IMHO they are over-engineered and
+unnecessarily complicated.
+
+I prefer creating a new executable for each test, and not to pack all
+tests into one executable, because this avoids linking problems if you
+replace some classes with dummy versions for one test, but want to
+link in the original code for another.
+
+My alternative solution is very simple: Each test is an executable
+which returns zero on success, and non-zero otherwise. You can use a
+normal Assert() to check for correct results, because it calls abort()
+if the assertion fails, which will return a non-zero exit value.
+
+To add the test unit program in file subdir/foobar-test.cc (which
+supposedly tests the code in subdir/foobar.cc):
+
+ - Add a line "#test-deps" to your subdir/foobar-test.cc source file
+   inside a comment. The directive can optionally be followed by a
+   space-separated list of .o files which need to be linked into the
+   executable. $(TEST-DEFAULTOBJS) are added automatically to this
+   list in the Makefile (expands to "util/log.o util/string-utf.o
+   util/debug.o")
+
+ - Add "subdir/foobar-test@exe@" to the definition of "test-programs"
+   in Makefile.in
+
+ - "make depend" - this reads the above "#test-deps" directive and
+   creates an appropriate Makefile entry for the unit test.
+
+ - "make unittest" to run all tests, in quiet mode, or "make
+   unittest-v" in very verbose mode. If --enable-debug was passed to
+   the configure script, the unit tests are also run by "make all"
+
+When linking the tests, $(TEST-LDFLAGS) is added to the link command.
+
+By convention, if the test is called with exactly one arg, that arg
+sets up the debug units for which output is to be enabled - just like
+the arg to the --debug switch of jigdo and jigdo-file. Add support for
+this in main() as follows:
+
+int main(int argc, char* argv[]) {
+  if (argc == 2) Logger::scanOptions(argv[1], argv[0]);
+  ...
+
+This is useful while testing the unit test: Whereas "make unittest"
+will call the test as "subdir/foobar-test", you can execute it as
+"subdir/foobar-test all" to enable debug output.
+
+
 Implementation
 ~~~~~~~~~~~~~~
 The application logic in job/ and net/ is separated from the frontend
@@ -300,7 +352,7 @@ the frontend in gtk/ is decoupled from the application logic in job/
 and other dirs.
 
 Basic idea: In the object that makes data available (e.g. SingleUrl in
-the case of a HTTP/FTP download), maintain a pointer to an IO object. 
+the case of a HTTP/FTP download), maintain a pointer to an IO object.
 SingleUrl::IO is an abstract class, to be implemented by the
 "consumer" of the data. This consumer is fed the data via calls to
 virtual methods like SingleUrl::IO::singleUrl_data(). There are many

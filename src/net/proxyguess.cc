@@ -193,12 +193,15 @@ namespace {
 
 namespace {
 
+# ifndef TESTING
   // Return the last modification date of the file in question, 0 on error
   inline time_t fileModTime(const char* path) {
     struct stat fileInfo;
     if (stat(path, &fileInfo) != 0) return 0;
     return fileInfo.st_mtime;
   }
+  typedef ifstream MyIfstream;
+# endif
 
   // Add file info to set of candidate config files
   template<class Browser>
@@ -258,7 +261,7 @@ namespace {
   bool Lynx::read() {
     bool result = false;
     static const string whitespace = " \t";
-    ifstream s(filename.c_str());
+    MyIfstream s(filename.c_str());
     string line;
     while (s) {
       getline(s, line);
@@ -290,7 +293,7 @@ namespace {
     // Maybe this should react on "use_proxy = off", but it doesn't
     bool result = false;
     static const string whitespace = " \t";
-    ifstream s(filename.c_str());
+    MyIfstream s(filename.c_str());
     string line;
     while (s) {
       getline(s, line);
@@ -331,7 +334,7 @@ namespace {
   // Works for Netscape 4.7, Galeon, Mozilla 5/6
   bool Mozilla::read() {
     // Doesn't understand .pac proxy definitions
-    ifstream s(filename.c_str());
+    MyIfstream s(filename.c_str());
     string line, ftphost, ftpport, httphost, httpport, noproxy;
     while (s) {
       getline(s, line);
@@ -388,7 +391,7 @@ namespace {
     // Maybe this should react on "use_proxy = off", but it doesn't
     bool result = false;
     static const string whitespace = " \t";
-    ifstream s(filename.c_str());
+    MyIfstream s(filename.c_str());
     string line;
     while (s) {
       getline(s, line);

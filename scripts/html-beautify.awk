@@ -8,7 +8,7 @@
 #  the file COPYING for details.
 
 function appendWord(word, spaceAfterWord) {
-  #print "appendWord \"" word "\" \"" spaceAfterWord "\"";
+  #print "appendWord \"" word "\" \"" gensub(/\n/, "\\\\n", "g", spaceAfterWord) "\"";
   if (prevSpaceAfterWord == "\n") {
     # Linebreak while inside <pre>
     doc = doc substr(indentStr, 1, ind) docLine "\n";
@@ -26,7 +26,7 @@ function appendWord(word, spaceAfterWord) {
   } else {
     # New line
     if (docLine != "") doc = doc substr(indentStr, 1, ind) docLine "\n";
-    #print docLine;
+    #print ">>> " docLine;
     docLine = word;
     ind = nextInd;
     prevSpaceAfterWord = spaceAfterWord;
@@ -66,7 +66,7 @@ BEGIN {
   doPreserve = 0; # Nesting level of <pre>
   while (match(rest, /([ \n\t]+|< *(\/ *)?)/)) {
     #print "MATCH \"" substr(rest, RSTART, RLENGTH) "\"";
-    #print "xxx "nextInd" " substr(rest, 1, 90);
+    #print "xxx "nextInd" " gensub(/\n/, "\\\\n", "g", substr(rest, 1, 90));
 
     if (substr(rest, RSTART, 1) == "<") {
       # Tag found
@@ -77,10 +77,15 @@ BEGIN {
       # Is tag <pre>?
       if (tagName in preserve) {
         if (closing && doPreserve > 0) {
+          appendWord(substr(rest, 1, RSTART + RLENGTH + length(tagName) \
+                            - 1), "");
+          nextInd -= indent;
           --doPreserve;
           if (doPreserve == 0) {
             curMaxLen = maxLen; nextInd = nonpreserveInd;
           }
+          rest = substr(rest, RSTART + RLENGTH + length(tagName));
+          continue;
         }
         if (!closing) {
           # Disable indentation while inside <pre>
@@ -120,7 +125,7 @@ BEGIN {
       }
       rest = substr(rest, RSTART + RLENGTH + length(tagName));
       continue;
-    }
+    } # endif tag found
 
     # Whitespace
     #print "dop " doPreserve ", RSTART=" RSTART ", RLENGTH=" RLENGTH;

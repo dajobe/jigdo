@@ -34,18 +34,22 @@
 # source filename appears more than once in different source
 # directories.
 
-# Another extension: If outputting a rule for a file matching
-# *-test.o, outputs an additional rule for direct compilation of
-# *-test
+# Another extension: If a source file contains "#makefile" at the
+# start of the line (whitespace allowed), everything after the
+# space/tab following this string is written to the Makefile verbatim.
+
+# Furthermore, if the source file contains "#test-deps" followed by a
+# (possibly empty) list of object files, an appropriate Makefile entry
+# is added to build the unit test's executable.
 #______________________________________________________________________
 
 # recursively find dependencies for specified file.
-function makeDeps(file) {
-  finalDeps = makeDeps2(file);
+function makeDeps(dir, file) {
+  finalDeps = makeDeps2(dir, file);
   return substr(finalDeps, 2, length(finalDeps) - 2);
 }
 
-function makeDeps2(file, l_deps, l_dir, l_recurseFile, l_line, l_exists,
+function makeDeps2(dir, file, l_deps, l_dir, l_recurseFile, l_line, l_exists,
                    l_lineNr, l_fileType, l_includedType) {
   if (deps[file] == "-") return ""; # avoid infinite recursion
   else if (deps[file] != "") return deps[file]; # already know about that
@@ -53,9 +57,24 @@ function makeDeps2(file, l_deps, l_dir, l_recurseFile, l_line, l_exists,
 
   l_deps = " "; l_lineNr = 0;
   l_fileType = substr(file, length(file) - 1); # e.g. "cc" or ".h"
-  while ((getline l_line < file) == 1) { # read each line of file
+  while ((getline l_line < (dir file)) == 1) { # read each line of file
     exists[file]; # have read at least 1 line, so the file is there
     ++l_lineNr;
+    if (l_line ~ /^[ \t]*\#[ \t]*makefile[ \t]/) {
+      sub(/^[ \t]*\#[ \t]*makefile[ \t]/, "", l_line);
+      inlinedMakefile = inlinedMakefile "# " file ":" l_lineNr "\n" \
+          l_line "\n";
+      continue;
+    }
+    if (l_line ~ /^[ \t]*\#[ \t]*test-deps([ \t]|$)/) {
+      sub(/^[ \t]*\#[ \t]*test-deps[ \t]?/, "", l_line);
+      base = file; sub(/^(.\/)*/, "", base); sub(/\.(c|cc|cpp|C)$/, "",base);
+      l_line = base".o $(TEST-DEFAULTOBJS) " l_line;
+      inlinedMakefile = inlinedMakefile "# " file ":" l_lineNr "\n" \
+          base "$(EXE): " l_line "\n" \
+          "\t$(LD) -o "base"$(EXE) " l_line " $(TEST-LDFLAGS)\n";
+      continue;
+    }
     if (l_line !~ /^[ \t]*\#[ \t]*include[ \t]+["<][a-zA-Z0-9.-]+[">]/)
       continue;
     # found #include line
@@ -67,7 +86,7 @@ function makeDeps2(file, l_deps, l_dir, l_recurseFile, l_line, l_exists,
     if (l_fileType == "cc" || l_includedType != "ih") {
       for (l_dir in includeDir) { # try each in include path
         l_recurseFile = substr(l_line, RSTART + 1, RLENGTH - 2);
-        split(makeDeps2(l_dir l_recurseFile), newDeps); # recurse
+        split(makeDeps2(dir, l_dir l_recurseFile), newDeps); # recurse
         # eliminate duplicates by only adding new files to l_deps
         for (i in newDeps) {
           if (index(l_deps, " " newDeps[i] " ") == 0)
@@ -86,7 +105,7 @@ function makeDeps2(file, l_deps, l_dir, l_recurseFile, l_line, l_exists,
       printf("%s:%d: #including file `%s' violates policy\n",
              file, l_lineNr, l_recurseFile);
   }
-  close(file);
+  close((dir file));
   deps[file] = l_deps;
   return l_deps;
 }
@@ -156,17 +175,15 @@ BEGIN {
   }
 
   # build dependencies
+  inlinedMakefile = "";
   while (++arg < ARGC) {
     f = ARGV[arg]; sub(/^\.\//, "", f);
-    base = f; sub(/\.cc?$/, "", base);
+    base = f; sub(/\.(c|cc|cpp|C)$/, "", base);
     target = base ".o";
     newDepContent = newDepContent \
-                    sprintf("%s: %s %s\n", target, f, makeDeps(srcDir f));
-    if (substr(base, length(base) - 4) == "-test")
-      newDepContent = newDepContent \
-                      sprintf("%s: %s\n\t$(LD) -o %s $(LDFLAGS) %s\n",
-                              base, target, base, target);
+                    sprintf("%s: %s %s\n", target, f, makeDeps(srcDir, f));
   }
+  newDepContent = inlinedMakefile "\n" newDepContent;
 
   # write files
   if (depContent == newDepContent) {

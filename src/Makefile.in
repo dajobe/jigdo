@@ -30,23 +30,17 @@ GLADECODE =	glade-2 -w # Create code from .glade file
 DOC =		doc++ --tables --footer /dev/null --filenames --html \
 		    --no-java-graphs --dir html
 WINDRES =	windres
-#NoMinGW#
 GTKCFLAGS =	@GTKCFLAGS@
 GTKLIBS =	@GTKLIBS@
 LIBWWWCFLAGS =	@LIBWWWCFLAGS@
 LIBWWWLIBS =	@LIBWWWLIBS@
-#MinGW## Adjust the next lines to fit your installation
-#MinGW#GTKINST = /mingw/local
-#MinGW#GTKCFLAGS = -I$(GTKINST)/include -I$(GTKINST)/include/glib-2.0 -I$(GTKINST)/lib/glib-2.0/include -I$(GTKINST)/lib/gtk+/include -I$(GTKINST)/include/gdk
-#MinGW#GTKLIBS = -L$(GTKINST)/lib -lgtk-0 -lglib-2.0 -lgdk-0
-#MinGW#LIBWWWINST = /mingw/local
-#MinGW#LIBWWWCFLAGS = -DHAVE_CONFIG_H -I$(LIBWWWINST)/include -I$(LIBWWWINST)/include/w3c-libwww
-#MinGW#LIBWWWLIBS = -L$(LIBWWWINST)/lib -lwwwinit -lwwwapp -lwwwhtml -lwwwtelnet -lwwwnews -lwwwhttp -lwwwmime -lwwwgopher -lwwwftp -lwwwfile -lwwwdir -lwwwcache -lwwwstream -lwwwmux -lwwwtrans -lwwwcore -lwwwutils -lmd5 -lwwwzip -lz -lws2_32
 
-programs =	@BUILD_TARGETS@
-debug-programs = torture@exe@
-libwww-hacks =	@LIBWWW_HACKS@ net/libwww-HTFTP.o net/libwww-HTHost.o
-windows-res =	@UNIX_COMMENT@ jigdo.res
+programs =	jigdo-file@exe@ @IF_GUI@ jigdo@exe@
+debug-programs = @IF_DEBUG@ torture@exe@
+libwww-hacks =	@IF_LIBWWW_HACKS@ net/libwww-HTFTP.o net/libwww-HTHost.o
+windows-res =	@IF_WINDOWS@ jigdo.res
+test-programs =	net/proxyguess-test@exe@ util/gunzip-test@exe@ \
+		util/log-test@exe@ util/string-utf-test@exe@
 
 # fmt -s -w1|sed 's%[^a-zA-Z0-9./-]\+%%g'|sort|fmt -w60|sed 's%$% \\%'
 objects-jigdo =	configfile.o glibc-md5.o gtk/gtk-makeimage.o \
@@ -84,23 +78,15 @@ objects-torture = cachefile.o compat.o configfile.o glibc-md5.o \
 #______________________________________________________________________
 
 .PHONY:         all all-msg clean distclean mostlyclean maintainer-clean \
-                dep depend doc strip mingw
-#NoMinGW#
-all:		all-msg Makefile $(programs) @DEBUG_PROGRAMS@ #TAGS
+                dep depend doc strip unittest unittest-v
+all:		all-msg Makefile $(programs) $(debug-programs) \
+		@IF_DEBUG@ unittest
 all-msg:
 		-@if test "$$EMACS" != t; then \
 		    echo "export cpp='$(CPPFLAGS)'"; \
 		    echo 'export cxx="$$cpp $(CXXFLAGS)"'; \
 		    echo 'export c="$$cpp $(CFLAGS)"'; \
 		fi
-#MinGW#all:	Makefile all-msg $(programs)
-#MinGW#all-msg:
-#MinGW#		@echo Using these {options}: $(CPPFLAGS) $(CXXFLAGS)
-#MinGW#clean mostlyclean:
-#MinGW#		-del *.o
-#MinGW#		-del *.exe
-#MinGW#		-del *.stamp
-#NoMinGW#
 check:		$(programs) torture
 		@echo 
 		@echo '*** Warning - this will take a few minutes and ~100MB'
@@ -147,13 +133,41 @@ Makedeps:
 # Dependency ensures auto-generated files are there & appear in depend output
 dep depend:	gtk/interface.cc
 		$(make-makedeps)
-#MinGW#
+		@if test "$(srcdir)/Makedeps" -nt Makefile; then \
+		    echo "cd .. && sh config.status"; \
+		    cd .. && sh config.status; \
+		fi
 strip:
 		for p in $(programs); do \
 		    if test -f "$$p"; then \
 		        strip -R .comment -R .note "$$p"; \
 		    fi; \
 		done
+
+TEST-DEFAULTOBJS = util/log.o util/string-utf.o util/debug.o
+TEST-LDFLAGS =	$(LDFLAGS) $(GTKLIBS) # $(LIBWWWLIBS)
+EXE =@exe@
+unittest:	$(test-programs)
+		@echo "Running unit tests..."; \
+		for p in $(test-programs); do \
+		    if "$$p"; then continue; fi; \
+		    echo "$$p failed, for details enter: $$p all"; exit 1; \
+		done; \
+		set $(test-programs); echo "All $$# tests succeeded"
+unittest-v:	$(test-programs)
+		@echo "Running unit tests..."; \
+		for p in $(test-programs); do \
+		    if "$$p" all; then echo "OK: $$p"; continue; fi; \
+		    echo "$$p failed"; exit 1; \
+		done; \
+		set $(test-programs); echo "All $$# tests succeeded"
+
+config.h:	$(srcdir)/../jigdo.spec
+		rm -f config.h
+		@echo "jigdo.spec has changed - rerun the configure script!"; \
+		exit 1
+Makefile:	Makefile.in Makedeps config.h.in
+		cd .. && sh config.status # update Makefile from Makefile.in
 #______________________________
 
 jigdo32.ico:	../gfx/jigdo32.ico
@@ -164,22 +178,18 @@ jigdo.res:	jigdo.rc jigdo32.ico
 #______________________________
 
 jigdo@exe@:	$(objects-jigdo)
-		$(LD) @MWINDOWS@ -o $@ $(objects-jigdo) $(LDFLAGS) \
-		    $(GTKLIBS) $(LIBWWWLIBS)
+		$(LD) -o $@ $(objects-jigdo) $(LDFLAGS) $(GTKLIBS) \
+		    $(LIBWWWLIBS) @IF_WINDOWS@@IF_NODEBUG@ -mwindows
 jigdo-file@exe@: $(objects-jigdo-file)
 		$(LD) -o $@ $(objects-jigdo-file) $(LDFLAGS)
 torture@exe@:	$(objects-torture)
 		$(LD) -o $@ $(objects-torture) $(LDFLAGS)
+mimestreamtest@exe@: mimestreamtest.o util/debug.o
+		$(LD) -o $@ mimestreamtest.o util/log.o util/string-utf.o \
+		    util/debug.o $(LDFLAGS) $(GTKLIBS)
 string-utftest@exe@: util/debug.o util/string-utf.o util/string-utftest.o
 		$(LD) -o $@ util/string-utf.o util/string-utftest.o \
 		    util/debug.o $(LDFLAGS) $(GTKLIBS)
-proxyguesstest@exe@: net/glibwww-callbacks.o net/glibwww-init.o \
-		    net/glibwww-trans.o net/proxyguess.o \
-		    net/proxyguesstest.o util/debug.o
-		$(LD) -o $@ net/glibwww-callbacks.o net/glibwww-init.o \
-		    net/glibwww-trans.o net/proxyguess.o \
-		    net/proxyguesstest.o util/debug.o \
-		    $(LDFLAGS) $(GTKLIBS) $(LIBWWWLIBS)
 gunziptest@exe@: util/gunzip.o util/gunziptest.o util/debug.o
 		$(LD) -o $@ util/gunzip.o util/gunziptest.o util/debug.o \
 		    $(LDFLAGS)
@@ -187,13 +197,6 @@ logtest@exe@:	util/debug.o util/log.o util/logtest.o util/string-utf.o
 		$(LD) -o $@ util/log.o util/logtest.o util/string-utf.o \
 		    util/debug.o $(LDFLAGS) $(GTKLIBS)
 
-#MinGW## Grr, to prevent built-in rules from being used:
-#MinGW#.PHONY:	jigdo jigdo-file torture
-#MinGW#jigdo:	jigdo.exe
-#MinGW#jigdo-file: jigdo-file.exe
-#MinGW#torture:	torture.exe
-
-#NoMinGW#
 gtk/interface.cc gtk/interface.hh: $(srcdir)/../jigdo.glade
 		cd $(srcdir)/.. \
 		    && $(GLADECODE) "jigdo.glade"
@@ -202,53 +205,6 @@ gtk/interface.cc gtk/interface.hh: $(srcdir)/../jigdo.glade
 		-ln -sf "$(srcdir)/gtk/interface.cc" gtk/interface.cc
 		cd $(srcdir) && rm -f gtk/gui.cc.tmp gtk/gui.hh.tmp \
 		    gtk/interface.cc.tmp gtk/interface.hh.tmp
-
-config.h:	$(srcdir)/../jigdo.spec
-		rm -f config.h
-		@echo "jigdo.spec has changed - rerun the configure script!"; \
-		exit 1
-Makefile:	Makefile.in Makedeps config.h.in
-		cd .. && sh config.status # update Makefile from Makefile.in
-#MinGW#config.h: config.h.mingw
-#MinGW#		copy config.h.mingw config.h
-#MinGW#Makefile: Makefile.mingw
-#MinGW#		copy Makefile.mingw Makefile
-
-#NoMinGW#
-# Makefile for Windows compilation with plain mingw32 (no Cygwin needed)
-mingw:		Makefile.mingw config.h.mingw
-Makefile.mingw:	Makefile.in
-		@echo "Generating \`$@' from \`$<'"; \
-		set -- srcdir . prefix UNUSED datadir UNUSED CPPFLAGS -I. \
-		    DEFS "-DHAVE_CONFIG_H" CC gcc CXX g++ LD g++ LIBS "-lz" \
-		    LDFLAGS "" BUILD_TARGETS "jigdo-file.exe jigdo.exe" \
-		    CFLAGS  "-g -O2 -Wall -W -march=pentium -fnative-struct"\
-		    CXXFLAGS "-g -O2 -Wall -W -march=pentium -fnative-struct"\
-		    AWK gawk DEBUG_PROGRAMS "" exe ".exe"; \
-		while test "$$#" != 0; \
-		    do subst="$$subst gsub(/@$$1@/, \"$$2\");"; shift 2; \
-		done; \
-		$(AWK) "/^#NoMinGW#/ { noOut = 1; next; } \
-                        /^#MinGW#/   { noOut = 0; \$$0 = substr(\$$0, 8); } \
-                        { if (noOut == 0) { $$subst; print; } }" "$<" >"$@";\
-		cat $(srcdir)/Makedeps >>Makefile.mingw
-config.h.mingw:	config.h.in Makefile.in
-		@echo "Generating \`$@' from \`$<'"; \
-		read a b v <"$(srcdir)/../jigdo.spec"; \
-		set -- WINDOWS     "define WINDOWS 1" \
-		    TYPE_UINT64    "define TYPE_UINT64 unsigned long long" \
-		    HAVE_OUTUINT64 "define HAVE_OUTUINT64 1" \
-		    HAVE_SSTREAM   "define HAVE_SSTREAM 1" \
-		    HAVE_GETOPT_H  "define HAVE_GETOPT_H 0" \
-		    JIGDO_VERSION  "define JIGDO_VERSION \"$$v\"" \
-		    DIRENT_HACK    "define DIRENT_HACK 1" \
-		    snprintf       "define snprintf _snprintf" \
-		    stat           "define stat _stati64" \
-		;while test "$$#" != 0; do \
-		    prg="$$prg s%^ *# *\(undef\|define\) \+$$1\( .*\)\?$$%#$$2%;";\
-		    shift 2; \
-		done; \
-		sed -e "$$prg" <"$<" >"$@"
 #______________________________________________________________________
 
 @SRC_MAKEDEPS@

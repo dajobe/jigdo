@@ -9,7 +9,7 @@
     <copyright>
       <year>2001-2003</year><holder>Richard Atterer</holder>
     </copyright>
-    <date>Apr 20, 2003</date>
+    <date>Sep 13, 2003</date>
   </refentryinfo>
   <refmeta>
     <refentrytitle>jigdo-file</refentrytitle>
@@ -327,6 +327,24 @@
       </varlistentry>
 
       <varlistentry>
+        <term><option>--debug</option><optional>=<literal>help</literal
+          >|<literal>all</literal>|<replaceable>UNIT,UNIT...</replaceable>
+          </optional></term>
+        <listitem>
+          <para>Switch on or off debugging output. Just `--debug' is
+          equivalent to `--debug=all'. The argument is a
+          comma-separated list of unit names for which debugging
+          output is to be enabled, or disabled if the name is preceded
+          by `~'. The special name `all' means all units. By default,
+          debugging output is switched off except for the units
+          `assert' and `general'. The exact list of available units
+          for which debugging can be switched on depends on whether
+          jigdo was compiled with debugging support - the list can be
+          printed with `--debug=help'.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
         <term><replaceable>FILES</replaceable></term>
         <listitem>
           <para>Names of files or directories to use as input. These
@@ -608,26 +626,6 @@
         </varlistentry>
 
         <varlistentry>
-          <term><option>--debug</option></term>
-          <listitem>
-            <para>Output debugging information during template
-            generation. Under normal circumstances, there is no need
-            to use this option - it is only intended to make it easier
-            to track down bugs in <command>jigdo-file</command> which
-            cause the program to misbehave or crash with certain input
-            files.</para>
-          </listitem>
-        </varlistentry>
-
-        <varlistentry>
-          <term><option>--no-debug</option></term>
-          <listitem>
-            <para><emphasis>This is the default.</emphasis> Do not
-            output debugging information.</para>
-          </listitem>
-        </varlistentry>
-
-        <varlistentry>
           <term><option>--match-exec=<replaceable>SHELLCOMMAND</replaceable
             ></option></term>
           <listitem>
@@ -641,35 +639,35 @@
             `<filename>.jigdo</filename>' file:
 
               <itemizedlist>
-                <listitem><para><envar>LABEL</envar>=<literal>Label</literal
-                > - Name of the label for the file. The example assumes
+                <listitem><para><envar>LABEL</envar>="<literal>Label</literal
+                >" - Name of the label for the file. The example assumes
                 that `<option>--label</option>
                 <literal>Label=/path</literal>' was specified by you.
                 In the absence of such an option, <envar>LABEL</envar>
                 will be set but empty.</para></listitem>
 
-                <listitem><para><envar>LABELPATH</envar>=<literal
-                >/path/</literal> - The path corresponding to the label,
+                <listitem><para><envar>LABELPATH</envar>="<literal
+                >/path/</literal>" - The path corresponding to the label,
                 or in other words, the prefix of the matched file's
                 path that will <emphasis>not</emphasis> appear in the
                 output `<filename>.jigdo</filename>' file. Is set even
                 without any `<option>--label</option>' option present.
                 Ends with a slash.</para></listitem>
 
-                <listitem><para><envar>MATCHPATH</envar>=<literal
-                >a/b/</literal> - The rest of the path, without the
+                <listitem><para><envar>MATCHPATH</envar>="<literal
+                >a/b/</literal>" - The rest of the path, without the
                 leafname of the matched file. Is either empty or ends
                 with a slash.</para></listitem>
 
-                <listitem><para><envar>LEAF</envar>=<literal>file</literal>
+                <listitem><para><envar>LEAF</envar>="<literal>file</literal>"
                 - The leafname of the matched file.</para></listitem>
 
-                <listitem><para><envar>MD5SUM</envar>=<literal
-                >lNVdUSqbo2yqm33webrhnw</literal> - The md5sum of the
+                <listitem><para><envar>MD5SUM</envar>="<literal
+                >lNVdUSqbo2yqm33webrhnw</literal>" - The md5sum of the
                 matched file, in Base64-like format.</para></listitem>
 
-                <listitem><para><envar>FILE</envar>=<literal
-                >/path//a/b/file</literal> - For convenience, the
+                <listitem><para><envar>FILE</envar>="<literal
+                >/path//a/b/file</literal>" - For convenience, the
                 complete path of the file. The variable is always set
                 to <literal>$LABELPATH$MATCHPATH$LEAF</literal
                 >.</para></listitem>
@@ -1002,7 +1000,7 @@ Info=<replaceable>long description</replaceable></screen>
       used, and the program that generated it. The `Info' label can
       contain a description of the contents of the jigdo file.</para>
 
-      <para>There is one such section per
+      <para>There should be one such section per
       `<filename>.jigdo</filename>' file.</para>
     </refsect2>
 
@@ -1014,14 +1012,9 @@ Info=<replaceable>long description</replaceable></screen>
 Filename=<replaceable>"filename for saving on user's disc"</replaceable>
 Template=<replaceable>"URI where to fetch template file"</replaceable>
 Template-MD5Sum=OQ8riqT1BuyzsrT9964A7g
-Selected=yes|no
-ShortInfo=<replaceable>single-line description, for displaying menu of images</replaceable>
+ShortInfo=<replaceable>single-line description (max. 200 characters)
+of the image</replaceable>
 Info=<replaceable>long description</replaceable></screen>
-
-      <para>The `Selected' label indicates whether the image is
-      selected for download by default when <command>jigdo</command>
-      is run for this file.
-      (<emphasis>UNIMPLEMENTED</emphasis>)</para>
 
       <para>Instead of an URI (which can be absolute or relative to
       the URL of the jigdo file), the value for the `Template' entry
@@ -1132,6 +1125,40 @@ Any text, except that lines must not begin with `['.</screen>
       <para>All text following a `<literal>[Comment]</literal>' or
       `<literal>[comment]</literal>' line is ignored, up to the next
       line with a section label.</para>
+    </refsect2>
+
+    <refsect2 id="include">
+      <title>Include directive</title>
+
+      <screen>[Include http://some.url/file.jigdo]</screen>
+
+      <para>Lines of this form cause the content of the specified
+      jigdo file to be downloaded and parsed just like the main jigdo
+      file. The effect will be the same as copying the included file's
+      contents into the file which contains the include directive.</para>
+
+      <para>The URL argument can be an absolute or relative URL.
+      Relative URLs are interpreted to be relative to the URL of the
+      jigdo file which contains the include directive. Includes can be
+      nested, but it is an error to create a loop of include
+      directives. It is <emphasis>not</emphasis> possible to use URLs
+      of the form `<replaceable>Label</replaceable>:<replaceable
+      >pathname</replaceable>'.</para>
+
+      <para>The URL cannot be quoted with "". Any
+      `<literal>]</literal>' characters in the argument must be
+      escaped as `<literal>%5D</literal>', and any spaces as
+      `<literal>%20</literal>'.</para>
+
+      <para>Include directives are only supported by
+      <command>jigdo</command>, they are ignored by
+      <command>jigdo-lite</command>.</para>
+
+      <para>An include directive terminates any previous section, but
+      it does not start a new one. In other words, a new section must
+      always be started after the include line,
+      <command>jigdo</command> does not allow normal entries to appear
+      below the `<literal>[Include]</literal>'.</para>
     </refsect2>
 
   </refsect1>

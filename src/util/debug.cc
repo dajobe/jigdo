@@ -1,7 +1,7 @@
 /* $Id$ -*- C++ -*-
   __   _
-  |_) /|  Copyright (C) 1999-2002 Richard Atterer
-  | \/¯|  <atterer@informatik.tu-muenchen.de>
+  |_) /|  Copyright (C) 1999-2003  |  richard@
+  | \/¯|  Richard Atterer          |  atterer.net
   ¯ '` ¯
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License, version 2. See
@@ -22,16 +22,15 @@
 
 #undef debug
 namespace { Logger debug("assert", true); }
+
+bool Debug::abortAfterFailedAssertion = true;
 //______________________________________________________________________
 
 int Debug::assertFail(const char* assertion, const char* file,
                       unsigned int line) {
   debug("%1:%2: `%3' failed", file, line, assertion);
-# if DEBUG
-  abort();
-# else
+  if (abortAfterFailedAssertion) abort();
   return 0;
-# endif
 }
 //______________________________________________________________________
 

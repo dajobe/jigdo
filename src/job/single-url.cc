@@ -165,8 +165,8 @@ void SingleUrl::download_data(const byte* data, unsigned size,
   unsigned limit = (size < 65 ? size : 65);
   for (unsigned i = 0; i < limit; ++i)
     if (data[i] >= 32 && data[i] < 127) s += data[i]; else s += '.';
-  debug("Got %1 currentSize=%2, realoffset=%3: %4",
-        size, progressVal.currentSize(), currentSize - size, s);
+  debug("%5 Got %1 currentSize=%2, realoffset=%3: %4",
+        size, progressVal.currentSize(), currentSize - size, s, this);
 # endif
 
   if (!progressVal.autoTick() // <-- extra check for efficiency only

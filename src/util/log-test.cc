@@ -9,25 +9,51 @@
 
   Logfile / debugging output
 
+  #test-deps
+
 */
 
-#include <iostream>
-
 #include <config.h>
+
+#include <iostream>
+#include <sstream>
+
 #include <log.hh>
 //______________________________________________________________________
 
 Logger info("Log-test");
 Logger debug("Flame-fest");
 
-int main() {
-  Logger::setEnabled("Log-test");
+namespace {
 
+  ostringstream out;
+
+  void put(const string& unitName, unsigned char unitNameLen,
+           const char* format, int args, const Subst arg[]) {
+    out << unitName << ':';
+    if (unitNameLen < 15) out << "               " + unitNameLen;
+    out << Subst::subst(format, args, arg) << endl;
+  }
+
+}
+
+int main() {
+  // Don't do this; it interferes and makes the test fail:
+  //if (argc == 2) Logger::scanOptions(argv[1], argv[0]);
+
+  Logger::setOutputFunction(&put);
+
+  Logger::setEnabled("Log-test");
   string c = " (correct)";
   info("The answer: %1%2", 42, c);
   debug("yo");
   Logger::setEnabled("Flame-fest");
   debug("boo");
+
+  Assert(out.str() ==
+    "Log-test:       The answer: 42 (correct)\n"
+    "Flame-fest:     boo\n");
+
   return 0;
 }
 
