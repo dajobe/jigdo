@@ -295,7 +295,7 @@ if test "$jigdo_gui" = "yes"; then
     if test "$PKGCONFIG" = "no"; then
         AC_MSG_RESULT([   * GTK+ not installed, or pkg-config not in])
         AC_MSG_RESULT([   * \$PATH. Please install GTK+ 2.])
-        installDevel "libgtk2.0" "libgtk2.0-dev"
+        installDevel "libgtk2.0" "libgtk2.0"
         jigdo_gui_failed
     fi
 fi
