@@ -87,7 +87,7 @@ public:
       too hard. In practice, we achieve randomisation by initializing the
       weight with a small random value, in the range
       [-RANDOM_INIT_RANGE,RANDOM_INIT_RANGE) */
-  static const double RANDOM_INIT_RANGE = 0.03125;
+  static const double RANDOM_INIT_RANGE;
 
 private:
   string urlVal; // Part of URL

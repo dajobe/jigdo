@@ -180,6 +180,10 @@ void expectEnum(PartUrlMapping* m, const char* expected) {
   msg("OK, got \"%1\"", result);
 }
 
+/* NB: In the following tests, all mappings must have different
+   weights. Otherwise, different rounding errors in different implementations
+   will lead to a different output order, and make the tests fail. */
+
 void score1() { // Single leaf object
   UrlMap m;
   vector<string> v;
@@ -198,7 +202,7 @@ void score2() { // Simple chain, 2 objects long
 
 void score3() { // Diamond-shaped graph
   UrlMap m;
-  as(m, "Label", "Server:x/");
+  as(m, "Label", "Server:x/ --try-first=", true);
   ap(m, md[0], "Label:some/path");
   as(m, "Label", "Server:y/ --try-first");
   as(m, "Server", "ftp://server.org:80/");
@@ -227,21 +231,21 @@ void score4() { // Full mesh, many leaf possibilities
 
 void score5() { // Full mesh, one leaf possibility
   UrlMap m;
-  ap(m, md[1], "A:a");
-  as(m, "A", "S:l");
-  as(m, "A", "S:m");
-  as(m, "A", "S:n");
+  ap(m, md[1], "A:.");
+  as(m, "A", "S:l --try-first=.1");
+  as(m, "A", "S:m --try-first=.21");
+  as(m, "A", "S:n --try-first=.32");
   as(m, "A", "S:o --try-last=.222");
-  as(m, "S", "T:!");
-  as(m, "S", "T:?");
-  as(m, "S", "T:,");
-  as(m, "S", "T:; --try-first=3.4");
+  as(m, "S", "T:a --try-first=.4");
+  as(m, "S", "T:b --try-first=.5");
+  as(m, "S", "T:c --try-first=.6");
+  as(m, "S", "T:d --try-first=3.4");
   as(m, "T", "http://x/");
   m.dumpJigdoInfo();
-  expectEnum(m[md[1]], "http://x/;ma http://x/;na http://x/;la http://x/;oa "
-             "http://x/!la http://x/,la http://x/?la http://x/!na "
-             "http://x/,na http://x/?na http://x/!ma http://x/,ma "
-             "http://x/?ma http://x/?oa http://x/,oa http://x/!oa");
+  expectEnum(m[md[1]], "http://x/dn. http://x/dm. http://x/dl. http://x/do. "
+             "http://x/cn. http://x/bn. http://x/cm. http://x/an. "
+             "http://x/bm. http://x/cl. http://x/am. http://x/bl. "
+             "http://x/al. http://x/co. http://x/bo. http://x/ao.");
 }
 //______________________________________________________________________
 

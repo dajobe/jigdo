@@ -35,6 +35,8 @@ namespace {
 
 }
 
+const double UrlMapping::RANDOM_INIT_RANGE = 0.03125;
+
 namespace { bool randomInit = true; }
 void UrlMapping::setNoRandomInitialWeight() { randomInit = false; }
 
