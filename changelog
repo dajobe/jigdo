@@ -3,6 +3,8 @@ Changelog for Jigsaw Download                               -*- Text -*-
 
 Current CVS version:
 
+  - Workaround for problems with big files (DVD images) when compiling
+    with GCC 3.0 to 3.3.
   - removed "too many files missing, won't attempt to download them
     from fallback mirror" logic in jigdo-lite because it was broken
   - .jigdo file format: Semantics of multiple [Image] sections have
