@@ -147,9 +147,9 @@ void GUI::create() {
       //"ftp://localhost/image"
       //"http://localhost:8000/~richard/ironmaiden/part32"
 #     if WINDOWS
-      "http://192.168.0.5:8000/~richard/ironmaiden/image"
+      "http://192.168.0.5:8000/~richard/ironmaiden/image.jigdo"
 #     else
-      "http://127.0.0.1:8000/~richard/ironmaiden/image"
+      "http://127.0.0.1:8000/~richard/ironmaiden/image.jigdo"
 #     endif
       );
 # endif

@@ -669,10 +669,10 @@ void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
       if (!imageInfo.empty()) return generateError(_("Value redefined"));
       imageInfo.assign(*data, valueOff, 5000);
     }
+    //____________________
 
   } else if (section == "Parts") {
 
-    // TODO
     if (value.empty()) return generateError(_("Missing argument"));
     MD5 md5;
     Base64In<ArrayOut> decoder;
@@ -689,7 +689,15 @@ void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
         debug("x b64='%1' value='%2'", b64.result(), *label);
         return generateError(_("Invalid MD5Sum in Parts section"));
       }
-      debug("PART %1 -> %2", md5.toString(), value.front());
+      //debug("PART %1 -> %2", md5.toString(), value.front());
+      master()->addPart(md5, value);
+
+  } else if (section == "Servers") {
+
+    if (value.empty()) return generateError(_("Missing argument"));
+    if (master()->addServer(*label, value).failed())
+      return generateError(_("Recursive label definition"));
+
   } // endif (section == "Something")
 
 }

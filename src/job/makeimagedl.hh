@@ -33,6 +33,7 @@
 #include <nocopy.hh>
 #include <single-url.hh>
 #include <status.hh>
+#include <url-mapping.fh>
 //______________________________________________________________________
 
 /**
@@ -126,14 +127,27 @@ public:
                    DataSource::IO* frontend);
 
   /** Is called by a child JigdoIO once the [Image] section has been seen.
-      The arguments are modified!
-      @return OK or FAILED (latter if ImageInfo parsing failed) */
+      The arguments are modified! */
   void setImageSection(string* imageName, string* imageInfo,
                        string* imageShortInfo, string* templateUrl,
                        MD5** templateMd5);
   /** Has setImageSection() already been called? (=>is imageName
       non-empty?) */
   inline bool haveImageSection() const;
+
+  /** Add info about a mapping line inside one of the [Parts] sections in the
+      .jigdo sections. The first entry of "value" is the URL (absolute or in
+      "Label:some/path form). The remaining "value" entries are assumed to be
+      options, and ignored ATM. */
+  void addPart(const MD5& md, vector<string>& value);
+
+  /** Add info about a [Servers] line, cf addPart(). For a line
+      "Foobar=Label:some/path" in the [Servers] section:
+      @param label == "Foobar"
+      @param value arguments; value.front()=="Label:some/path"
+      @return failed() iff the line results in a recursive server
+      definition. */
+  Status addServer(const string& label, vector<string>& value);
 
   /** Return child download object which contains a DataSource which produces
       the data of the requested URL. That returned object is usually a newly
@@ -163,7 +177,7 @@ public:
       getting the string, the frontend must specify what strings the
       respective begin and end tags should be replaced with. The default args
       turn the string into plain UTF-8 without markup. This call is fairly
-      expensive, may want to cache returned string.
+      expensive, you may want to cache the returned string.
 
       If there in an error parsing the XML, the string from the ImageInfo
       entry is either returned unchanged (if !escapedText), or all
@@ -222,12 +236,15 @@ private: // Really private
   Child* childForSemiCompleted(const struct stat& fileInfo,
                                const string& filename);
 
+  ServerUrlMapping* findOrCreateServerUrlMapping(const string& url,
+                                                 unsigned colon);
+
   static const char* destDescTemplateVal;
 
   State stateVal; // State, e.g. "downloading jigdo file", "error"
 
   string jigdoUrl; // URL of .jigdo file
-  ChildList childrenVal;
+  ChildList childrenVal; // Child downloads
 
   string dest; // Destination dir. No trailing '/', empty string for root dir
   string tmpDirVal; // Temporary dir, a subdir of dest
@@ -240,6 +257,15 @@ private: // Really private
   string imageInfoVal, imageShortInfoVal;
   string templateUrlVal;
   MD5* templateMd5Val;
+
+  /* [Parts] lines in .jigdo data; for each md5sum, there's a linked list of
+     PartUrlMappings */
+  typedef map<MD5, SmartPtr<PartUrlMapping> > PartMap;
+  PartMap parts;
+  /* [Servers] lines in .jigdo data; for each label string, there's a linked
+     list of ServerUrlMappings */
+  typedef map<string, SmartPtr<ServerUrlMapping> > ServerMap;
+  ServerMap servers;
 };
 //______________________________________________________________________
 

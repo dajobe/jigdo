@@ -26,10 +26,12 @@
 #include <cached-url.hh>
 #include <compat.hh>
 #include <jigdo-io.hh>
+#include <jigdoconfig.hh>
 #include <log.hh>
 #include <makeimagedl.hh>
 #include <md5sum.hh>
 #include <mimestream.hh>
+#include <url-mapping.hh>
 #include <string.hh>
 //______________________________________________________________________
 
@@ -423,4 +425,104 @@ void MakeImageDl::jigdoFinished() {
       delete x;
     }
   }
+}
+//______________________________________________________________________
+
+// map<MD5, SmartPtr<PartUrlMapping> > parts;
+
+/* Given an URL-like string of the form "Label:some/path" or
+   "http://foo/bar", return the ServerUrlMapping for "Label"/"http". If none
+   exists, create one.
+   @param url URL-like string
+   @param colon Offset of ':' in url, must be >0
+   @return new or existent mapping */
+ServerUrlMapping* MakeImageDl::findOrCreateServerUrlMapping(
+    const string& url, unsigned colon) {
+  string label(url, 0, colon);
+  ServerMap::iterator i = servers.lower_bound(label);
+  if (i != servers.end() && i->first == label)
+    return i->second.get(); // "Label" entry present, just return it
+
+  // No entry for "Label" yet, need to create a dummy ServerUrlMapping
+  ServerUrlMapping* s = new ServerUrlMapping();
+  /* Initialize the url for label "http" with "http:"; addServer() below will
+     recognize this special case. */
+  servers.insert(i, make_pair(label, makeSmartPtr(s)));
+  label += ':';
+  s->setUrl(label);
+  return s;
+}
+//____________________
+
+void MakeImageDl::addPart(const MD5& md, vector<string>& value) {
+  string& url = value.front();
+  debug("addPart %1 -> %2", md.toString(), url);
+
+  PartUrlMapping* p = new PartUrlMapping();
+  unsigned colon = JigdoConfig::findLabelColon(url);
+  if (colon == 0) {
+    p->setUrl(url);
+  } else {
+    p->setPrepend(findOrCreateServerUrlMapping(url, colon));
+    p->setUrl(url, colon + 1);
+  }
+  // Insert entry in "parts"
+  pair<PartMap::iterator, bool> x =
+    parts.insert(make_pair(md, makeSmartPtr(p)));
+  if (!x.second) {
+    // entry for md already present in parts, add p to its linked list
+    x.first->second->insertNext(p);
+  }
+}
+//____________________
+
+/* For a line "Foobar=Label:some/path" in the [Servers] section:
+   @param label == "Foobar"
+   @param value arguments; value.front()=="Label:some/path" */
+Status MakeImageDl::addServer(const string& label, vector<string>& value) {
+  string& url = value.front();
+  debug("addServer %1 -> %2", label, url);
+
+  /* Create entry for "Foobar". We usually create a new ServerUrlMapping,
+     except in the case where findOrCreateServerUrlMapping() has created a
+     dummy entry during previous processing of a [Parts] section. */
+  ServerUrlMapping* s;
+  ServerMap::iterator i = servers.lower_bound(label);
+  if (i == servers.end() || i->first != label) {
+    // Create object and start a new linked list; add list head to "servers"
+    s = new ServerUrlMapping();
+    servers.insert(i, make_pair(label, makeSmartPtr(s)));
+  } else {
+    const string& somepath = i->second->url();
+    if (!somepath.empty() && somepath[somepath.length() - 1] == ':') {
+      // List head is dummy; use it directly
+      s = i->second.get();
+    } else {
+      // Create object and add it to existing linked list
+      s = new ServerUrlMapping();
+      i->second->insertNext(s);
+    }
+  }
+
+  /* Process the "Label:some/path" string, maybe adding a dummy
+     ServerUrlMapping for "Label". */
+  unsigned colon = JigdoConfig::findLabelColon(url);
+  if (colon == 0) {
+    s->setUrl(url);
+  } else {
+    ServerUrlMapping* prep = findOrCreateServerUrlMapping(url, colon);
+    s->setPrepend(prep);
+    s->setUrl(url, colon + 1);
+    // Check whether this is a recursive definition
+    UrlMapping* i = prep;
+    do {
+      if (i == s) { // Cycle detected
+        // Break cycle, leave s in nonsensical state. Maybe also delete prep
+        s->setPrepend(0);
+        return FAILED;
+      }
+      i = i->prepend();
+    } while (i != 0);
+  }
+  return OK;
 }

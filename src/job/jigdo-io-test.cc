@@ -19,6 +19,7 @@
 
 #include <makeimagedl.hh>
 #include <md5sum.hh>
+#include <url-mapping.hh>
 
 #include <jigdo-io.hh>
 /* Cannot link against jigdo-io.o, because this is not always compiled with
@@ -246,6 +247,13 @@ void MakeImageDl::setImageSection(string* imageName, string*, string*,
                                   string*, MD5**) {
   Paranoid(!haveImageSection());
   imageNameVal.swap(*imageName);
+}
+
+void MakeImageDl::addPart(const MD5&, vector<string>&) {
+  //debug("addPart %1 -> %2", md.toString(), value.front());
+}
+Status MakeImageDl::addServer(const string&, vector<string>&) {
+  return OK;
 }
 
 void MakeImageDl::jigdoFinished() {

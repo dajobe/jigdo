@@ -7,7 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  Download & interpret .jigdo, download parts, assemble image
+  Download (via SingleURL) & interpret .jigdo data, download parts, assemble
+  image
 
 */
 
@@ -46,7 +47,7 @@
     <ul>
 
       <li>Maintains .jigdo file contents, but does not download the .jigdo
-      data - someone else must do this and pass the file to MakeImage.
+      data - someone else must do this and pass the file info to MakeImage.
 
       <li>Stores name of .template file once present, opens & reads it.
 

@@ -20,6 +20,7 @@
 #include <debug.hh>
 #include <log.hh>
 #include <makeimagedl.hh>
+#include <url-mapping.hh>
 //______________________________________________________________________
 
 using namespace Job;
