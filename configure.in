@@ -204,6 +204,16 @@ if test "$jigdo_libdb" = "yes"; then
         AC_MSG_ERROR(libdb3 not found.)
     else
         LIBS="-l$have_libdb $LIBS"
+        AC_MSG_CHECKING(for db.h of libdb 3.x)
+        AC_EGREP_CPP(dbversionmajoris 3, [#include <db.h>
+            dbversionmajoris DB_VERSION_MAJOR],
+            is_db3_h=yes, is_db3_h=no)
+        AC_MSG_RESULT($is_db3_h);
+        if test "$is_db3_h" = "no"; then
+            AC_MSG_RESULT([   * libdb3 library is present, but the db.h file])
+            AC_MSG_RESULT([   * seems to be from a different version, not 3.])
+            installDevel "libdb3" "libdb3.3"
+        fi
     fi
     AC_DEFINE(HAVE_LIBDB, 1) dnl make compilation fail if libdb not there
 elif test "$jigdo_libdb" != "no" -a "$jigdo_libdb" != "NO"; then
