@@ -111,8 +111,9 @@ private:
       returned object is usually a newly started download, except if the file
       (or its beginning) was already downloaded. The filename is based on
       either the base64ified md checksum, or (if that is 0), the b64ied md5
-      checksum of the url. */
-  Job::DataSource* dataSourceFor(const string& url, const MD5* md = 0);
+      checksum of the url.
+      @return New object, or null if error (and io->job_failed was called) */
+  DataSource* dataSourceFor(const string& url, const MD5* md = 0);
 
   // Wraps around a SingleUrl, for downloading the .jigdo file
   class JigdoDownload;
@@ -128,7 +129,7 @@ private:
 
   // URL of .jigdo file, corresponding download handler (null if finished)
   string jigdoUrl;
-  JigdoDownload* jigdo;
+  DataSource* jigdo;
 
   string dest; // Destination dir. No trailing '/', empty string for root dir
   string tmpDirVal; // Temporary dir, a subdir of dest
@@ -161,12 +162,15 @@ public:
       the download of the .jigdo file or the .template file, or the download
       of a part. The GTK+ GUI uses this to display the new SingleUrl as a
       "child" of the MakeImageDl.
+      @param destDesc A descriptive string like "/foo/bar/image, offset
+      3453", NOT a filename! Supplied for information only, to be displayed
+      to the user.
       @return IO object to associate with this child download. Anything
       happening to the SingleUrl child will be passed on to the object you
       return here. Can return null if nothing should be called, but this
       won't prevent the child download from being created. */
-  virtual Job::DataSource::IO* makeImageDl_new(Job::SingleUrl* childDownload)
-    = 0;
+  virtual Job::DataSource::IO* makeImageDl_new(
+      Job::SingleUrl* childDownload, const string& destDesc) = 0;
 
   /** A child has (successfully or not) finished. Immediately after this
       call, the childDownload will be deleted. */

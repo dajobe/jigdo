@@ -582,7 +582,11 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
     throw Cleanup(0);
   }
 
+# if WINDOWS
+  Logger::scanOptions(optDebug, binName());
+# else
   Logger::scanOptions(optDebug, binName().c_str());
+# endif
   //______________________________
 
   // Silently correct invalid blockLength/md5BlockLength args

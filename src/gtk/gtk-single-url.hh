@@ -41,7 +41,7 @@ public:
   /** Create a new GtkSingleUrl, and also create an internal Job::SingleUrl
       to do the actual download. Delete the internal SingleURl from
       ~GtkSingleUrl(). */
-  GtkSingleUrl(const string& uriStr, const string& destination);
+  GtkSingleUrl(const string& uriStr, const string& destFile);
   /** Create a new GtkSingleUrl, but use it with an already existing
       Job::SingleUrl. The Job::SingleUrl will not be owned by the
       GtkSingleUrl and will not be deleted by its dtor. If created like this,
@@ -51,8 +51,12 @@ public:
       do with the data what it wants, and then to pass the call on to this
       GtkSingleUrl (more accurately, the methods that this GtkSingleUrl
       inherits from Job::DataSource::IO). See also
-      GtkMakeImage::makeImageDl_new(). */
-  GtkSingleUrl(const string& uriStr, Job::SingleUrl* download);
+      GtkMakeImage::makeImageDl_new().
+      @param destDesc A descriptive string like "/foo/bar/image, offset
+      3453", NOT a filename! Supplied for information only, to be displayed
+      to the user. */
+  GtkSingleUrl(const string& uriStr, const string& destDesc,
+               Job::SingleUrl* download);
   virtual ~GtkSingleUrl();
 
   // Virtual methods from JobLine
@@ -85,11 +89,6 @@ private:
   virtual void dataSource_data(const byte* data, unsigned size,
                               uint64 currentSize);
 
-  /* Return true if the object was created using the second ctor, i.e. with a
-     pre-created Job::SingleUrl object. If true, will never write to any
-     output file. */
-  bool childMode() const { return dest.empty(); }
-
   // Helper methods
   /* Registered to be called for each tick by run(), updates the "% done"
      progress info. */
@@ -116,6 +115,11 @@ private:
   string progress, status; // Lines to display in main window
   string treeViewStatus; // Status section in the list of jobs
   bfstream* destStream;
+
+  /* true if the object was created using the second ctor, i.e. with a
+     pre-created Job::SingleUrl object. If true, will never write to any
+     output file. */
+  bool childMode;
 
   MessageBox::Ref messageBox;
   Job::SingleUrl* job; // Job which handles the download

@@ -51,7 +51,8 @@ private:
   virtual void job_succeeded();
   virtual void job_failed(string* message);
   virtual void job_message(string* message);
-  virtual Job::DataSource::IO* makeImageDl_new(Job::SingleUrl*childDownload);
+  virtual Job::DataSource::IO* makeImageDl_new(
+      Job::SingleUrl*childDownload, const string& destDesc);
   virtual void makeImageDl_finished(Job::SingleUrl* childDownload);
 
   // Update info in main window

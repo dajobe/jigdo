@@ -142,11 +142,12 @@ void GtkMakeImage::job_message(string* message) {
 }
 
 Job::DataSource::IO* GtkMakeImage::makeImageDl_new(
-    Job::SingleUrl* childDownload) {
+    Job::SingleUrl* childDownload, const string& destDesc) {
 # if DEBUG
   msg("GtkMakeImage::makeImageDl_new", 0);
 # endif
-  GtkSingleUrl* child = new GtkSingleUrl(mid.jigdoUri(), childDownload);
+  GtkSingleUrl* child = new GtkSingleUrl(mid.jigdoUri(), destDesc,
+                                         childDownload);
   GUI::jobList.prepend(child, this); // New child of "this" is "child"
   bool status = child->run();
   /* NB run() cannot result in "delete child;" for child mode, so we always

@@ -89,12 +89,12 @@ class MD5Sum {
 public:
   class ProgressReporter;
 
-  /// Initialises the checksum
+  /** Initialise the checksum */
   inline MD5Sum();
-  /// Initialises with another checksum instance
+  /** Initialise with another checksum instance */
   MD5Sum(const MD5Sum& md);
   ~MD5Sum() { delete p; }
-  /// Assigns another checksum instance
+  /** Assign another checksum instance */
   MD5Sum& operator=(const MD5Sum& md);
   /** Tests for equality. Note: Will only return true if both message
       digest operations have been finished and their MD5 sums are the

@@ -30,6 +30,8 @@
 using namespace Job;
 //______________________________________________________________________
 
+DEBUG_UNIT("makeimagedl")
+
 MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
                          const string& destination)
     : io(ioPtr), stateVal(DOWNLOADING_JIGDO),
@@ -77,10 +79,10 @@ void MakeImageDl::run() {
   }
   writeReadMe();
 
-#warning jigdo = dataSourceFor(jigdoUrl, ---);
+  jigdo = dataSourceFor(jigdoUrl, 0);
 
-  jigdo = new JigdoDownload(this, 0, jigdoUrl, mi.configFile().end());
-  jigdo->run();
+  //jigdo = new JigdoDownload(this, 0, jigdoUrl, mi.configFile().end());
+  //  jigdo->run();
 }
 
 void MakeImageDl::error(const string& message) {
@@ -122,4 +124,84 @@ void Job::MakeImageDl::writeReadMe() {
     "URL=%1\n"
     "Destination=%2\n"
     ), jigdoUri(), dest);
+}
+//______________________________________________________________________
+
+DataSource* MakeImageDl::dataSourceFor(const string& url, const MD5* md) {
+  debug("dataSourceFor: %1", url);
+
+  string filename = tmpDir();
+  filename += DIRSEP;
+  Base64String b64;
+  if (md == 0) {
+    // Create leafname from url ("u" for "url")
+    filename += "u-";
+    MD5Sum nameMd;
+    nameMd.update(reinterpret_cast<const byte*>(url.c_str()),
+                  url.length()).finish();
+    b64.write(nameMd.digest(), 16).flush();
+  } else {
+    // Create leafname from md ("c" for "content")
+    filename += "c-";
+    b64.write(*md, 16).flush();
+  }
+  filename += b64.result();
+
+  // Check whether file already present in cache, i.e. in tmpDir
+  struct stat fileInfo;
+  int statResult = stat(filename.c_str(), &fileInfo);
+  if (statResult == 0) {
+    if (!S_ISREG(fileInfo.st_mode)) {
+      // Something messed with the cache dir
+      string err = subst(_("Invalid cache entry: `%1' is not a file"),
+                         filename);
+      io->job_failed(&err);
+      return 0;
+    }
+    if (md != 0) {
+      // Data with that MD5 known - no need to go on the net, imm. return it
+      debug("dataSourceFor: already have %1", filename);
+      Assert(false); return 0;
+    } else {
+      /* Data for URL fetched before. If less than IF_MOD_SINCE seconds ago,
+         just return it, else do an If-Modified-Since request. */
+      debug("dataSourceFor: if-mod-since %1", filename);
+      Assert(false); return 0;
+    }
+  }
+  //____________________
+
+  /* statResult != 0, we assume this means "no such file or directory".
+     Now check whether a download is already under way, or if a half-finished
+     download was aborted earlier. */
+  Paranoid(filename[tmpDir().length() + 2] == '-');
+  filename[tmpDir().length() + 2] = '~';
+  statResult = stat(filename.c_str(), &fileInfo);
+  if (statResult == 0) {
+    if (!S_ISREG(fileInfo.st_mode)) {
+      // Something messed with the cache dir
+      string err = subst(_("Invalid cache entry: `%1' is not a file"),
+                         filename);
+      io->job_failed(&err);
+      return 0;
+    }
+    debug("dataSourceFor: already have partial %1", filename);
+    Assert(false); //return 0;
+//     if (anotherdownloadunderway) {
+//       return cloneofotherdownload; // What if other d/l is aborted by user
+//     } else {
+//       // Do a resume + If-Modified-Since
+//       return x;
+//     }
+  }
+  //____________________
+
+  /* Neither the complete nor the partial data is in the cache, so start a
+     new download. */
+  debug("dataSourceFor: New download to %1", filename);
+  SingleUrl* dl = new SingleUrl(0, url);
+  dl->io().set(io->makeImageDl_new(dl, filename));
+  dl->run(0, 0, 0, 0, false);
+
+  return 0;
 }

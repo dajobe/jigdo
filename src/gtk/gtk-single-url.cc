@@ -25,21 +25,19 @@
 
 DEBUG_UNIT("gtk-single-url")
 
-GtkSingleUrl::GtkSingleUrl(const string& uriStr, const string& destination)
-  : uri(uriStr), dest(destination), progress(), status(), treeViewStatus(),
-    destStream(0), messageBox(), job(0) {
-  // Must supply an output file. destination.empty() is used by childMode()
-  Assert(!destination.empty());
-}
+GtkSingleUrl::GtkSingleUrl(const string& uriStr, const string& destFile)
+  : uri(uriStr), dest(destFile), progress(), status(), treeViewStatus(),
+    destStream(0), childMode(false), messageBox(), job(0) { }
 
-GtkSingleUrl::GtkSingleUrl(const string& uriStr, Job::SingleUrl* download)
-  : uri(uriStr), dest(), progress(), status(), treeViewStatus(),
-    destStream(0), messageBox(), job(download) { }
+GtkSingleUrl::GtkSingleUrl(const string& uriStr, const string& destDesc,
+                           Job::SingleUrl* download)
+  : uri(uriStr), dest(destDesc), progress(), status(), treeViewStatus(),
+    destStream(0), childMode(true), messageBox(), job(download) { }
 
 GtkSingleUrl::~GtkSingleUrl() {
   if (jobList()->isWindowOwner(this))
     setNotebookPage(GUI::window.pageOpen);
-  if (childMode()) {
+  if (childMode) {
     if (job != 0) job->setDestStream(0);
   } else {
     // Only delete if job owned, i.e. if we're not a child of another job
@@ -70,10 +68,7 @@ bool GtkSingleUrl::run() {
                      -1);
 
   // Don't open output file and don't run() download if child mode
-  if (dest.empty()) {
-    Paranoid(childMode());
-    return SUCCESS;
-  }
+  if (childMode) return SUCCESS;
 
   struct stat fileInfo;
   int statResult = stat(dest.c_str(), &fileInfo);
@@ -108,7 +103,7 @@ bool GtkSingleUrl::run() {
 
 void GtkSingleUrl::openOutputAndRun(bool pragmaNoCache) {
   // Open output file
-  Paranoid(!childMode());
+  Paranoid(!childMode);
   Paranoid(destStream == 0);
   destStream = new bfstream(dest.c_str(),
                             ios::binary|ios::in|ios::out|ios::trunc);
@@ -159,7 +154,7 @@ namespace {
 //________________________________________
 
 void GtkSingleUrl::openOutputAndResume() {
-  Paranoid(!childMode());
+  Paranoid(!childMode);
   struct stat fileInfo;
   int statResult = stat(dest.c_str(), &fileInfo);
 
@@ -191,7 +186,7 @@ void GtkSingleUrl::openOutputAndResume() {
 /* Called e.g. after the connection dropped unexpectedly, to resume the
    download. */
 void GtkSingleUrl::startResume() {
-  Paranoid(!childMode());
+  Paranoid(!childMode);
   Paranoid(job != 0);
   Paranoid(job->resumePossible()); // We already checked this earlier
   callRegularly(0);
@@ -274,6 +269,8 @@ void GtkSingleUrl::percentDone(uint64* cur, uint64* total) {
 void GtkSingleUrl::updateWindow() {
   if (!jobList()->isWindowOwner(this)) return;
 
+  //debug("updateWindow: status=%1", status);
+
   // URL and destination lines
   gtk_label_set_text(GTK_LABEL(GUI::window.download_URL), uri.c_str());
   gtk_label_set_text(GTK_LABEL(GUI::window.download_dest), dest.c_str());
@@ -290,15 +287,18 @@ void GtkSingleUrl::updateWindow() {
 
   // Buttons (in)sensitive
   gtk_widget_set_sensitive(GUI::window.download_startButton,
-    (job != 0 && (paused() || job->succeeded()
-                  || job->failed() && job->resumePossible()) ?
+    (job != 0 && (paused() || !childMode
+                  && (job->succeeded()
+                      || job->failed() && job->resumePossible())) ?
      TRUE : FALSE));
   gtk_widget_set_sensitive(GUI::window.download_pauseButton,
     (job != 0 && !job->failed() && !job->succeeded() && !paused() ?
      TRUE : FALSE));
   gtk_widget_set_sensitive(GUI::window.download_stopButton,
-    (job != 0 && !job->failed() && !job->succeeded() ?
+    (!childMode && job != 0 && !job->failed() && !job->succeeded() ?
      TRUE : FALSE));
+  gtk_widget_set_sensitive(GUI::window.download_restartButton,
+                           (!childMode ? TRUE : FALSE));
 }
 //______________________________________________________________________
 
@@ -424,6 +424,7 @@ void GtkSingleUrl::job_failed(string* message) {
   } else {
     treeViewStatus = subst(_("<b>%E1</b>"), message);
   }
+  //debug("job_failed: %1", message);
   status.swap(*message);
   updateWindow();
   gtk_tree_store_set(jobList()->store(), row(), JobList::COLUMN_STATUS,
@@ -457,7 +458,7 @@ void GtkSingleUrl::dataSource_data(const byte* /*data*/, unsigned /*size*/,
   if (!needTicks())
     callRegularly(&GtkSingleUrl::showProgress);
 
-  if (childMode()) return;
+  if (childMode) return;
 
   //writeBytes(*destStream, data, size);
   if (!*destStream) {
@@ -687,7 +688,7 @@ void GtkSingleUrl::restart() {
   destStream = 0;
   if (job != 0) {
     job->setDestStream(0);
-    Assert(!childMode());
+    Assert(!childMode);
     if (job->paused()) job->cont();
     job->stop();
 //     delete job;
@@ -695,10 +696,10 @@ void GtkSingleUrl::restart() {
   }
 
   // Start the new download
-  openOutputAndRun(true);
-  progress.erase();
   status = _("Download was restarted - waiting...");
   treeViewStatus = _("Restarted - waiting");
+  openOutputAndRun(true);
+  progress.erase();
   updateWindow();
   gtk_tree_store_set(jobList()->store(), row(),
                      JobList::COLUMN_STATUS, treeViewStatus.c_str(),

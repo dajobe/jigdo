@@ -287,13 +287,16 @@ gint JobList::timeoutCallback(gpointer jobList) {
 gboolean JobList::selectRowCallback(GtkTreeSelection* /*selection*/,
                                     GtkTreeModel* model,
                                     GtkTreePath* path,
-                                    gboolean /*path_currently_selected*/,
+                                    gboolean path_currently_selected,
                                     gpointer data) {
+  if (path_currently_selected) return TRUE;
+
   JobList* self = static_cast<JobList*>(data);
   if (self->selectRowIdleId != 0)
     return TRUE; // Callback already pending - do nothing
   self->selectRowIdleId = gtk_idle_add(&selectRowIdle, self);
 
+  debug("selectRowCallback");
   GtkTreeIter row;
   bool ok = gtk_tree_model_get_iter(model, &row, path);
   Assert(ok);
@@ -303,6 +306,7 @@ gboolean JobList::selectRowCallback(GtkTreeSelection* /*selection*/,
 }
 
 gboolean JobList::selectRowIdle(gpointer data) {
+  debug("selectRowIdle");
   JobList* self = static_cast<JobList*>(data);
   self->selectRowIdleId = 0;
   return FALSE; // "Don't call me again"

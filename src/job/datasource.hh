@@ -22,10 +22,16 @@ namespace Job {
   class DataSource;
 }
 
-/** Interface implemented by SingeUrl and CachedUrl. */
+/** Interface implemented by SingleUrl and CachedUrl.
+    MakeImageDl::dataSourceFor() is the function which examines the local
+    jigdo download's temporary directory and creates a SingleUrl/CachedUrl as
+    appropriate. */
 class Job::DataSource : NoCopy {
 public:
   class IO;
+
+  DataSource() { }
+  virtual ~DataSource() { }
 };
 //______________________________________________________________________
 
