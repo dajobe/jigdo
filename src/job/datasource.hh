@@ -69,7 +69,7 @@ public:
         arrived. You can write the data to a file, copy it away etc.
         currentSize is the offset into the downloaded data (including the
         "size" new bytes) - useful for "x% done" messages. */
-    virtual void dataSource_data(const byte* data, size_t size,
+    virtual void dataSource_data(const byte* data, unsigned size,
                                  uint64 currentSize) = 0;
   };
   //____________________

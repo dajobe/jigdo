@@ -163,7 +163,7 @@ void JigdoIO::dataSource_dataSize(uint64 n) {
   if (frontend != 0) frontend->dataSource_dataSize(n);
 }
 
-void JigdoIO::dataSource_data(const byte* data, size_t size,
+void JigdoIO::dataSource_data(const byte* data, unsigned size,
                               uint64 currentSize) {
   Assert(!finished());
   if (/*master()->finalState() ||*/ failed()) {

@@ -1,6 +1,10 @@
 Changelog for Jigsaw Download                               -*- Text -*-
 ------------------------------------------------------------------------
 
+Current CVS version
+
+  - Fix for compilation on 64 bit architectures
+
 jigdo 0.7.1 -- Richard Atterer, 20 Jun 2004
 
   - Workaround for problems with big files (DVD images) when compiling
