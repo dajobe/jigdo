@@ -97,7 +97,7 @@ public:
       don't add "Pragma: no-cache" header.
       @param pragmaNoCache If true, perform a "reload", discarding anything
       cached e.g. in a proxy. */
-  inline void setPragmaNoCache(bool pragmaNoCache);
+//   inline void setPragmaNoCache(bool pragmaNoCache);
 
   /** Start download or resume it
 
@@ -186,17 +186,17 @@ private:
 
   /* Was setResumeOffset()/setDestination()/setPragmaNoCache() called before
      run()? If false, run() will call it with default values. */
-  bool haveResumeOffset, haveDestination, havePragmaNoCache;
+  bool haveResumeOffset, haveDestination; //, havePragmaNoCache;
 
   int tries; // Nr of tries resuming after interrupted connection
 };
 //======================================================================
 
 
-void Job::SingleUrl::setPragmaNoCache(bool pragmaNoCache) {
-  download.setPragmaNoCache(pragmaNoCache);
-  havePragmaNoCache = true;
-}
+// void Job::SingleUrl::setPragmaNoCache(bool pragmaNoCache) {
+//   download.setPragmaNoCache(pragmaNoCache);
+//   havePragmaNoCache = true;
+// }
 int Job::SingleUrl::currentTry() const { return tries; }
 bool Job::SingleUrl::resuming() const { return resumeLeft > 0; }
 bool Job::SingleUrl::failed() const { return download.failed(); }

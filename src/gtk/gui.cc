@@ -19,6 +19,7 @@
 
 #include <fstream>
 #include <ctype.h>
+#include <errno.h>
 
 #include <gtk-single-url.hh>
 #include <gtk-makeimage.hh>

@@ -22,7 +22,9 @@
 #include <glib.h>
 #include <string>
 
-#include <libwww.hh>
+// #include <curl.h>
+typedef void CURL;
+typedef void CURLSH;
 
 #ifdef ERROR
 #  undef ERROR /* Windows... */
@@ -44,6 +46,9 @@ public:
   // Initialize libwww - call this before starting any downloads
   static void init();
 
+  // Clean up libwww - call this after all requests are finished
+  static void cleanup();
+
   /** Create a new URI from an absolute base URI and a relative URI. (rel can
       also be absolute, in this case, the result in dest equals rel.) */
   static void uriJoin(string* dest, const string& base, const string& rel);
@@ -63,7 +68,7 @@ public:
       pragmaNoCache==true. Caution: The setting is not reset after the
       download has finished/failed and will be reused if you re-run(), so
       better *always* call this immediately before run(). */
-  void setPragmaNoCache(bool pragmaNoCache);
+//   void setPragmaNoCache(bool pragmaNoCache);
 
   /** Start downloading. Returns (almost) immediately and runs the download
       in the background via the glib/libwww event loop. If resumeOffset > 0,
@@ -77,14 +82,14 @@ public:
   /** Pause the request. Actually, this only sets a flag, which causes the
       request to be paused at the next convenient opportunity. The socket of
       the Download is no longer passed to select(). */
-  inline void pause();
+  /*inline*/ void pause();
   /** Continue with the download */
   void cont();
   /** Is the download paused? (i.e. really paused now, not just pause()
       called.) */
   inline bool paused() const;
   /** Is the download paused, or is it not yet paused, but will be soon? */
-  inline bool pausedSoon() const;
+  //inline bool pausedSoon() const;
   /** Did the download fail with an error? */
   inline bool failed() const;
   /** Is download finished? (Also returns true if FTP/HTTP1.0 connection
@@ -113,52 +118,34 @@ private:
   enum State {
     CREATED, // but not run() yet
     RUNNING, // downloading
-    PAUSE_SCHEDULED, // will switch to pause next time data arrives
+    //PAUSE_SCHEDULED, // will switch to pause next time data arrives
     PAUSED, // socket no longer being polled, we'll get no more data
     INTERRUPTED, // like ERROR, but will try resuming the download
     ERROR, SUCCEEDED
   };
 
-  // Function called by libwww for progress reports
-  static BOOL alertCallback(HTRequest* request, HTAlertOpcode op, int msgnum,
-                            const char* dfault, void* input,
-                            HTAlertPar* reply);
-  // Function called by libwww on error
-  static int afterFilter(HTRequest* request, HTResponse* response,
-                         void* param, int status);
-  // Function called by libwww when a request is (re)started
-  static int activateRequestCallback(HTRequest* request);
-
-  // libwww HTStream interface
-  static int flush(HTStream* me);
-  static int free(HTStream* me);
-  static int abort(HTStream* me, HTList* e);
-  static int putChar(HTStream* me, char c);
-  static int putString(HTStream* me, const char* s);
-  static int write(HTStream* me, const char* s, int l);
-  // Function called by libwww, just before any alertCallback
-  static int requestCallback(HTRequest* request, void* downloadObj);
+  // Called by libcurl when data is received from the net
+  static size_t curlWriter(void* data, size_t size, size_t nmemb,
+                           void* selfPtr);
+  // Called by glibcurl after curl_multi_perform()
+  static void Download::glibcurlCallback(void*);
+  
   // Unregister request from glibwww event loop
-  void pauseNow();
+//   void pauseNow();
   // Call output->error() with appropriate string taken from request object
   void generateError(State newState = ERROR);
-  // Set resumeChecked=true or create an error. Returns true if error.
-  bool resumeCheck();
   /* A callback function which is registered if the download needs to be
      stopped. It'll get executed the next time the main glib loop is
      executed. This delayed execution is necessary because libwww doesn't
      like Download::stop() being called from download_newData(). */
   static gboolean stopLater_callback(gpointer data);
+  //   static CURLSH* shHandle; // Handle of curl_shared object
 
-  /* In order for this object to be a libwww stream, we need to supply a
-     "vtbl pointer" for HTStream AS THE FIRST DATA MEMBER. */
-  const HTStreamClass* vptr;
-  string uriVal;
+  CURL* handle; // Handle of curl_easy object
+  string uriVal; // Careful: Includes a trailing null byte!
   uint64 resumeOffsetVal;
-  bool resumeChecked; // false => still need to check for right Content-Range
   uint64 currentSize;
   Output* outputVal; // Usually points to a Job::SingleUrl
-  HTRequest* request;
   State state;
 
   unsigned stopLaterId; // glib idle function id, or 0 if none
@@ -218,12 +205,12 @@ const string& Download::uri() const { return uriVal; }
 Download::Output* Download::output() const { return outputVal; }
 void Download::setOutput(Download::Output* o) { outputVal = o; }
 
-void Download::pause() {
-  if (state == RUNNING) state = PAUSE_SCHEDULED;
-}
+// void Download::pause() {
+//   if (state == RUNNING) state = PAUSE_SCHEDULED;
+// }
 bool Download::paused() const { return state == PAUSED; }
-bool Download::pausedSoon() const {
-  return state == PAUSED || state == PAUSE_SCHEDULED; }
+// bool Download::pausedSoon() const {
+//   return state == PAUSED || state == PAUSE_SCHEDULED; }
 bool Download::failed() const { return state == ERROR; }
 bool Download::succeeded() const { return state == SUCCEEDED; }
 bool Download::interrupted() const { return state == INTERRUPTED; }

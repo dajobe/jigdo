@@ -57,6 +57,9 @@ public:
   inline JobList();
   /** Any Jobs still in the list are deleted */
   ~JobList();
+  /** Like the dtor; later call to the dtor will not cause anything to
+      happen */
+  void finalize();
 
   /** The GTK data structure that contains the linked list of items for this
       JobList. */

@@ -13,6 +13,11 @@
   <property name="default_height">430</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
+  <property name="decorated">True</property>
+  <property name="skip_taskbar_hint">False</property>
+  <property name="skip_pager_hint">False</property>
+  <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+  <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
   <signal name="delete_event" handler="on_window_delete_event"/>
 
   <child>
@@ -34,55 +39,89 @@
 	      <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
 	      <property name="toolbar_style">GTK_TOOLBAR_BOTH</property>
 	      <property name="tooltips">True</property>
+	      <property name="show_arrow">True</property>
 
 	      <child>
-		<widget class="button" id="toolbarOpen">
+		<widget class="GtkToolButton" id="toolbarOpen">
 		  <property name="border_width">1</property>
 		  <property name="visible">True</property>
 		  <property name="sensitive">False</property>
 		  <property name="tooltip" translatable="yes">Open new .jigdo file or URL</property>
-		  <property name="label">gtk-new</property>
-		  <property name="use_stock">True</property>
+		  <property name="stock_id">gtk-new</property>
+		  <property name="visible_horizontal">True</property>
+		  <property name="visible_vertical">True</property>
+		  <property name="is_important">False</property>
 		  <signal name="clicked" handler="setNotebookPage" object="pageOpen" last_modification_time="Sun, 02 Feb 2003 19:57:12 GMT"/>
 		</widget>
+		<packing>
+		  <property name="expand">False</property>
+		  <property name="homogeneous">True</property>
+		</packing>
 	      </child>
 
 	      <child>
-		<widget class="button" id="toolbarReuse">
+		<widget class="GtkToolButton" id="toolbarReuse">
 		  <property name="border_width">1</property>
 		  <property name="sensitive">False</property>
 		  <property name="tooltip" translatable="yes">Scan local filesystems for data needed by jigsaw downloads - useful when &quot;upgrading&quot; e.g. a CD image to a newer version</property>
 		  <property name="label" translatable="yes">Reuse files</property>
 		  <property name="use_underline">True</property>
-		  <property name="stock_pixmap">gtk-refresh</property>
+		  <property name="visible_horizontal">True</property>
+		  <property name="visible_vertical">True</property>
+		  <property name="is_important">False</property>
 		  <signal name="clicked" handler="setNotebookPage" object="pageReuse"/>
 		</widget>
-	      </child>
-
-	      <child>
-		<widget class="button" id="toolbarSettings">
-		  <property name="border_width">1</property>
-		  <property name="sensitive">False</property>
-		  <property name="tooltip" translatable="yes">Change preferences</property>
-		  <property name="label">gtk-properties</property>
-		  <property name="use_stock">True</property>
-		  <property name="new_group">True</property>
-		</widget>
 		<packing>
-		  <property name="new_group">True</property>
+		  <property name="expand">False</property>
+		  <property name="homogeneous">True</property>
 		</packing>
 	      </child>
 
 	      <child>
-		<widget class="button" id="toolbarExit">
+		<widget class="GtkSeparatorToolItem" id="separatortoolitem1">
+		  <property name="visible">True</property>
+		  <property name="draw">True</property>
+		  <property name="visible_horizontal">True</property>
+		  <property name="visible_vertical">True</property>
+		</widget>
+		<packing>
+		  <property name="expand">False</property>
+		  <property name="homogeneous">False</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkToolButton" id="toolbarSettings">
+		  <property name="border_width">1</property>
+		  <property name="sensitive">False</property>
+		  <property name="tooltip" translatable="yes">Change preferences</property>
+		  <property name="stock_id">gtk-properties</property>
+		  <property name="visible_horizontal">True</property>
+		  <property name="visible_vertical">True</property>
+		  <property name="is_important">False</property>
+		</widget>
+		<packing>
+		  <property name="expand">False</property>
+		  <property name="homogeneous">True</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkToolButton" id="toolbarExit">
 		  <property name="border_width">1</property>
 		  <property name="visible">True</property>
 		  <property name="tooltip" translatable="yes">Exit from Jigsaw Download</property>
-		  <property name="label">gtk-quit</property>
-		  <property name="use_stock">True</property>
+		  <property name="stock_id">gtk-quit</property>
+		  <property name="visible_horizontal">True</property>
+		  <property name="visible_vertical">True</property>
+		  <property name="is_important">False</property>
 		  <signal name="clicked" handler="on_toolbarExit_clicked"/>
 		  <accelerator key="Q" modifiers="GDK_MOD1_MASK" signal="clicked"/>
 		</widget>
+		<packing>
+		  <property name="expand">False</property>
+		  <property name="homogeneous">True</property>
+		</packing>
 	      </child>
 	    </widget>
 	  </child>
@@ -147,6 +186,8 @@
 		      <child>
 			<widget class="GtkEventBox" id="aboutBgnd">
 			  <property name="visible">True</property>
+			  <property name="visible_window">True</property>
+			  <property name="above_child">False</property>
 
 			  <child>
 			    <widget class="GtkVBox" id="vbox9">
@@ -181,6 +222,7 @@
 				<widget class="GtkButton" id="aboutJigdoButton">
 				  <property name="visible">True</property>
 				  <property name="relief">GTK_RELIEF_NONE</property>
+				  <property name="focus_on_click">True</property>
 				  <signal name="clicked" handler="on_aboutJigdoButton_clicked"/>
 
 				  <child>
@@ -190,6 +232,10 @@
 				      <property name="yalign">0.5</property>
 				      <property name="xscale">1</property>
 				      <property name="yscale">1</property>
+				      <property name="top_padding">0</property>
+				      <property name="bottom_padding">0</property>
+				      <property name="left_padding">0</property>
+				      <property name="right_padding">0</property>
 
 				      <child>
 					<widget class="GtkLabel" id="aboutJigdoButtonLabel">
@@ -249,8 +295,11 @@
 			    <widget class="GtkButton" id="openButton">
 			      <property name="visible">True</property>
 			      <property name="can_default">True</property>
+			      <property name="has_default">True</property>
 			      <property name="can_focus">True</property>
+			      <property name="has_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 			      <signal name="clicked" handler="on_openButton_clicked" last_modification_time="Wed, 05 Feb 2003 15:19:59 GMT"/>
 
 			      <child>
@@ -260,6 +309,10 @@
 				  <property name="yalign">0.5</property>
 				  <property name="xscale">0</property>
 				  <property name="yscale">0</property>
+				  <property name="top_padding">0</property>
+				  <property name="bottom_padding">0</property>
+				  <property name="left_padding">0</property>
+				  <property name="right_padding">0</property>
 
 				  <child>
 				    <widget class="GtkHBox" id="hbox95">
@@ -436,6 +489,7 @@
 			      <property name="label" translatable="yes">Browse...</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 			    </widget>
 			    <packing>
 			      <property name="left_attach">2</property>
@@ -454,6 +508,7 @@
 			      <property name="label" translatable="yes">Browse...</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 			    </widget>
 			    <packing>
 			      <property name="left_attach">2</property>
@@ -607,6 +662,7 @@ Note that any directory to be scanned must contain single files which would othe
 			  <property name="label" translatable="yes">Browse...</property>
 			  <property name="use_underline">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
+			  <property name="focus_on_click">True</property>
 			</widget>
 			<packing>
 			  <property name="padding">0</property>
@@ -634,6 +690,7 @@ Note that any directory to be scanned must contain single files which would othe
 			  <property name="can_default">True</property>
 			  <property name="can_focus">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
+			  <property name="focus_on_click">True</property>
 
 			  <child>
 			    <widget class="GtkHBox" id="hbox59">
@@ -684,6 +741,7 @@ Note that any directory to be scanned must contain single files which would othe
 			  <property name="label" translatable="yes">Clear cache</property>
 			  <property name="use_underline">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
+			  <property name="focus_on_click">True</property>
 			</widget>
 			<packing>
 			  <property name="padding">0</property>
@@ -797,6 +855,7 @@ Note that any directory to be scanned must contain single files which would othe
 				  <property name="visible">True</property>
 				  <property name="can_focus">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <property name="focus_on_click">True</property>
 				  <signal name="enter" handler="on_download_closeButton_enter" last_modification_time="Tue, 25 Feb 2003 22:09:53 GMT"/>
 				  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:10:02 GMT"/>
 				  <signal name="clicked" handler="on_download_closeButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:45 GMT"/>
@@ -825,6 +884,7 @@ Note that any directory to be scanned must contain single files which would othe
 				  <property name="visible">True</property>
 				  <property name="can_focus">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <property name="focus_on_click">True</property>
 				  <signal name="enter" handler="on_download_restartButton_enter" last_modification_time="Mon, 03 Mar 2003 16:05:10 GMT"/>
 				  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:46 GMT"/>
 				  <signal name="clicked" handler="on_download_restartButton_clicked" last_modification_time="Mon, 03 Mar 2003 16:05:21 GMT"/>
@@ -875,6 +935,7 @@ Note that any directory to be scanned must contain single files which would othe
 				  <property name="visible">True</property>
 				  <property name="can_focus">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <property name="focus_on_click">True</property>
 				  <signal name="enter" handler="on_download_stopButton_enter" last_modification_time="Tue, 25 Feb 2003 22:09:15 GMT"/>
 				  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:26 GMT"/>
 				  <signal name="clicked" handler="on_download_stopButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:33 GMT"/>
@@ -903,6 +964,7 @@ Note that any directory to be scanned must contain single files which would othe
 				  <property name="visible">True</property>
 				  <property name="can_focus">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <property name="focus_on_click">True</property>
 				  <signal name="enter" handler="on_download_pauseButton_enter" last_modification_time="Tue, 25 Feb 2003 18:23:27 GMT"/>
 				  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 18:23:57 GMT"/>
 				  <signal name="clicked" handler="on_download_pauseButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:22 GMT"/>
@@ -931,6 +993,7 @@ Note that any directory to be scanned must contain single files which would othe
 				  <property name="visible">True</property>
 				  <property name="can_focus">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <property name="focus_on_click">True</property>
 				  <signal name="enter" handler="on_download_startButton_enter" last_modification_time="Tue, 25 Feb 2003 22:08:55 GMT"/>
 				  <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:06 GMT"/>
 				  <signal name="clicked" handler="on_download_startButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:10:43 GMT"/>
@@ -1375,6 +1438,7 @@ x</property>
 			      <property name="can_default">True</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 
 			      <child>
 				<widget class="GtkAlignment" id="alignment3">
@@ -1383,6 +1447,10 @@ x</property>
 				  <property name="yalign">0.5</property>
 				  <property name="xscale">0</property>
 				  <property name="yscale">0</property>
+				  <property name="top_padding">0</property>
+				  <property name="bottom_padding">0</property>
+				  <property name="left_padding">0</property>
+				  <property name="right_padding">0</property>
 
 				  <child>
 				    <widget class="GtkHBox" id="hbox85">
@@ -1563,6 +1631,10 @@ just click Next...</property>
 			      <property name="yalign">0.5</property>
 			      <property name="xscale">1</property>
 			      <property name="yscale">0</property>
+			      <property name="top_padding">0</property>
+			      <property name="bottom_padding">0</property>
+			      <property name="left_padding">0</property>
+			      <property name="right_padding">0</property>
 
 			      <child>
 				<widget class="GtkButton" id="button127">
@@ -1572,6 +1644,7 @@ just click Next...</property>
 				  <property name="label" translatable="yes">...</property>
 				  <property name="use_underline">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <property name="focus_on_click">True</property>
 				</widget>
 			      </child>
 			    </widget>
@@ -1589,6 +1662,7 @@ just click Next...</property>
 			      <property name="can_default">True</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 
 			      <child>
 				<widget class="GtkAlignment" id="alignment5">
@@ -1597,6 +1671,10 @@ just click Next...</property>
 				  <property name="yalign">0.5</property>
 				  <property name="xscale">0</property>
 				  <property name="yscale">0</property>
+				  <property name="top_padding">0</property>
+				  <property name="bottom_padding">0</property>
+				  <property name="left_padding">0</property>
+				  <property name="right_padding">0</property>
 
 				  <child>
 				    <widget class="GtkHBox" id="hbox89">
@@ -1674,6 +1752,7 @@ just click Next...</property>
 			      <property name="label">gtk-go-back</property>
 			      <property name="use_stock">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 			    </widget>
 			  </child>
 
@@ -1683,6 +1762,7 @@ just click Next...</property>
 			      <property name="can_default">True</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 
 			      <child>
 				<widget class="GtkAlignment" id="alignment4">
@@ -1691,6 +1771,10 @@ just click Next...</property>
 				  <property name="yalign">0.5</property>
 				  <property name="xscale">0</property>
 				  <property name="yscale">0</property>
+				  <property name="top_padding">0</property>
+				  <property name="bottom_padding">0</property>
+				  <property name="left_padding">0</property>
+				  <property name="right_padding">0</property>
 
 				  <child>
 				    <widget class="GtkHBox" id="hbox86">
@@ -1815,6 +1899,7 @@ just click Next...</property>
 			      <property name="label" translatable="yes">_Automatic selection: Use &quot;netselect&quot; to find the best servers</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 			      <property name="active">False</property>
 			      <property name="inconsistent">False</property>
 			      <property name="draw_indicator">True</property>
@@ -1840,6 +1925,7 @@ just click Next...</property>
 				  <property name="label" translatable="yes">_Simple selection, by country name: </property>
 				  <property name="use_underline">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <property name="focus_on_click">True</property>
 				  <property name="active">False</property>
 				  <property name="inconsistent">False</property>
 				  <property name="draw_indicator">True</property>
@@ -1909,6 +1995,10 @@ just click Next...</property>
 				  <property name="yalign">0</property>
 				  <property name="xscale">1</property>
 				  <property name="yscale">0</property>
+				  <property name="top_padding">0</property>
+				  <property name="bottom_padding">0</property>
+				  <property name="left_padding">0</property>
+				  <property name="right_padding">0</property>
 
 				  <child>
 				    <widget class="GtkRadioButton" id="radiobutton3">
@@ -1918,6 +2008,7 @@ just click Next...</property>
 				      <property name="label" translatable="yes">Ad_vanced: </property>
 				      <property name="use_underline">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
 				      <property name="active">False</property>
 				      <property name="inconsistent">False</property>
 				      <property name="draw_indicator">True</property>
@@ -2167,6 +2258,7 @@ just click Next...</property>
 			      <property name="label">gtk-go-back</property>
 			      <property name="use_stock">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 			    </widget>
 			  </child>
 
@@ -2176,6 +2268,7 @@ just click Next...</property>
 			      <property name="can_default">True</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 
 			      <child>
 				<widget class="GtkAlignment" id="alignment9">
@@ -2184,6 +2277,10 @@ just click Next...</property>
 				  <property name="yalign">0.5</property>
 				  <property name="xscale">0</property>
 				  <property name="yscale">0</property>
+				  <property name="top_padding">0</property>
+				  <property name="bottom_padding">0</property>
+				  <property name="left_padding">0</property>
+				  <property name="right_padding">0</property>
 
 				  <child>
 				    <widget class="GtkHBox" id="hbox92">
@@ -2341,6 +2438,7 @@ just click Next...</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
 				      <signal name="enter" handler="on_download_closeButton_enter" last_modification_time="Tue, 25 Feb 2003 22:09:53 GMT"/>
 				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:10:02 GMT"/>
 				      <signal name="clicked" handler="on_download_closeButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:45 GMT"/>
@@ -2369,6 +2467,7 @@ just click Next...</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
 				      <signal name="enter" handler="on_download_restartButton_enter" last_modification_time="Mon, 03 Mar 2003 16:05:10 GMT"/>
 				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:46 GMT"/>
 				      <signal name="clicked" handler="on_download_restartButton_clicked" last_modification_time="Mon, 03 Mar 2003 16:05:21 GMT"/>
@@ -2419,6 +2518,7 @@ just click Next...</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
 				      <signal name="enter" handler="on_download_stopButton_enter" last_modification_time="Tue, 25 Feb 2003 22:09:15 GMT"/>
 				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:26 GMT"/>
 				      <signal name="clicked" handler="on_download_stopButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:33 GMT"/>
@@ -2447,6 +2547,7 @@ just click Next...</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
 				      <signal name="enter" handler="on_download_pauseButton_enter" last_modification_time="Tue, 25 Feb 2003 18:23:27 GMT"/>
 				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 18:23:57 GMT"/>
 				      <signal name="clicked" handler="on_download_pauseButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:11:22 GMT"/>
@@ -2475,6 +2576,7 @@ just click Next...</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
 				      <signal name="enter" handler="on_download_startButton_enter" last_modification_time="Tue, 25 Feb 2003 22:08:55 GMT"/>
 				      <signal name="leave" handler="on_download_button_leave" last_modification_time="Tue, 25 Feb 2003 22:09:06 GMT"/>
 				      <signal name="clicked" handler="on_download_startButton_clicked" last_modification_time="Tue, 25 Feb 2003 23:10:43 GMT"/>
@@ -2853,6 +2955,11 @@ just click Next...</property>
   <property name="modal">False</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
+  <property name="decorated">True</property>
+  <property name="skip_taskbar_hint">False</property>
+  <property name="skip_pager_hint">False</property>
+  <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
+  <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="gtk_widget_hide" object="filesel"/>
 
@@ -2862,6 +2969,7 @@ just click Next...</property>
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="gtk_widget_hide" object="filesel"/>
     </widget>
   </child>
@@ -2872,6 +2980,7 @@ just click Next...</property>
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
     </widget>
   </child>
 </widget>
@@ -2884,6 +2993,11 @@ just click Next...</property>
   <property name="modal">False</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
+  <property name="decorated">True</property>
+  <property name="skip_taskbar_hint">False</property>
+  <property name="skip_pager_hint">False</property>
+  <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+  <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
 
   <child>
     <widget class="GtkVBox" id="vbox26">
@@ -2913,6 +3027,7 @@ just click Next...</property>
 		  <property name="label" translatable="yes">OK</property>
 		  <property name="use_underline">True</property>
 		  <property name="relief">GTK_RELIEF_NORMAL</property>
+		  <property name="focus_on_click">True</property>
 		</widget>
 	      </child>
 
@@ -2924,6 +3039,7 @@ just click Next...</property>
 		  <property name="label" translatable="yes">Apply</property>
 		  <property name="use_underline">True</property>
 		  <property name="relief">GTK_RELIEF_NORMAL</property>
+		  <property name="focus_on_click">True</property>
 		</widget>
 	      </child>
 
@@ -2935,6 +3051,7 @@ just click Next...</property>
 		  <property name="label" translatable="yes">Cancel</property>
 		  <property name="use_underline">True</property>
 		  <property name="relief">GTK_RELIEF_NORMAL</property>
+		  <property name="focus_on_click">True</property>
 		</widget>
 	      </child>
 	    </widget>
@@ -3041,6 +3158,7 @@ just click Next...</property>
 	      <property name="label" translatable="yes">Display tooltips</property>
 	      <property name="use_underline">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="active">True</property>
 	      <property name="inconsistent">False</property>
 	      <property name="draw_indicator">True</property>
@@ -3059,6 +3177,7 @@ just click Next...</property>
 	      <property name="label" translatable="yes">Switch to download screen once download of a .jigdo file is complete</property>
 	      <property name="use_underline">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="active">True</property>
 	      <property name="inconsistent">False</property>
 	      <property name="draw_indicator">True</property>
@@ -3083,6 +3202,7 @@ just click Next...</property>
 		  <property name="label" translatable="yes">Save .jigdo files in destination directory</property>
 		  <property name="use_underline">True</property>
 		  <property name="relief">GTK_RELIEF_NORMAL</property>
+		  <property name="focus_on_click">True</property>
 		  <property name="active">False</property>
 		  <property name="inconsistent">False</property>
 		  <property name="draw_indicator">True</property>
@@ -3101,6 +3221,7 @@ just click Next...</property>
 		  <property name="label" translatable="yes">Save .template files in destination directory</property>
 		  <property name="use_underline">True</property>
 		  <property name="relief">GTK_RELIEF_NORMAL</property>
+		  <property name="focus_on_click">True</property>
 		  <property name="active">False</property>
 		  <property name="inconsistent">False</property>
 		  <property name="draw_indicator">True</property>
@@ -3401,6 +3522,11 @@ just click Next...</property>
   <property name="default_height">300</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
+  <property name="decorated">True</property>
+  <property name="skip_taskbar_hint">False</property>
+  <property name="skip_pager_hint">False</property>
+  <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+  <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
   <signal name="delete_event" handler="gtk_widget_hide" object="license"/>
 
   <child>
@@ -3417,6 +3543,8 @@ just click Next...</property>
 	  <property name="visible">True</property>
 	  <property name="can_focus">True</property>
 	  <property name="editable">False</property>
+	  <property name="overwrite">False</property>
+	  <property name="accepts_tab">True</property>
 	  <property name="justification">GTK_JUSTIFY_LEFT</property>
 	  <property name="wrap_mode">GTK_WRAP_WORD</property>
 	  <property name="cursor_visible">False</property>

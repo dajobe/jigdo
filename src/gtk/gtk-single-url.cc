@@ -14,6 +14,7 @@
 #include <config.h>
 
 #include <time.h>
+#include <errno.h>
 
 #include <autoptr.hh>
 #include <gtk-single-url.hh>
@@ -105,7 +106,7 @@ bool GtkSingleUrl::run() {
 }
 //______________________________________________________________________
 
-void GtkSingleUrl::openOutputAndRun(bool pragmaNoCache) {
+void GtkSingleUrl::openOutputAndRun(/*bool pragmaNoCache*/) {
   // Open output file
   Paranoid(!childMode);
   Paranoid(destStream == 0);
@@ -126,7 +127,7 @@ void GtkSingleUrl::openOutputAndRun(bool pragmaNoCache) {
   status = _("Waiting...");
   if (job == 0) job = singleUrl = new Job::SingleUrl(this, uri);
   singleUrl->setDestination(destStream.get(), 0, 0);
-  singleUrl->setPragmaNoCache(pragmaNoCache);
+  //singleUrl->setPragmaNoCache(pragmaNoCache);
   singleUrl->run();
 }
 //________________________________________
@@ -724,7 +725,7 @@ void GtkSingleUrl::restart() {
   // Start the new download
   status = _("Download was restarted - waiting...");
   treeViewStatus = _("Restarted - waiting");
-  openOutputAndRun(true);
+  openOutputAndRun(/*true*/);
   state = RUNNING;
   progress.erase();
   updateWindow();

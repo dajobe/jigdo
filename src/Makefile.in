@@ -1,6 +1,6 @@
 # Project: Jigdo (Jigsaw download)
 #  __   _
-#  |_) /|  Copyright (C) 2001-2003  |  richard@
+#  |_) /|  Copyright (C) 2001-2004  |  richard@
 #  | \/¯|  Richard Atterer          |  atterer.net
 #  ¯ '` ¯
 srcdir =	@srcdir@
@@ -9,21 +9,26 @@ VPATH =		@srcdir@
 prefix =	@prefix@
 datadir =	@datadir@
 
-SUBDIRS =	gtk job net util
-SUBINCLUDE =	-I"$(srcdir)/gtk" -I"$(srcdir)/job" -I"$(srcdir)/net" \
-		-I"$(srcdir)/util" 
+SUBDIRS =	glibcurl gtk job net util
+SUBINCLUDE =	-I"$(srcdir)/glibcurl" -I"$(srcdir)/gtk" -I"$(srcdir)/job" \
+		-I"$(srcdir)/net" -I"$(srcdir)/util"
+
+# Prevent these variables from being taken from the environment
+X =
+Y =
 
 # -I. to pick up config.h, _FILE_OFFSET_BITS for big file support under Linux
 CPPFLAGS =	@CPPFLAGS@ -I. -I"$(srcdir)" $(SUBINCLUDE) \
 		-D_FILE_OFFSET_BITS=64 @DEFS@ \
 		-DPACKAGE_DATA_DIR="\"$(datadir)/jigdo/\"" \
 		-DPACKAGE_LOCALE_DIR="\"$(datadir)/locale\"" \
-		$(GTKCFLAGS) $(LIBWWWCFLAGS)
+		$(GTKCFLAGS) $(CURLCFLAGS) # $(LIBWWWCFLAGS)
 CC =		@CC@
 CFLAGS =	@CFLAGS@ $(X)
 CXX =		@CXX@
 CXXFLAGS =	@CXXFLAGS@ $(X)
 LD =		@CXX@
+LD_C =		@CC@
 LDFLAGS =	@LIBS@ @LDFLAGS@ $(Y)
 AWK =		@AWK@
 GLADECODE =	glade-2 -w # Create code from .glade file
@@ -32,12 +37,14 @@ DOC =		doc++ --tables --footer /dev/null --filenames --html \
 WINDRES =	windres
 GTKCFLAGS =	@GTKCFLAGS@
 GTKLIBS =	@GTKLIBS@
-LIBWWWCFLAGS =	@LIBWWWCFLAGS@
-LIBWWWLIBS =	@LIBWWWLIBS@
+#LIBWWWCFLAGS =	@LIBWWWCFLAGS@
+#LIBWWWLIBS =	@LIBWWWLIBS@
+CURLCFLAGS =	@CURLCFLAGS@
+CURLLIBS =	@CURLLIBS@
 
 programs =	jigdo-file@exe@ @IF_GUI@ jigdo@exe@
-debug-programs = @IF_DEBUG@ torture@exe@
-libwww-hacks =	@IF_LIBWWW_HACKS@ net/libwww-HTFTP.o net/libwww-HTHost.o
+debug-programs = @IF_DEBUG@ torture@exe@ glibcurl/glibcurl-example@exe@
+#libwww-hacks =	@IF_LIBWWW_HACKS@ net/libwww-HTFTP.o net/libwww-HTHost.o
 windows-res =	@IF_WINDOWS@ jigdo.res
 test-programs =	job/jigdo-io-test@exe@ job/makeimagedl-info-test@exe@ \
 		net/proxyguess-test@exe@ \
@@ -46,29 +53,31 @@ test-programs =	job/jigdo-io-test@exe@ job/makeimagedl-info-test@exe@ \
 		util/mimestream-test@exe@ util/string-utf-test@exe@
 
 # fmt -s -w1|sed 's%[^a-zA-Z0-9./-]\+%%g'|sort|fmt -w60|sed 's%$% \\%'
-objects-jigdo =	compat.o gtk/gtk-makeimage.o gtk/gtk-single-url.o gtk/gui.o \
-		gtk/interface.o gtk/jigdo.o gtk/jobline.o gtk/joblist.o \
-		gtk/messagebox.o gtk/support.o gtk/treeiter.o jigdoconfig.o \
-		job/cached-url.o job/datasource.o job/jigdo-io.o \
-		job/makeimage.o job/makeimagedl.o job/makeimagedl-info.o \
-		job/single-url.o \
-		net/download.o net/glibwww-callbacks.o net/glibwww-init.o \
-		net/proxyguess.o util/bstream.o util/configfile.o util/glibc-getopt.o \
-		util/glibc-getopt1.o util/glibc-md5.o util/gunzip.o \
-		util/log.o util/md5sum.o util/progress.o util/string-utf.o \
-		$(libwww-hacks) $(windows-res) \
+objects-jigdo =	compat.o glibcurl/glibcurl.o gtk/gtk-makeimage.o \
+		gtk/gtk-single-url.o gtk/gui.o gtk/interface.o gtk/jigdo.o \
+		gtk/jobline.o gtk/joblist.o gtk/messagebox.o gtk/support.o \
+		gtk/treeiter.o jigdoconfig.o job/cached-url.o \
+		job/datasource.o job/jigdo-io.o job/makeimage.o \
+		job/makeimagedl-info.o job/makeimagedl.o job/single-url.o \
+		net/download.o net/proxyguess.o util/bstream.o \
+		util/configfile.o util/glibc-getopt.o util/glibc-getopt1.o \
+		util/glibc-md5.o util/gunzip.o util/log.o util/md5sum.o \
+		util/progress.o util/string-utf.o \
+		$(windows-res) \
 		util/debug.o # this must come last!
+#^ net/glibwww-callbacks.o net/glibwww-init.o
 objects-jigdo-file = cachefile.o compat.o jigdo-file-cmd.o jigdo-file.o \
 		jigdoconfig.o mkimage.o mkjigdo.o mktemplate.o \
-		partialmatch.o recursedir.o scan.o util/bstream.o util/configfile.o \
-		util/glibc-getopt.o util/glibc-getopt1.o util/glibc-md5.o \
-		util/log.o util/md5sum.o util/rsyncsum.o util/string.o \
-		zstream.o \
+		partialmatch.o recursedir.o scan.o util/bstream.o \
+		util/configfile.o util/glibc-getopt.o util/glibc-getopt1.o \
+		util/glibc-md5.o util/log.o util/md5sum.o util/rsyncsum.o \
+		util/string.o zstream.o \
 		util/debug.o # this must come last!
 objects-torture = cachefile.o compat.o jigdoconfig.o mkimage.o mkjigdo.o \
 		mktemplate.o partialmatch.o recursedir.o scan.o torture.o \
-		util/bstream.o util/configfile.o util/glibc-md5.o util/log.o util/md5sum.o \
-		util/rsyncsum.o util/string.o zstream.o \
+		util/bstream.o util/configfile.o util/glibc-md5.o \
+		util/log.o util/md5sum.o util/rsyncsum.o util/string.o \
+		zstream.o \
 		util/debug.o # this must come last!
 #______________________________
 
@@ -150,7 +159,7 @@ strip:
 		done
 
 TEST-DEFAULTOBJS = util/log.o util/string-utf.o util/debug.o
-TEST-LDFLAGS =	$(LDFLAGS) $(GTKLIBS) # $(LIBWWWLIBS)
+TEST-LDFLAGS =	$(LDFLAGS) $(GTKLIBS)
 EXE =@exe@
 # Compile only
 test-c:		$(test-programs)
@@ -188,7 +197,11 @@ jigdo.res:	jigdo.rc jigdo32.ico
 
 jigdo@exe@:	$(objects-jigdo)
 		$(LD) -o $@ $(objects-jigdo) $(LDFLAGS) $(GTKLIBS) \
-		    $(LIBWWWLIBS) @IF_WINDOWS@@IF_NODEBUG@ -mwindows
+		    $(CURLLIBS) @IF_WINDOWS@ @IF_NODEBUG@ -mwindows
+glibcurl/glibcurl-example@exe@:	glibcurl/glibcurl-example.o \
+		    glibcurl/glibcurl.o
+		$(LD_C) -o $@ glibcurl/glibcurl-example.o \
+		    glibcurl/glibcurl.o $(LDFLAGS) $(GTKLIBS) $(CURLLIBS)
 jigdo-file@exe@: $(objects-jigdo-file)
 		$(LD) -o $@ $(objects-jigdo-file) $(LDFLAGS)
 torture@exe@:	$(objects-torture)

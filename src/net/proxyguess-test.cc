@@ -18,10 +18,16 @@
 #include <algorithm>
 #include <map>
 #include <sstream>
+#include <glib.h>
 
 #include <debug.hh>
-#include <glibwww.hh>
 #include <log.hh>
+
+#define glibcurl_add_noproxy glibcurl_add_noproxy_ORIG
+#define glibcurl_add_proxy glibcurl_add_proxy_ORIG
+#include <glibcurl.h>
+#undef glibcurl_add_noproxy
+#undef glibcurl_add_proxy
 //______________________________________________________________________
 
 #if WINDOWS
@@ -79,13 +85,13 @@ namespace {
 
 }
 
-void glibwww_add_proxy(const gchar *protocol, const gchar *proxy) {
+void glibcurl_add_proxy(const gchar *protocol, const gchar *proxy) {
   if (!proxySettings.empty()) proxySettings += ',';
   proxySettings += protocol;
   proxySettings += '=';
   proxySettings += proxy;
 }
-void glibwww_add_noproxy(const gchar *host) {
+void glibcurl_add_noproxy(const gchar *host) {
   if (!proxySettings.empty()) proxySettings += ',';
   proxySettings += "noproxy=";
   proxySettings += host;

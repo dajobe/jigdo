@@ -1,7 +1,7 @@
 /* $Id$ -*- C++ -*-
   __   _
-  |_) /|  Copyright (C) 2001-2003  |  richard@
-  | \/¯|  Richard Atterer          |  atterer.net
+  |_) /|  Copyright (C) 2004  |  richard@
+  | \/¯|  Richard Atterer     |  atterer.net
   ¯ '` ¯
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License, version 2. See
@@ -9,7 +9,7 @@
 
   Download data from URL, write to output function, report on progress
 
-  This is the one and only file which accesses libwww directly.
+  This is the one and only file which accesses libcurl directly.
 
 */
 
@@ -23,11 +23,11 @@
 #if HAVE_UNAME
 #  include <sys/utsname.h>
 #endif
+#include <curl/curl.h>
 
 #include <debug.hh>
 #include <download.hh>
-#include <glibwww.hh>
-#include <libwww.hh>
+#include <glibcurl.h>
 #include <log.hh>
 #include <string-utf.hh>
 //______________________________________________________________________
@@ -38,51 +38,18 @@ DEBUG_UNIT("download")
 
 namespace {
 
-  Logger libwwwDebug("libwww");
+  Logger curlDebug("curl");
 
-  extern "C"
-  int tracer(const char* fmt, va_list args) {
-    vfprintf(stderr, fmt, args);
-    return HT_OK;
-  }
-
-  BOOL nonono(HTRequest*, HTAlertOpcode, int, const char*, void*,
-              HTAlertPar*) {
-    return NO;
-  }
 }
+
+// CURLSH* Download::shHandle = 0;
 
 // Initialize (g)libwww
 void Download::init() {
-  HTAlertInit();
-  if (libwwwDebug) {
-    HTSetTraceMessageMask("flbtspuhox");
-    HTTrace_setCallback(tracer);
-  }
-
-  HTEventInit(); // Necessary on Windows to initialize WinSock
-  HTNet_setMaxSocket(32);
-
-  /* These calls are necessary for redirections to work. (Why? Don't
-     ask why - this is libwww, after all...) */
-  HTList* converters = HTList_new();
-  HTConverterInit(converters); // Register the default set of converters
-  HTFormat_setConversion(converters); // Global converters for all requests
-
-  HTAlert_setInteractive(YES);
-  // HTPrint_setCallback(printer);
-  glibwww_init("jigdo", JIGDO_VERSION);
-
-  HTAlert_add(Download::alertCallback, HT_A_PROGRESS); // Progress reports
-  HTAlert_add(nonono, static_cast<HTAlertOpcode>(
-              HT_A_CONFIRM | HT_A_PROMPT | HT_A_SECRET | HT_A_USER_PW));
-  // To get notified of errors, redirects etc.
-  HTNet_addAfter(Download::afterFilter, NULL /*template*/, 0 /*param*/,
-                 HT_ALL, HT_FILTER_MIDDLE);
-
-  HTFTP_setTransferMode(FTP_BINARY_TRANSFER_MODE);
-
-  //HTHost_setActivateRequestCallback(Download::activateRequestCallback);
+  glibcurl_init();
+//   shHandle = curl_share_init();
+//   curl_share_setopt(shHandle, CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
+  glibcurl_set_callback(glibcurlCallback, 0);
 
   if (userAgent.empty()) {
     userAgent = "jigdo/" JIGDO_VERSION;
@@ -115,234 +82,136 @@ void Download::init() {
       userAgent += ')';
     }
 #   endif
-    userAgent += " libwww/";
-    userAgent += HTLib_version();
+    userAgent += " (+http://atterer.net/jigdo/) ";
+    //userAgent += curl_version();
+    const char* p = curl_version();
+    while (*p != ' ' && *p != '\0') userAgent += *p++;
+    userAgent += '\0';
     debug("User-Agent: %1", userAgent);
   }
 }
-//______________________________________________________________________
 
-void Download::uriJoin(string* dest, const string& base, const string& rel) {
-  if (HTURL_isAbsolute(rel.c_str())) {
-    *dest = rel;
-  } else {
-    char* joined = HTParse(rel.c_str(), base.c_str(), PARSE_ALL);
-    *dest = HTSimplify(&joined);
-    HT_FREE(joined);
-  }
+void Download::cleanup() {
+  debug("cleanup");
+  // Dumps core when called - wish I knew why:
+  //curl_share_cleanup(shHandle);
+  glibcurl_cleanup();
 }
 //______________________________________________________________________
 
-namespace {
-
-  inline Download* getDownload(HTRequest* request) {
-    return static_cast<Download*>(HTRequest_context(request));
-  }
-  inline Download* getDownload(HTStream* stream) {
-    return reinterpret_cast<Download*>(stream);
-  }
-
+void Download::uriJoin(string* dest, const string& /*base*/, const string& rel) {
+#warning uriJoin
+  *dest = rel;
+//   if (HTURL_isAbsolute(rel.c_str())) {
+//     *dest = rel;
+//   } else {
+//     char* joined = HTParse(rel.c_str(), base.c_str(), PARSE_ALL);
+//     *dest = HTSimplify(&joined);
+//     HT_FREE(joined);
+//   }
 }
 //______________________________________________________________________
 
 Download::Download(const string& uri, Output* o)
-    : uriVal(uri), resumeOffsetVal(0), resumeChecked(true), currentSize(0),
-      outputVal(o), request(0), state(CREATED), stopLaterId(0),
-      insideNewData(false) {
-  static const HTStreamClass downloadWriter = {
-    "jigdoDownloadWriter", flush, free, abort, putChar, putString, write
-  };
-  vptr = &downloadWriter;
-
-  /* The code below (e.g. in putChar()) silently assumes that the first data
-     member's address of a Download object is identical to the object's
-     address. The C++ standard makes no guarantee about this. :-/ */
-  Assert(static_cast<void*>(this) == static_cast<void*>(&vptr));
-  request = HTRequest_new();
-
-  // Store within the HTRequest object a ptr to the corresponding Download
-  HTRequest_setContext(request, static_cast<void*>(this));
-
-  HTStream* writer = reinterpret_cast<HTStream*>(this); // Shudder... :-)
-  HTRequest_setOutputFormat(request, WWW_SOURCE); // Raw data, no headers...
-  HTRequest_setOutputStream(request, writer); // is sent to writer
-  //HTRequest_setDebugStream(request, NULL); // body different from 200 OK
-  HTRequest_setAnchor(request, HTAnchor_findAddress(uriVal.c_str()));
-
-  // Remove libwww's User-Agent field and add our own
-  HTRequest_setRqHd(request,
-      static_cast<HTRqHd>(HTRequest_rqHd(request) & ~HT_C_USER_AGENT));
-  HTRequest_addExtraHeader(request, "User-Agent",
-                           const_cast<char*>(userAgent.c_str()));
+    : handle(0), uriVal(uri), resumeOffsetVal(0), currentSize(0),
+      outputVal(o), state(CREATED), stopLaterId(0), insideNewData(false) {
+  /* string::data() just points at the "raw" memory that contains the string
+     data. In contrast, string::c_str() may create a temporary buffer, add
+     the null byte, and destroy that buffer during the next method invocation
+     on that string. Since libcurl needs access to the URL all the time,
+     using c_str() seems unwise/unportable. Add terminator to data()
+     instead. */
+  uriVal += '\0';
 }
 //________________________________________
 
 Download::~Download() {
-  debug("~Download");
-  Assert(insideNewData == false);
-  stop();
-
-  if (request != 0) HTRequest_delete(request);
+  debug("~Download %1", uriVal.data());
+  Assert(!insideNewData);
+  //   stop();
+  if (handle != 0) {
+    glibcurl_remove(handle);
+    debug("~Download: curl_easy_cleanup(%1)", (void*)handle);
+    curl_easy_cleanup(handle);
+  }
   if (stopLaterId != 0) g_source_remove(stopLaterId);
 }
 //______________________________________________________________________
 
-void Download::setPragmaNoCache(bool pragmaNoCache) {
-  Paranoid(state == CREATED || failed() || succeeded() || interrupted());
-  // Force reload from originating server, bypassing proxies?
-  if (pragmaNoCache)
-    HTRequest_addGnHd(request, HT_G_PRAGMA_NO_CACHE);
-  else
-    HTRequest_setGnHd(request, static_cast<HTGnHd>(HTRequest_gnHd(request)
-                                                   & ~HT_G_PRAGMA_NO_CACHE));
-}
+// void Download::setPragmaNoCache(bool pragmaNoCache) {
+//   Paranoid(state == CREATED || failed() || succeeded() || interrupted());
+//   // Force reload from originating server, bypassing proxies?
+//   if (pragmaNoCache)
+//     HTRequest_addGnHd(request, HT_G_PRAGMA_NO_CACHE);
+//   else
+//     HTRequest_setGnHd(request, static_cast<HTGnHd>(HTRequest_gnHd(request)
+//                                                    & ~HT_G_PRAGMA_NO_CACHE));
+// }
 
-/* Important: Our HTRequest object can be used several times - we must ensure
-   that any non-default settings (e.g. "Range" header) are reset before
-   reusing it. */
+/* Important: The handle can be used several times - we must ensure that any
+   non-default settings (e.g. "Range" header) are reset before reusing it. */
 void Download::run() {
   debug("run resumeOffset=%1", resumeOffset());
   Assert(outputVal != 0); // Must have set up output
-  Paranoid(request != 0); // Don't call this after stop()
-  //Assert(destroyRequestId == 0); // No pending callback allowed from now on
-  state = RUNNING;
-  currentSize = resumeOffset();
 
-  // Shall we resume the download from a certain offset?
-  HTRequest_deleteRange(request); // Delete old range, if any
-  if (resumeOffset() > 0) {
-    /* TODO: If we contacted the host earlier, we could use
-       HTHost_isRangeUnitAcceptable() to check whether the host accepts range
-       requests. */
+  if (handle == 0) {    
+    handle = curl_easy_init();
+    Assert(handle != 0);
 
-    // range can be "345-999" (both inclusive) or "345-"; offsets start at 0
-    string range;
-    append(range, resumeOffset());
-    range += '-';
-    HTRequest_addRange(request, "bytes", const_cast<char*>(range.c_str()));
-    /* A server can ignore the range for various reasons (unsupported,
-       requested offset outside file) - this can be detected by the
-       presence/absence of a content-range header in its answer (header
-       present and "206 Partial Response" <=> partial retrieval OK). Check
-       later whether Content-Range is present and correct. */
-    resumeChecked = false;
+    // Set URL
+    curl_easy_setopt(handle, CURLOPT_URL, uriVal.data());
+
+    if (curlDebug) {
+      // Enable debug output
+      curl_easy_setopt(handle, CURLOPT_VERBOSE, 1);
+    }
+    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 1);
+    // Follow redirects
+    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1);
+    // Enable referer for HTTP redirs (CURLOPT_REFERER to be set by creator)
+    curl_easy_setopt(handle, CURLOPT_AUTOREFERER, 1);
+    // Set user agent
+    curl_easy_setopt(handle, CURLOPT_USERAGENT, userAgent.data());
+
+    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, curlWriter);
+    curl_easy_setopt(handle, CURLOPT_WRITEDATA, this);
+    curl_easy_setopt(handle, CURLOPT_PRIVATE, this);
+    
+    //curl_easy_setopt(handle, CURLOPT_SHARE, shHandle);
+
+    glibcurl_add(handle);
   }
 
-  if (HTLoad(request, NO) == NO) generateError();
+  //Paranoid(handle != 0); // Don't call this after stop()
+  state = RUNNING;
+
+  // Shall we resume the download from a certain offset?
+  currentSize = resumeOffset();
+  curl_easy_setopt(handle, CURLOPT_RESUME_FROM_LARGE, resumeOffset());
+
+  // TODO: CURLOPT_PROXY*
+
   return;
 }
 //______________________________________________________________________
 
-/* Implementation for the libwww HTStream functionality - forwards the
-   calls to the Output object.
-   Return codes: HT_WOULD_BLOCK, HT_ERROR, HT_OK, >0 to pass back. */
+size_t Download::curlWriter(void* data, size_t size, size_t nmemb,
+                            void* selfPtr) {
+  Download* self = static_cast<Download*>(selfPtr);
+  unsigned len = size * nmemb;
 
-int Download::free(HTStream* me) {
-  Download* self = getDownload(me);
-  debug("free %1", self);
-  HTRequest_setContext(self->request, 0);
-  Assert(!self->insideNewData);
-  return HT_OK;
-}
-#if DEBUG
-int Download::flush(HTStream* me) {
-  debug("flush %1", getDownload(me));
-  return HT_OK;
-}
-int Download::abort(HTStream* me, HTList*) {
-  debug("abort %1", getDownload(me));
-  return HT_OK;
-}
-#else
-int Download::flush(HTStream*) { return HT_OK; }
-int Download::abort(HTStream*, HTList*) { return HT_OK; }
-#endif
-//________________________________________
-
-int Download::putChar(HTStream* me, char c) {
-  Download* self = getDownload(me);
-  if (self->stopLaterId != 0) return HT_OK;
-
+  if (self->stopLaterId != 0) return len;
   self->insideNewData = true;
-  if (!self->resumeChecked && self->resumeCheck()) {
-    self->insideNewData = false;
-    return HT_ERROR;
-  }
-  if (self->state == PAUSE_SCHEDULED) self->pauseNow();
-  self->currentSize += 1;
-  self->outputVal->download_data(reinterpret_cast<const byte*>(&c),
-                                 1, self->currentSize);
-  self->insideNewData = false;
-  return HT_OK;
-}
-int Download::putString(HTStream* me, const char* s) {
-  Download* self = getDownload(me);
-  if (self->stopLaterId != 0) return HT_OK;
-  self->insideNewData = true;
-  if (!self->resumeChecked && self->resumeCheck()) {
-    self->insideNewData = false;
-    return HT_ERROR;
-  }
-  if (self->state == PAUSE_SCHEDULED) self->pauseNow();
-  size_t len = strlen(s);
+  //if (self->state == PAUSE_SCHEDULED) self->pauseNow();
   self->currentSize += len;
-  self->outputVal->download_data(reinterpret_cast<const byte*>(s),
+  self->outputVal->download_data(reinterpret_cast<const byte*>(data),
                                  len, self->currentSize);
   self->insideNewData = false;
-  return HT_OK;
-}
-int Download::write(HTStream* me, const char* s, int l) {
-  Download* self = getDownload(me);
-  self->insideNewData = true;
-  if (self->stopLaterId != 0) return HT_OK;
-  if (!self->resumeChecked && self->resumeCheck()) {
-    self->insideNewData = false;
-    return HT_ERROR;
-  }
-  if (self->state == PAUSE_SCHEDULED) self->pauseNow();
-  size_t len = static_cast<size_t>(l);
-  self->currentSize += len;
-  self->outputVal->download_data(reinterpret_cast<const byte*>(s),
-                                 len, self->currentSize);
-  self->insideNewData = false;
-  return HT_OK;
+  return len;
 }
 //______________________________________________________________________
 
-bool Download::resumeCheck() {
-  resumeChecked = true;
-
-  HTNet* net = HTRequest_net(request);
-  unsigned protocol = HTProtocol_id(HTNet_protocol(net));
-  if (protocol != 80 && protocol != 21) return false;
-  // The check below only works for HTTP (and FTP in hacked libwww 5.4.0)
-
-  do { // Never loops, just to break out
-    HTAssocList* ranges = HTResponse_range(HTRequest_response(request));
-    if (ranges == 0) break;
-    HTAssoc* r = static_cast<HTAssoc*>(HTAssocList_nextObject(ranges));
-    if (r == 0) break;
-    if (strcmp(HTAssoc_name(r), "bytes") != 0) break;
-    const char* s = HTAssoc_value(r);
-    if (s == 0) break;
-    uint64 startOff = 0;
-    while (*s >= '0' && *s <= '9') startOff = startOff * 10 + (*s++ - '0');
-    debug("resumeCheck: resumeOffsetVal=%1, server offset=%2",
-          resumeOffset(), startOff);
-    if (startOff == resumeOffset())
-      return false;
-  } while (false);
-
-  // Error, resume not possible (e.g. because it's a HTTP 1.0 server)
-  debug("resumeCheck: Resume not supported");
-  stop();
-  state = ERROR;
-  string error = _("Resume not supported by server");
-  outputVal->download_failed(&error);
-  return true;
-}
-//______________________________________________________________________
-
+#if 0
 // Function which is called by libwww whenever anything happens for a request
 BOOL Download::alertCallback(HTRequest* request, HTAlertOpcode op,
                              int /*msgnum*/, const char* /*dfault*/,
@@ -392,8 +261,30 @@ BOOL Download::alertCallback(HTRequest* request, HTAlertOpcode op,
 
   return YES; // Value only relevant for op == HT_A_CONFIRM
 }
+#endif
 //______________________________________________________________________
 
+void Download::glibcurlCallback(void*) {
+  int inQueue;
+  while (true) {
+    CURLMsg* msg = curl_multi_info_read(glibcurl_handle(), &inQueue);
+    if (msg == 0) break;
+    char* privatePtr;
+    curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &privatePtr);
+    Download* download = reinterpret_cast<Download*>(privatePtr);
+    if (msg->msg == CURLMSG_DONE) {
+      debug("glibcurlCallback: Download %1 done, code %2", download,
+            msg->data.result);
+      download->state = SUCCEEDED;
+      download->outputVal->download_succeeded();
+    } else {
+      debug("glibcurlCallback: Download %1 not done, code %2", download,
+            msg->data.result);
+    }
+  }
+}
+
+#if 0
 namespace {
   struct libwwwError { int code; const char* msg; const char* type; };
   libwwwError libwwwErrors[] = { HTERR_ENGLISH_INITIALIZER };
@@ -445,153 +336,163 @@ int Download::afterFilter(HTRequest* request, HTResponse* /*response*/,
   self->generateError();
   return HT_OK;
 }
+#endif
 //______________________________________________________________________
-
-/* This is dirty, dirty - don't look... Unfortunately, the socket used for
-   FTP data connections isn't publically accessible. */
-
-extern "C" {
-
-  // Taken from libwww, HTFTP.c
-  typedef enum _HTFTPState {
-    FTP_SUCCESS = -2,
-    FTP_ERROR = -1,
-    FTP_BEGIN = 0,
-    FTP_NEED_CCON,                                   /* Control connection */
-    FTP_NEED_LOGIN,
-    FTP_NEED_DCON,                                      /* Data connection */
-    FTP_NEED_DATA,
-    FTP_NEED_SERVER                              /* For directory listings */
-  } HTFTPState;
-
-  // Taken from libwww, HTFTP.c
-  typedef struct _ftp_ctrl {
-    HTChunk *           cmd;
-    int                 repcode;
-    char *              reply;
-    char *              uid;
-    char *              passwd;
-    char *              account;
-    HTFTPState          state;                  /* State of the connection */
-    int                 substate;               /* For hierarchical states */
-    BOOL                sent;                     /* Read or write command */
-    BOOL                cwd;                                   /* Done cwd */
-    BOOL                reset;                          /* Expect greeting */
-    FTPServerType       server;                          /* Type of server */
-    HTNet *             cnet;                        /* Control connection */
-    HTNet *             dnet;                           /* Data connection */
-    // This is the HTNet^^^^ that we need to access to find the socket! -- RA
-    BOOL                alreadyLoggedIn;
-  } ftp_ctrl;
-
-}
 
 /* Pause download by removing the request's socket from the list of sockets
    to call select() with. */
-void Download::pauseNow() {
-  Paranoid(state == PAUSE_SCHEDULED);
+// void Download::pauseNow() {
+//   Paranoid(state == PAUSE_SCHEDULED);
+//   state = PAUSED;
+//   if (handle == 0) return;
+//   Assert(glibcurl_remove(handle) == CURLM_OK);
+//   debug("Download::pauseNow");
+// }
+
+void Download::pause() {
+  Assert(!insideNewData);
   state = PAUSED;
-  if (request == 0) return;
-
-  /* The HTNet object whose socket we'll unregister from the event loop. This
-     will prevent more data from being delivered to it, effectively pausing
-     the request. */
-  HTNet* net = HTRequest_net(request);
-
-  unsigned protocol = HTProtocol_id(HTNet_protocol(net));
-  if (protocol == 21) {
-    /* Protocol is FTP, which uses a control connection (which corresponds to
-       the main HTNet object) and a data connection. We need the HTNet object
-       for the latter. */
-    ftp_ctrl* ctrl = static_cast<ftp_ctrl*>(HTNet_context(net));
-    net = ctrl->dnet;
-  }
-
-#if 1
-  HTChannel* channel = HTHost_channel(HTNet_host(net));
-  HTEvent_unregister(HTChannel_socket(channel), HTEvent_READ);
-#else
-  // Unregister socket
-  HTEvent_setTimeout(HTNet_event(net), -1); // No timeout for the socket
-  SOCKET socket = HTNet_socket(net);
-  HTEvent_unregister(socket, HTEvent_READ);
-  debug("pauseNow: unregistered socket %1, event %2, cbf %3",
-        int(socket), (void*)HTNet_event(net), (void*)HTNet_event(net)->cbf);
-#endif
+  if (handle == 0) return;
+  Assert(glibcurl_remove(handle) == CURLM_OK);
+  debug("Download::pause");
 }
 
 // Analogous to pauseNow() above
 void Download::cont() {
-  if (state == PAUSE_SCHEDULED) state = RUNNING;
+
+  /* Broken ATM: libcurl will go
+* Connection 0 seems to be dead!
+* Closing connection #0
+* About to connect() to 127.0.0.1 port 8000
+* Connected to localhost (127.0.0.1) port 8000
+... and then restart the transfer, but without the right range header */
+  Assert(false);
+
+  //if (state == PAUSE_SCHEDULED) state = RUNNING;
   if (state == RUNNING) return;
   Assert(paused());
   state = RUNNING;
-  if (request == 0) return;
-
-  HTNet* net = HTRequest_net(request);
-  unsigned protocol = HTProtocol_id(HTNet_protocol(net));
-  if (protocol == 21) {
-    ftp_ctrl* ctrl = static_cast<ftp_ctrl*>(HTNet_context(net));
-    net = ctrl->dnet;
-  }
-
-#if 1
-  HTHost* host = HTNet_host(net);
-  HTHost_unregister(host, net, HTEvent_READ);
-  HTHost_register(host, net, HTEvent_READ);
-#else
-  // Register socket again
-  /* For some weird reason the timeout gets reset to 0 somewhere, which
-     causes *immediate* timeouts with glibwww - fix that. */
-  HTEvent* event = HTNet_event(net);
-  HTEvent_setTimeout(event, HTHost_eventTimeout());
-  SOCKET socket = HTNet_socket(net);
-  HTEvent_register(socket, HTEvent_READ, event);
-  debug("cont: registered socket %1, event %2, cbf %3",
-        int(socket), (void*)event, (void*)event->cbf);
-#endif
+  if (handle == 0) return;
+  glibcurl_add(handle);
+  debug("Download::cont");
 }
 //______________________________________________________________________
 
 void Download::stop() {
-  if (request == 0) return;
+  if (handle == 0) return;
   if (state == ERROR || state == INTERRUPTED || state == SUCCEEDED) return;
   state = INTERRUPTED;//ERROR;//SUCCEEDED;
+
   if (insideNewData) {
     debug("stop later");
-    // Cannot call HTNet_killPipe() (sometimes segfaults), so do it later
+    // Cannot call curl_easy_cleanup() (segfaults), so do it later
     if (stopLaterId != 0) return;
     stopLaterId = g_idle_add_full(G_PRIORITY_HIGH_IDLE, &stopLater_callback,
                                   (gpointer)this, NULL);
     Assert(stopLaterId != 0); // because we use 0 as a special value
   } else {
-#   if DEBUG
-    int status = HTNet_killPipe(HTRequest_net(request));
-    debug("stop: HTNet_killPipe() returned %1", status);
-#   else
-    HTNet_killPipe(HTRequest_net(request));
-#   endif
+    debug("stop now: curl_easy_cleanup(%1)", (void*)handle);
+    glibcurl_remove(handle);
+    curl_easy_cleanup(handle);
+    handle = 0;
   }
+
   // None of this is really the right thing. Believe me, I tried both. ;-/
   //string err = _("Download stopped");
   //outputVal->download_failed(&err);
   //outputVal->download_succeeded();
 }
 
+namespace {
+
+  const char* curlStrErr(CURLcode cc) {
+    switch (cc) {
+    CURLE_OK: return _("No error");
+    CURLE_UNSUPPORTED_PROTOCOL: return _("Unsupported protocol");
+    CURLE_URL_MALFORMAT: return _("The URL was not properly formatted");
+    CURLE_URL_MALFORMAT_USER: return _("The user part of the URL syntax was not correct");
+    CURLE_COULDNT_RESOLVE_PROXY: return _("The given proxy host could not be resolved");
+    CURLE_COULDNT_RESOLVE_HOST: return _("The given remote host could not be resolved");
+    CURLE_COULDNT_CONNECT: return _("Failed to connect to host or proxy");
+    CURLE_FTP_WEIRD_SERVER_REPLY: return "Weird FTP server reply";
+    CURLE_FTP_ACCESS_DENIED: return _("Access denied on FTP server");
+    CURLE_FTP_USER_PASSWORD_INCORRECT: return _("Incorrect username and/or password");
+    CURLE_FTP_WEIRD_PASS_REPLY: return "Weird FTP server reply to PASS";
+    CURLE_FTP_WEIRD_USER_REPLY: return "Weird FTP server reply to USER";
+    CURLE_FTP_WEIRD_PASV_REPLY: return "Weird FTP server reply to PASV";
+    CURLE_FTP_WEIRD_227_FORMAT: return "Weird FTP server `227' reply";
+    CURLE_FTP_CANT_GET_HOST: return "Failure to lookup the host used for the new FTP connection";
+    CURLE_FTP_CANT_RECONNECT: return "Cannot reconnect to FTP server after weird PASV or EPSV answer";
+    CURLE_FTP_COULDNT_SET_BINARY: return _("Error when trying to set FTP transfer mode to binary");
+    CURLE_PARTIAL_FILE: return _("Transfer interrupted");
+    CURLE_FTP_COULDNT_RETR_FILE: return "Weird FTP server reply to RETR";
+    CURLE_FTP_WRITE_ERROR: return "No `transfer successful' after FTP upload";
+    CURLE_FTP_QUOTE_ERROR: return "Error after FTP QUOTE command";
+    CURLE_HTTP_RETURNED_ERROR: return _("HTTP error");
+    CURLE_WRITE_ERROR: return "Network write error";
+    CURLE_MALFORMAT_USER: return "Malformat user";
+    CURLE_FTP_COULDNT_STOR_FILE: return "FTP server denied the STOR operation";
+    CURLE_READ_ERROR: return _("Network read error");
+    CURLE_OUT_OF_MEMORY: return "Out of memory";
+    CURLE_OPERATION_TIMEOUTED: return _("Timeout");
+    CURLE_FTP_COULDNT_SET_ASCII: return _("Error when trying to set FTP transfer mode to ASCII");
+    CURLE_FTP_PORT_FAILED: return _("FTP PORT command failed");
+    CURLE_FTP_COULDNT_USE_REST: return _("Resuming of downloads unsupported");
+    CURLE_FTP_COULDNT_GET_SIZE: return _("FTP server does not support file size command");
+    CURLE_HTTP_RANGE_ERROR: return _("Resuming of downloads unsupported");
+    CURLE_HTTP_POST_ERROR: return "HTTP POST error";
+    CURLE_SSL_CONNECT_ERROR: return _("");
+    CURLE_BAD_DOWNLOAD_RESUME: return _("");
+    CURLE_FILE_COULDNT_READ_FILE: return _("");
+    CURLE_LDAP_CANNOT_BIND: return _("");
+    CURLE_LDAP_SEARCH_FAILED: return _("");
+    CURLE_LIBRARY_NOT_FOUND: return _("");
+    CURLE_FUNCTION_NOT_FOUND: return _("");
+    CURLE_ABORTED_BY_CALLBACK: return _("");
+    CURLE_BAD_FUNCTION_ARGUMENT: return _("");
+    CURLE_BAD_CALLING_ORDER: return _("");
+    CURLE_HTTP_PORT_FAILED: return _("");
+    CURLE_BAD_PASSWORD_ENTERED: return _("");
+    CURLE_TOO_MANY_REDIRECTS : return _("");
+    CURLE_UNKNOWN_TELNET_OPTION: return _("");
+    CURLE_TELNET_OPTION_SYNTAX : return _("");
+    CURLE_OBSOLETE: return _("");
+    CURLE_SSL_PEER_CERTIFICATE: return _("");
+    CURLE_GOT_NOTHING: return _("");
+    CURLE_SSL_ENGINE_NOTFOUND: return _("");
+    CURLE_SSL_ENGINE_SETFAILED: return _("");
+    CURLE_SEND_ERROR: return _("");
+    CURLE_RECV_ERROR: return _("");
+    CURLE_SHARE_IN_USE: return _("");
+    CURLE_SSL_CERTPROBLEM: return _("");
+    CURLE_SSL_CIPHER: return _("");
+    CURLE_SSL_CACERT: return _("");
+    CURLE_BAD_CONTENT_ENCODING: return _("");
+    CURLE_LDAP_INVALID_URL: return _("");
+    CURLE_FILESIZE_EXCEEDED: return _("");
+    CURLE_FTP_SSL_FAILED: return _("");
+    default: return _("Unknown network error");
+    }
+  }
+
+}
+
 gboolean Download::stopLater_callback(gpointer data) {
   Download* self = static_cast<Download*>(data);
-  Assert(self->insideNewData == false);
-# if DEBUG
-  int status = HTNet_killPipe(HTRequest_net(self->request));
-  debug("stopLater_callback: HTNet_killPipe() returned %1", status);
-# else
-  HTNet_killPipe(HTRequest_net(self->request));
-# endif
+  Assert(!self->insideNewData);
+
+  debug("stopLater_callback: curl_easy_cleanup(%1)", (void*)self->handle);
+  if (self->handle != 0) {
+    glibcurl_remove(self->handle);
+    curl_easy_cleanup(self->handle);
+    self->handle = 0;
+  }
   self->stopLaterId = 0;
   return FALSE; // "Don't call me again"
 }
 //______________________________________________________________________
 
+#if 0
 // Call output->error() with appropriate string taken from request object
 /* If this is called, the Download is assumed to have failed in a
    non-recoverable way. */
@@ -626,3 +527,4 @@ void Download::generateError(State newState) {
     s = _("Error");
   outputVal->download_failed(&s);
 }
+#endif

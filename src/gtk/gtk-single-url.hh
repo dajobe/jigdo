@@ -114,7 +114,7 @@ private:
   void updateWindow();
   void resumeAsk(struct stat* fileInfo); // Ask user "resume/overwrite?"
   static void resumeResponse(GtkDialog*, int r, gpointer data);
-  void openOutputAndRun(bool pragmaNoCache = false); // Allocate download job
+  void openOutputAndRun(/*bool pragmaNoCache = false*/); // Allocate download job
   void openOutputAndResume(); // Alloc job and read resume data from file
   void updateTreeView(); // Update our line in GtkTreeView
   void failedPermanently(string* message);

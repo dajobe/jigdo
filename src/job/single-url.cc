@@ -35,7 +35,7 @@ SingleUrl::SingleUrl(DataSource::IO* ioPtr, const string& uri)
   : DataSource(ioPtr), download(uri, this), progressVal(),
     destStreamVal(0), destOff(0), destEndOff(0), resumeLeft(0),
     haveResumeOffset(false), haveDestination(false),
-    havePragmaNoCache(false), tries(0) {
+    /*havePragmaNoCache(false),*/ tries(0) {
   debug("SingleUrl %1", this);
 }
 //________________________________________
@@ -75,8 +75,8 @@ void SingleUrl::run() {
   haveResumeOffset = false;
   if (!haveDestination) setDestination(0, 0, 0);
   haveDestination = false;
-  if (!havePragmaNoCache) setPragmaNoCache(false);
-  havePragmaNoCache = false;
+//   if (!havePragmaNoCache) setPragmaNoCache(false);
+//   havePragmaNoCache = false;
 
   if (destEndOff > destOff)
     progressVal.setDataSize(destEndOff - destOff);
@@ -162,15 +162,16 @@ void SingleUrl::download_data(const byte* data, unsigned size,
   Paranoid(resuming() || progressVal.currentSize() == currentSize - size);
   //g_usleep(10000);
   string s;
-  unsigned limit = (size < 65 ? size : 65);
+  unsigned limit = (size < 60 ? size : 60);
   for (unsigned i = 0; i < limit; ++i)
     if (data[i] >= 32 && data[i] < 127) s += data[i]; else s += '.';
   debug("%5 Got %1 currentSize=%2, realoffset=%3: %4",
         size, progressVal.currentSize(), currentSize - size, s, this);
 # endif
 
+  // && !download.pausedSoon())
   if (!progressVal.autoTick() // <-- extra check for efficiency only
-      && !download.pausedSoon())
+      && !download.paused())
     progressVal.setAutoTick(true);
 
   if (!resuming()) {
@@ -255,7 +256,8 @@ void SingleUrl::download_message(string* message) {
 //______________________________________________________________________
 
 bool SingleUrl::paused() const {
-  return download.pausedSoon();
+  //return download.pausedSoon();
+  return download.paused();
 }
 
 void SingleUrl::pause() {

@@ -25,7 +25,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <glibwww.hh>
+#include <glib.h>
+#include <glibcurl.h>
 #include <log.hh>
 #include <proxyguess.hh>
 //______________________________________________________________________
@@ -226,7 +227,7 @@ namespace {
     if (*proxy == '#') return false; // Assuming comment, not setting proxy
     if (*proxy == '\0') return false;
     debug("%1 proxy: %2", protocol, proxy);
-    glibwww_add_proxy(protocol, proxy);
+    glibcurl_add_proxy(protocol, proxy);
     return true;
   }
 
@@ -243,7 +244,7 @@ namespace {
         ++list;
       }
       debug("No proxy for %1", host);
-      glibwww_add_noproxy(host.c_str());
+      glibcurl_add_noproxy(host.c_str());
       host.erase();
     }
   }

@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize networking code
     Download::init();
-    if (optProxy != OFF) glibwww_parse_proxy_env();
+#warning    if (optProxy != OFF) glibwww_parse_proxy_env();
     if (optProxy == GUESS) proxyGuess();
 
     // Start downloads of any URIs specified on command line
@@ -195,8 +195,12 @@ int main(int argc, char *argv[]) {
   }
   catch (Cleanup c) {
     msg("[Cleanup %1]", c.returnValue);
+    GUI::jobList.finalize();
+    Download::cleanup();
     return c.returnValue;
   }
+  GUI::jobList.finalize();
+  Download::cleanup();
 
 # if DEBUG && !WINDOWS
   const char* preload = getenv("LD_PRELOAD");

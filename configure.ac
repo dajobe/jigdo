@@ -234,7 +234,7 @@ if test "$jigdo_libdb" = "yes"; then
     AC_CHECK_HEADER(db.h, have_db_h="yes", have_db_h="no")
     AC_MSG_CHECKING(for libdb version in db.h)
     printf "#include <db.h>\nDB_VERSION_MAJOR DB_VERSION_MINOR\n" >conftest.c
-    set `eval $ac_cpp conftest.c | egrep '^ *[[0-9]] *'`; v="$1"; vv="$2"
+    set x `eval $ac_cpp conftest.c | egrep '^ *[[0-9]] *'`; v="$2"; vv="$3"
     AC_MSG_RESULT($v.$vv)
     if test "$v" -ne 3 -a "$v" -ne 4; then
         AC_MSG_RESULT([   * Warning: jigdo is only known to work with libdb])
@@ -301,8 +301,10 @@ if test "$jigdo_gui" = "yes"; then
 fi
 GTKCFLAGS="# GUI application disabled by configure script"
 GTKLIBS="$GTKCFLAGS"
-LIBWWWCFLAGS="$GTKCFLAGS"
-LIBWWWLIBS="$GTKCFLAGS"
+dnl LIBWWWCFLAGS="$GTKCFLAGS"
+dnl LIBWWWLIBS="$GTKCFLAGS"
+CURLCFLAGS="$GTKCFLAGS"
+CURLLIBS="$GTKCFLAGS"
 dnl The following adds flags for GTK+ and glib
 if test "$jigdo_gui" = "yes"; then
     AC_MSG_CHECKING(for value of --with-pkg-config-prefix)
@@ -328,36 +330,58 @@ if test "$jigdo_gui" = "yes"; then
     GTKLIBS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 --libs 2>/dev/null`"
 fi
 
-dnl The following adds flags for libwww
+dnl dnl The following adds flags for libwww
+dnl if test "$jigdo_gui" = "yes"; then
+dnl     AC_MSG_CHECKING(for libwww 5.3.2 or later)
+dnl     jigdo_libwwwver="`libwww-config --version 2>&1`"
+dnl     AC_MSG_RESULT($jigdo_libwwwver)
+dnl     case "$jigdo_libwwwver" in
+dnl         dnl Extra [] around [0-9] style wildcards, or M4 swallows them
+dnl         [[6-9]*|5.[4-9]*|5.[1-9][0-9]*|5.3.[2-9]*|5.3.[1-9][0-9]*])
+dnl             LIBWWWCFLAGS="`libwww-config --cflags 2>/dev/null`"
+dnl             LIBWWWLIBS="`libwww-config --libs 2>/dev/null`"
+dnl             dnl Some versions of libwww-config include "-I/usr/include" in
+dnl             dnl their --cflags output, which completely upsets some versions
+dnl             dnl of GCC.
+dnl             LIBWWWCFLAGS=`echo " $LIBWWWCFLAGS " | sed -e 's% -I/usr/include/* % %'`
+dnl             dnl If we are cross-compiling for Windows and the wrong
+dnl             dnl (ie host system's) libwww-config was executed above, we
+dnl             dnl may need to turn -lz from its output into -lzdll. Yuk,
+dnl             dnl that's hacky, but then it'll save people some trouble
+dnl             case "$is_windows $LIBS " in
+dnl                 yes*"-lzdll "*)
+dnl                     LIBWWWLIBS=`echo " $LIBWWWLIBS " | sed -e 's% -lz % -lzdll %'`
+dnl             esac
+dnl             ;;
+dnl         *)
+dnl         AC_MSG_RESULT([   * libwww not installed, or the installed version])
+dnl         AC_MSG_RESULT([   * is too old, or libwww-config is not in \$PATH.])
+dnl         AC_MSG_RESULT([   * Please install libwww 5.3.2 or later, it is])
+dnl         AC_MSG_RESULT([   * needed by the jigdo GUI application.])
+dnl         installDevel "libwww" "w3c-libwww-devel/libopenssl0"
+dnl         jigdo_gui_failed
+dnl     esac
+dnl fi
+
+dnl The following adds flags for libcurl
 if test "$jigdo_gui" = "yes"; then
-    AC_MSG_CHECKING(for libwww 5.3.2 or later)
-    jigdo_libwwwver="`libwww-config --version 2>&1`"
-    AC_MSG_RESULT($jigdo_libwwwver)
-    case "$jigdo_libwwwver" in
-        dnl Extra [] around [0-9] style wildcards, or M4 swallows them
-        [[6-9]*|5.[4-9]*|5.[1-9][0-9]*|5.3.[2-9]*|5.3.[1-9][0-9]*])
-            LIBWWWCFLAGS="`libwww-config --cflags 2>/dev/null`"
-            LIBWWWLIBS="`libwww-config --libs 2>/dev/null`"
-            dnl Some versions of libwww-config include "-I/usr/include" in
-            dnl their --cflags output, which completely upsets some versions
-            dnl of GCC.
-            LIBWWWCFLAGS=`echo " $LIBWWWCFLAGS " | sed -e 's% -I/usr/include/* % %'`
-            dnl If we are cross-compiling for Windows and the wrong
-            dnl (ie host system's) libwww-config was executed above, we
-            dnl may need to turn -lz from its output into -lzdll. Yuk,
-            dnl that's hacky, but then it'll save people some trouble
-            case "$is_windows $LIBS " in
-                yes*"-lzdll "*)
-                    LIBWWWLIBS=`echo " $LIBWWWLIBS " | sed -e 's% -lz % -lzdll %'`
-            esac
+    AC_MSG_CHECKING(for libcurl 7.11.0 or later)
+    set x `curl-config --version 2>&1`
+    shift
+    case "$1" in [[0-9]*]) ;; *) shift;; esac
+    jigdo_curlver="$1"
+    AC_MSG_RESULT($jigdo_curlver)
+    case "$jigdo_curlver" in
+        [[1-9][0-9].*|[8-9].*|7.1[1-9]*|7.[2-9][0-9]*])
+            CURLCFLAGS="`curl-config --cflags 2>/dev/null`"
+            CURLLIBS="`curl-config --libs 2>/dev/null`"
             ;;
         *)
-        AC_MSG_RESULT([   * libwww not installed, or the installed version])
-        AC_MSG_RESULT([   * is too old, or libwww-config is not in \$PATH.])
-        AC_MSG_RESULT([   * Please install libwww 5.3.2 or later, it is])
+        AC_MSG_RESULT([   * libcurl not installed, or the installed version])
+        AC_MSG_RESULT([   * is too old, or curl-config is not in \$PATH.])
+        AC_MSG_RESULT([   * Please install libcurl 7.11.0 or later, it is])
         AC_MSG_RESULT([   * needed by the jigdo GUI application.])
-        installDevel "libwww" "w3c-libwww-devel/libopenssl0"
-        jigdo_gui_failed
+        installDevel "libcurl2" "libcurl2"
     esac
 fi
 
@@ -365,36 +389,10 @@ if test "$jigdo_gui" = "yes"; then IF_GUI=""; else IF_GUI="#"; fi
 AC_SUBST(IF_GUI)
 AC_SUBST(GTKCFLAGS)
 AC_SUBST(GTKLIBS)
-AC_SUBST(LIBWWWCFLAGS)
-AC_SUBST(LIBWWWLIBS)
-dnl ____________________
-
-dnl Both MinGW32 and glib declare 'struct dirent' and 'struct DIR'. If
-dnl there are problems using the relevant headers together, do some
-dnl really dirty things with the preprocessor to disable the glib
-dnl declaration.
-dnl Update: Only happens with old versions, can probably remove this.
-dirent_hack="no"
-if test "$is_windows" = yes; then
-    CPPFLAGS_orig="$CPPFLAGS"
-    CPPFLAGS="$CPPFLAGS $GTKCFLAGS"
-    AC_MSG_CHECKING(for conflicting 'struct dirent' in dirent.h and glib.h)
-    AC_TRY_COMPILE([#include <dirent.h>
-                    #include <glib.h>], , dirent_hack="no",dirent_hack="yes")
-    if test "$dirent_hack" = "yes"; then
-        AC_TRY_COMPILE([#include <dirent.h>
-                        #define dirent other_dirent
-                        #define DIR other_DIR
-                        #include <glib.h>], , , dirent_hack="no")
-    fi
-    AC_MSG_RESULT($dirent_hack)
-    CPPFLAGS="$CPPFLAGS_orig"
-fi
-if test "$dirent_hack" = "yes"; then
-    AC_DEFINE(DIRENT_HACK, 1)
-else
-    AC_DEFINE(DIRENT_HACK, 0)
-fi
+dnl AC_SUBST(LIBWWWCFLAGS)
+dnl AC_SUBST(LIBWWWLIBS)
+AC_SUBST(CURLCFLAGS)
+AC_SUBST(CURLLIBS)
 dnl ____________________
 
 AC_MSG_CHECKING(for value of --with-uint64)
@@ -570,6 +568,7 @@ AC_MSG_RESULT(\"$USE_NLS\")
 AC_SUBST(USE_NLS)
 CATALOGS=""
 if test "$USE_NLS" = "yes"; then
+    oldLIBS="$LIBS"
     AC_CHECK_LIB(intl, dgettext, x="yes", x="no")
     if test "$x" = "yes"; then
         LIBS="$LIBS -lintl";
@@ -586,6 +585,7 @@ if test "$USE_NLS" = "yes"; then
         AC_MSG_RESULT([   * able to display translated status/error])
         AC_MSG_RESULT([   * messages instead of the default English ones.])
         USE_NLS="no"
+        LIBS="$oldLIBS"
     fi
 fi
 if test "$USE_NLS" = "yes"; then
@@ -619,29 +619,29 @@ dnl ______________________________________________________________________
 
 dnl Checks for other --enable-xxx, --with-xxx switches
 
-AC_MSG_CHECKING(for value of --enable-libwww-hacks)
-AC_ARG_ENABLE(libwww-hacks,
-    [  --disable-libwww-hacks  Don't compile fixed versions of some libwww
-                          code (Try this if you see link errors/crashes)],
-    jigdo_libwww_hacks=$enableval, jigdo_libwww_hacks=yes)
-AC_MSG_RESULT(\"$jigdo_libwww_hacks\")
-if test "$jigdo_libwww_hacks" = yes; then
-    IF_LIBWWW_HACKS="" # enable hacks
-elif test "$jigdo_libwww_hacks" != no; then
-    AC_MSG_ERROR(Invalid argument to --enable-libwww-hacks option)
-else
-    IF_LIBWWW_HACKS="#" # disable hacks, by commenting out Makefile line
-fi
-AC_SUBST(IF_LIBWWW_HACKS)
+dnl AC_MSG_CHECKING(for value of --enable-libwww-hacks)
+dnl AC_ARG_ENABLE(libwww-hacks,
+dnl     [  --disable-libwww-hacks  Don't compile fixed versions of some libwww
+dnl                           code (Try this if you see link errors/crashes)],
+dnl     jigdo_libwww_hacks=$enableval, jigdo_libwww_hacks=yes)
+dnl AC_MSG_RESULT(\"$jigdo_libwww_hacks\")
+dnl if test "$jigdo_libwww_hacks" = yes; then
+dnl     IF_LIBWWW_HACKS="" # enable hacks
+dnl elif test "$jigdo_libwww_hacks" != no; then
+dnl     AC_MSG_ERROR(Invalid argument to --enable-libwww-hacks option)
+dnl else
+dnl     IF_LIBWWW_HACKS="#" # disable hacks, by commenting out Makefile line
+dnl fi
+dnl AC_SUBST(IF_LIBWWW_HACKS)
 dnl ______________________________________________________________________
 
 dnl Do this at end in order not to influence other compile tests which
 dnl might return warnings. Turning the warnings into errors would make
 dnl the tests fail.
-if test "$jigdo_debug" = "yes"; then
-    #if test "$GCC" = yes; then CFLAGS="$CFLAGS -Werror"; fi
-    if test "$GXX" = yes; then CXXFLAGS="$CXXFLAGS -Werror"; fi
-fi
+dnl if test "$jigdo_debug" = "yes"; then
+dnl     #if test "$GCC" = yes; then CFLAGS="$CFLAGS -Werror"; fi
+dnl     if test "$GXX" = yes; then CXXFLAGS="$CXXFLAGS -Werror"; fi
+dnl fi
 if test "$GXX" = "yes"; then
     CFLAGS="-Wall $CFLAGS -W"
     CXXFLAGS="$CXXFLAGS -Wall -W -Wpointer-arith -Wconversion -Woverloaded-virtual"
@@ -657,7 +657,7 @@ SRC_MAKEDEPS="$srcdir/src/Makedeps"
 AC_SUBST_FILE(SRC_MAKEDEPS)
 
 dnl Create subdirs in src directory
-for dir in "" gtk job net util; do
+for dir in "" glibcurl gtk job net util; do
     test ! -d "src/$dir" && mkdir "src/$dir"
 done
 AC_OUTPUT(Makefile doc/Makefile src/Makefile po/Makefile)
