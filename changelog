@@ -11,6 +11,7 @@ Current CVS version
     --jigdo/--template arguments. Broken in 0.7.1, would deduce
     /x.iso.template from /x.iso, instead of /x.template (Adrian Bunk)
   - Fix for compilation on 64 bit architectures
+  - Fixed "compiler recent enough" check in configure.ac for GCC 3.5
 
 jigdo 0.7.1 -- Richard Atterer, 20 Jun 2004
 
