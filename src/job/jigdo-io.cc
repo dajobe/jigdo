@@ -696,8 +696,8 @@ void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
   } else if (section == "Servers") {
 
     if (value.empty()) return generateError(_("Missing argument"));
-    if (master()->urlMap.addServer(urlVal, *label, value).failed())
-      return generateError(_("Recursive label definition"));
+    const char* x = master()->urlMap.addServer(urlVal, *label, value);
+    if (x != 0) return generateError(x);
 
   } // endif (section == "Something")
 

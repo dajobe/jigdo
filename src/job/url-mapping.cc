@@ -14,7 +14,9 @@
 #include <config.h>
 
 #include <glib.h>
+#include <float.h>
 
+#include <compat.hh>
 #include <debug.hh>
 #include <log.hh>
 #include <uri.hh>
@@ -33,9 +35,15 @@ namespace {
 
 }
 
-UrlMapping::UrlMapping() : urlVal(), prepVal(0), nextVal(0), tries(0),
-                           triesFailed(0) {
-  weight = g_rand_double_range(r.r, RANDOM_INIT_LOWER, RANDOM_INIT_UPPER);
+namespace { bool randomInit = true; }
+void UrlMapping::setNoRandomInitialWeight() { randomInit = false; }
+
+UrlMapping::UrlMapping()
+  : urlVal(), prepVal(0), nextVal(0)/*, tries(0), triesFailed(0)*/ {
+  if (randomInit)
+    weight = g_rand_double_range(r.r, -RANDOM_INIT_RANGE, RANDOM_INIT_RANGE);
+  else
+    weight = 0.0;
 }
 
 UrlMapping::~UrlMapping() { }
@@ -68,8 +76,8 @@ ServerUrlMapping* UrlMap::findOrCreateServerUrlMapping(
 }
 //____________________
 
-void UrlMap::addPart(const string& baseUrl, const MD5& md,
-                          vector<string>& value) {
+const char* UrlMap::addPart(const string& baseUrl, const MD5& md,
+                            const vector<string>& value) {
   string url;
   if (findLabelColon(value.front()) != 0)
     url = value.front();
@@ -94,14 +102,15 @@ void UrlMap::addPart(const string& baseUrl, const MD5& md,
     // entry for md already present in partsVal, add p to its linked list
     x.first->second->insertNext(p);
   }
+  return p->parseOptions(value);
 }
 //____________________
 
 /* For a line "Foobar=Label:some/path" in the [Servers] section:
    @param label == "Foobar"
    @param value arguments; value.front()=="Label:some/path" */
-Status UrlMap::addServer(const string& baseUrl, const string& label,
-                              vector<string>& value) {
+const char* UrlMap::addServer(const string& baseUrl, const string& label,
+                              const vector<string>& value) {
   string url;
   if (findLabelColon(value.front()) != 0)
     url = value.front();
@@ -148,12 +157,12 @@ Status UrlMap::addServer(const string& baseUrl, const string& label,
       if (i == mappingList) { // Cycle detected
         // Break cycle, leave s in nonsensical state. Maybe also delete prep
         s->setPrepend(0);
-        return FAILED;
+        return _("Recursive label definition");
       }
       i = i->prepend();
     } while (i != 0);
   }
-  return OK;
+  return s->parseOptions(value);
 }
 //______________________________________________________________________
 
@@ -184,4 +193,119 @@ void UrlMap::dumpJigdoInfo() {
       p = p->next();
     }
   }
+}
+//______________________________________________________________________
+
+const char* UrlMapping::parseOptions(const vector<string>& value) {
+  for (vector<string>::const_iterator i = value.begin(), e = value.end();
+       i != e; ++i) {
+    if (compat_compare(*i, 0, 11, "--try-first", 0, 11) == 0) {
+      if (i->length() == 11) {
+        weight += 1.0;
+      } else if ((*i)[11] == '=') {
+        double d = 0.0;
+        if (sscanf(i->c_str() + 12, "%lf", &d) != 1)
+          return _("Invalid argument to --try-first");
+        weight += d;
+      }
+    } else if (compat_compare(*i, 0, 10, "--try-last", 0, 10) == 0) {
+      if (i->length() == 10) {
+        weight -= 1.0;
+      } else if ((*i)[10] == '=') {
+        double d = 0.0;
+        if (sscanf(i->c_str() + 11, "%lf", &d) != 1)
+          return _("Invalid argument to --try-last");
+        weight -= d;
+      }
+    }
+  }
+  return 0;
+}
+//______________________________________________________________________
+
+string PartUrlMapping::enumerate(vector<UrlMapping*>* bestPath) {
+  string result;
+  double bestScore = -FLT_MAX;
+  unsigned serialNr = 0;
+  unsigned bestSerialNr = 0;
+
+  bestPath->clear();
+  UrlMapping* mapping = this;
+  do {
+    //debug("enumerate: at top-level: %1", mapping->url());
+    enumerate(0, mapping, 0.0, 0, &serialNr, &bestScore,
+              bestPath, &bestSerialNr); // Recurse
+    mapping = mapping->next(); // Walk through list of peers
+  } while (mapping != 0);
+
+  if (bestSerialNr != 0) {
+    seen.insert(bestSerialNr); // Ensure this URL is only output once
+    for (vector<UrlMapping*>::iterator i = bestPath->begin(),
+           e = bestPath->end(); i != e; ++i)
+      result += (*i)->url(); // Construct URL
+    debug("enumerate: \"%1\" with score %2", result, bestScore);
+  } else {
+    debug("enumerate: end");
+  }
+  return result;
+}
+
+/* @param stackPtr For recording how we reached this "mapping".
+   @param mapping Current node in graph
+   @param score Accumulated scores of objects through which we came here
+   @param pathLen Nr of objects through which we reached "mapping"
+   @param serialNr Nr of leaves encountered so far during recursion. One leaf
+   may be reached through >1 paths in the graph; in that case, it counts >1
+   times.
+   @param bestScore Highest score found so far
+   @param bestPath Path through graph corresponding to bestScore
+   @param bestSerialNr Value of serialNr for this leaf obj
+*/
+void PartUrlMapping::enumerate(StackEntry* stackPtr, UrlMapping* mapping,
+    double score, unsigned pathLen, unsigned* serialNr, double* bestScore,
+    vector<UrlMapping*>* bestPath, unsigned* bestSerialNr) {
+//   debug("enumerate: pathLen=%1 serialNr=%2 url=%3", pathLen, *serialNr,
+//         mapping->url());
+  // Update score to include "mapping" object
+  score += mapping->weight;
+  ++pathLen;
+
+  if (mapping->prepend() == 0) {
+    /* Landed at leaf of acyclic graph, i.e. mapping has no further "Label:"
+       prepended to it. (In practice, mapping->url() is "http:" or
+       "ftp:".). Check whether this path's score is a new maximum. */
+    //debug("enumerate: Leaf");
+    ++*serialNr;
+    if (*serialNr == 0) {
+      --*serialNr; return; // Whoa, overflow! Should Not Happen(tm)
+    }
+    // Score of path = SUM(scores_of_path_elements) / length_of_path
+    double pathScore = score / implicit_cast<double>(pathLen);
+    if (pathScore > *bestScore
+        && seen.find(*serialNr) == seen.end()) {
+      debug("enumerate: New best score %1", pathScore);
+      // New best score found
+      *bestScore = pathScore;
+      *bestSerialNr = *serialNr;
+      bestPath->clear();
+      bestPath->push_back(mapping);
+      StackEntry* s = stackPtr;
+      while (s != 0) {
+        bestPath->push_back(s->mapping);
+        s = s->up;
+      }
+    }
+    return;
+  }
+
+  // Not at leaf object - continue recursion
+  StackEntry stack;
+  stack.mapping = mapping;
+  stack.up = stackPtr;
+  mapping = mapping->prepend(); // Descend
+  do {
+    enumerate(&stack, mapping, score, pathLen, serialNr, bestScore,
+              bestPath, bestSerialNr); // Recurse
+    mapping = mapping->next(); // Walk through list of peers
+  } while (mapping != 0);
 }

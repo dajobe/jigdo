@@ -27,7 +27,7 @@
 /** Create a new URI from an absolute base URI and a relative URI. (rel can
     also be absolute, in this case, the result in dest equals rel.) */
 void uriJoin(string* dest, const string& base, const string& rel) {
-  if (isRealUrl(rel)) {
+  if (isRealUrl(rel) || base.empty()) {
     *dest = rel;
     return;
   }

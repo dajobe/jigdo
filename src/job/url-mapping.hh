@@ -29,6 +29,7 @@
 
 #include <string>
 #include <map>
+#include <set>
 #include <vector>
 
 #include <debug.hh>
@@ -36,13 +37,21 @@
 #include <nocopy.hh>
 #include <smartptr.hh>
 #include <status.hh>
+#include <uri.hh> /* for findLabelColon() */
 #include <url-mapping.fh>
 //______________________________________________________________________
 
-/** Mapping md5sum => list of files */
+/** Object which represents a "Label:some/path" mapping. The "some/path"
+    string is stored in the object, and the Label is represented with a
+    pointer to another UrlMapping, whose output URL(s) need to be prepended
+    to "some/path". UrlMappings can be chained into a linked list. */
 class UrlMapping : public SmartPtrBase, public NoCopy {
+  friend class ServerUrlMapping;
+  friend class PartUrlMapping;
 public:
-  /** url is overwritten! */
+  /** For url-mapping-test: Do not init weight randomly. */
+  static void setNoRandomInitialWeight();
+
   UrlMapping();
   virtual ~UrlMapping() = 0;
 
@@ -52,6 +61,11 @@ public:
                      string::size_type n = string::npos);
   /** Get url value */
   inline const string& url() const { return urlVal; }
+
+  /** Parse options from .jigdo file: --try-first[=..],
+      --try-last[=..]. Unrecognized parameters are ignored.
+      @return null on success, else error message. */
+  const char* parseOptions(const vector<string>& value);
 
   /** If this UrlMapping is based on the string "Label:some/path" in a .jigdo
       file, then url()=="some/path" and prepend() points to the mapping(s)
@@ -71,9 +85,9 @@ public:
       of people try to download the same thing using default settings (e.g.
       no country preference), the first server in its list shouldn't be hit
       too hard. In practice, we achieve randomisation by initializing the
-      weight with a small random value. */
-  static const double RANDOM_INIT_LOWER = -.125;
-  static const double RANDOM_INIT_UPPER = .125;
+      weight with a small random value, in the range
+      [-RANDOM_INIT_RANGE,RANDOM_INIT_RANGE) */
+  static const double RANDOM_INIT_RANGE = 0.03125;
 
 private:
   string urlVal; // Part of URL
@@ -84,9 +98,9 @@ private:
   // Statistics, for server selection
 
   // Nr of times we tried to download an URL generated using this mapping
-  unsigned tries; // 0 or 1 for PartUrlMapping, more possible for servers
+  //unsigned tries; // 0 or 1 for PartUrlMapping, more possible for servers
   // Number of above tries which failed (404 not found, checksum error etc)
-  unsigned triesFailed;
+  //unsigned triesFailed;
 
   /* Mapping-specific weight, includes user's global country preference,
      preference for this jigdo download's servers, global server preference.
@@ -110,28 +124,61 @@ class ServerUrlMapping : public UrlMapping {
 };
 //______________________________________________________________________
 
+/** Object to enumerate all URLs for "Label:some/path".  The order of
+    preference for the enumeration can change dynamically, i.e. if the score
+    of a server entry is decreased after several failed attempts to download
+    from it, future weight calculations involving that server will take the
+    decreased weight into account. */
 class PartUrlMapping : public UrlMapping {
-  /* Recurse through list of mappings and find the mapping */
-  //string getBestUrl();
+public:
+  /** You must not call the addServer() method of this object's UrlMap after
+      calling enumerate(). Otherwise, future results returned by this method
+      will be complete nonsense. Enumerates all possible URLs, sorted by
+      weight. Returns the empty string if all URLs enumerated. Internally,
+      scans through the whole UrlMap each time, which can potentially take a
+      long time. */
+  string enumerate(vector<UrlMapping*>* best);
+
+private:
+  /* Because the UrlMapping data structure is not a tree, but an acyclic
+     directed graph (i.e. tree with some branches coming together again),
+     need to record the path through the structure while we recurse. */
+  struct StackEntry {
+    UrlMapping* mapping;
+    StackEntry* up;
+  };
+
+  void enumerate(StackEntry* stackPtr, UrlMapping* mapping,
+    double score, unsigned pathLen, unsigned* serialNr, double* bestScore,
+    vector<UrlMapping*>* bestPath, unsigned* bestSerialNr);
+
+  /* Set of URLs that were already returned by bestUnvisitedUrl(). Each URL
+     is represented by a unique number, which is assigned to it by a
+     depth-first scan of the tree-like structure in the UrlMap. */
+  set<unsigned> seen;
 };
 //______________________________________________________________________
 
-class UrlMap {
+class UrlMap : public NoCopy {
 public:
+  inline UrlMap();
+
   /** Add info about a mapping line inside one of the [Parts] sections in the
       .jigdo sections. The first entry of "value" is the URL (absolute,
       relative to baseUrl or in "Label:some/path form). The remaining "value"
-      entries are assumed to be options, and ignored ATM. */
-  void addPart(const string& baseUrl, const MD5& md, vector<string>& value);
+      entries are assumed to be options, and ignored ATM.
+      @return null if success, else error message */
+  const char* addPart(const string& baseUrl, const MD5& md,
+                      const vector<string>& value);
 
   /** Add info about a [Servers] line, cf addPart(). For a line
       "Foobar=Label:some/path" in the [Servers] section:
       @param label == "Foobar"
       @param value arguments; value.front()=="Label:some/path"
-      @return failed() iff the line results in a recursive server
-      definition. */
-  Status addServer(const string& baseUrl, const string& label,
-                   vector<string>& value);
+      @return null if success, else error message */
+  const char* addServer(const string& baseUrl, const string& label,
+                        const vector<string>& value);
+
 
   /** Output the graph built up by addPart()/addServer() to the log. */
   void dumpJigdoInfo();
@@ -146,14 +193,16 @@ public:
   const PartMap& parts() const { return partsVal; }
   const ServerMap& servers() const { return serversVal; }
 
+  /** Make lookups */
+  inline PartUrlMapping* operator[](const MD5& m) const;
+
 private:
   ServerUrlMapping* findOrCreateServerUrlMapping(const string& url,
                                                  unsigned colon);
-
   PartMap partsVal;
   ServerMap serversVal;
 };
-//______________________________________________________________________
+//======================================================================
 
 void UrlMapping::insertNext(UrlMapping* um) {
   Paranoid(um != 0 && um->nextVal.isNull());
@@ -162,8 +211,17 @@ void UrlMapping::insertNext(UrlMapping* um) {
 }
 
 void UrlMapping::setUrl(const string& url, string::size_type pos,
-                     string::size_type n) {
+                        string::size_type n) {
   urlVal.assign(url, pos, n);
+}
+
+UrlMap::UrlMap() : partsVal(), serversVal() { }
+
+PartUrlMapping* UrlMap::operator[](const MD5& m) const {
+  PartUrlMapping* result;
+  PartMap::const_iterator i = parts().find(m);
+  if (i != parts().end()) result = i->second.get(); else result = 0;
+  return result;
 }
 
 #endif

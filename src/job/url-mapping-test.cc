@@ -9,12 +9,13 @@
 
   Test for addServer(), addPart()
 
-  #test-deps job/url-mapping.o util/md5sum.o util/glibc-md5.o net/uri.o
+  #test-deps job/url-mapping.o util/configfile.o util/md5sum.o util/glibc-md5.o net/uri.o
 
 */
 
 #include <config.h>
 
+#include <configfile.hh>
 #include <debug.hh>
 #include <log.hh>
 #include <uri.hh>
@@ -54,24 +55,32 @@ namespace {
       msg("Error: Expected \"%1\", but got \"%2\"", s, logged);
       Assert(logged == s);
     }
+    logged.erase();
   }
 
   const string base = "http://baseurl/";
 
   // Add part
-  inline void ap(UrlMap& m, const MD5& md, const char* s) {
-    vector<string> v;
-    v.push_back(s);
-    m.addPart(base, md, v);
+  void ap(UrlMap& m, const MD5& md, const char* s) {
+    vector<string> value;
+    ConfigFile::split(value, s, 0);
+//     vector<string> v;
+//     v.push_back(s);
+    const char* result = m.addPart(base, md, value);
+    if (result != 0) msg("addPart: %1", result);
+    Assert(result == 0);
   }
 
   // Add server
-  inline void as(UrlMap& m, const char* label, const char* s,
-                 Status expectedReturnCode = OK) {
-    vector<string> v;
-    v.push_back(s);
-    Status result = m.addServer(base, label, v);
-    Assert(result == expectedReturnCode);
+  void as(UrlMap& m, const char* label, const char* s,
+          bool expectFailure = false) {
+    vector<string> value;
+    ConfigFile::split(value, s, 0);
+//     vector<string> v;
+//     v.push_back(s);
+    const char* result = m.addServer(base, label, value);
+    if (result != 0) msg("addServer: %1", result);
+    Assert(expectFailure == (result != 0));
   }
 
   MD5 md[10];
@@ -126,7 +135,7 @@ void test3() {
   // Loops disallowed
   UrlMap m;
   as(m, "asdf", "foo:x");
-  as(m, "foo", "asdf:y", FAILED);
+  as(m, "foo", "asdf:y", true);
   logged.erase();
   m.dumpJigdoInfo();
   expect("Server asdf: foo + `x'\n"
@@ -141,7 +150,7 @@ void test4() {
   as(m, "c", "d:");
   as(m, "d", "foo:");
   as(m, "d", "bar:");
-  as(m, "d", "a:", FAILED);
+  as(m, "d", "a:", true);
   logged.erase();
   m.dumpJigdoInfo();
   expect("Server a: b + `'\n"
@@ -153,16 +162,107 @@ void test4() {
          "Server d: bar + `'\n"
          "Server foo:  + `foo:'\n");
 }
+//______________________________________________________________________
+
+void expectEnum(PartUrlMapping* m, const char* expected) {
+  vector<UrlMapping*> best;
+  string result;
+  while (true) {
+    string s = m->enumerate(&best);
+    if (s.empty()) break;
+    if (!result.empty()) result += ' ';
+    result += s;
+  }
+  if (result != expected) {
+    msg("Error: Expected \"%1\", but got \"%2\"", expected, result);
+    Assert(result == expected);
+  }
+  msg("OK, got \"%1\"", result);
+}
+
+void score1() { // Single leaf object
+  UrlMap m;
+  vector<string> v;
+  v.push_back("fooboo/bar/baz");
+  m.addPart("", md[0], v);
+  m.dumpJigdoInfo();
+  expectEnum(m[md[0]], "fooboo/bar/baz");
+}
+
+void score2() { // Simple chain, 2 objects long
+  UrlMap m;
+  ap(m, md[0], "fooboo/bar/baz");
+  m.dumpJigdoInfo();
+  expectEnum(m[md[0]], "http://baseurl/fooboo/bar/baz");
+}
+
+void score3() { // Diamond-shaped graph
+  UrlMap m;
+  as(m, "Label", "Server:x/");
+  ap(m, md[0], "Label:some/path");
+  as(m, "Label", "Server:y/ --try-first");
+  as(m, "Server", "ftp://server.org:80/");
+  m.dumpJigdoInfo();
+  expectEnum(m[md[0]],
+             "ftp://server.org:80/y/some/path "
+             "ftp://server.org:80/x/some/path");
+}
+
+void score4() { // Full mesh, many leaf possibilities
+  UrlMap m;
+  ap(m, md[1], "A:a --try-first");
+  ap(m, md[1], "A:b");
+  ap(m, md[1], "A:c --try-last");
+  ap(m, md[1], "A:d --try-first=3.0");
+  as(m, "A", "S:l --try-first=-13");
+  as(m, "A", "S:m --try-last=.222");
+  as(m, "A", "S:n --try-first=3.4");
+  as(m, "A", "S:o --try-first --try-first=6.5");
+  as(m, "S", "p://x/");
+  m.dumpJigdoInfo();
+  expectEnum(m[md[1]], "p://x/od p://x/oa p://x/ob p://x/oc p://x/nd p://x/na "
+             "p://x/nb p://x/md p://x/nc p://x/ma p://x/mb p://x/mc p://x/ld "
+             "p://x/la p://x/lb p://x/lc");
+}
+
+void score5() { // Full mesh, one leaf possibility
+  UrlMap m;
+  ap(m, md[1], "A:a");
+  as(m, "A", "S:l");
+  as(m, "A", "S:m");
+  as(m, "A", "S:n");
+  as(m, "A", "S:o --try-last=.222");
+  as(m, "S", "T:!");
+  as(m, "S", "T:?");
+  as(m, "S", "T:,");
+  as(m, "S", "T:; --try-first=3.4");
+  as(m, "T", "http://x/");
+  m.dumpJigdoInfo();
+  expectEnum(m[md[1]], "http://x/;ma http://x/;na http://x/;la http://x/;oa "
+             "http://x/!la http://x/,la http://x/?la http://x/!na "
+             "http://x/,na http://x/?na http://x/!ma http://x/,ma "
+             "http://x/?ma http://x/?oa http://x/,oa http://x/!oa");
+}
+//______________________________________________________________________
 
 int main(int argc, char* argv[]) {
   if (argc == 2) Logger::scanOptions(argv[1], argv[0]);
-  loggerInit();
 
   int n = 0;
   for (int i = 0; i < 10; ++i)
     for (int j = 0; j < 16; ++j)
       md[i].sum[j] = ++n;
 
+  msg("Score tests");
+  UrlMapping::setNoRandomInitialWeight();
+  score1();
+  score2();
+  score3();
+  score4();
+  score5();
+
+  msg("Graph build tests");
+  loggerInit();
   test1();
   test2();
   test3();
