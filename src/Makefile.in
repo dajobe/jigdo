@@ -108,7 +108,7 @@ clean mostlyclean:
 		        "$(srcdir)/$$d/$$p.cc"; then rm -f "$$p"; fi; done; \
 		done
 		rm -f gtk/interface.hh.tmp gtk/gui.cc.tmp gtk/gui.hh.tmp
-		rm -f $(programs) $(debug-programs)
+		rm -f $(programs) $(debug-programs) $(test-programs)
 distclean:	clean
 		for d in . $(SUBDIRS); do \
 		    rm -f $$d/TAGS $$d/*~ $$d/\#*\# $$d/*.bak; \
