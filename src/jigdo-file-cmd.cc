@@ -35,10 +35,12 @@ namespace {
    dest and return it (except when it points to an object which should not be
    deleted by the caller; in this case return null). */
 bistream* openForInput(bistream*& dest, const string& name) throw(Cleanup) {
-  if (name == "-")
-    dest = new bifstream(stdin);
-  else
-    dest = new bifstream(name.c_str(), ios::binary);
+  if (name == "-") {
+    static bifstream stdinStream(stdin);
+    dest = &stdinStream;
+    return 0;
+  }
+  dest = new bifstream(name.c_str(), ios::binary);
   if (!*dest) {
     cerr << subst(_("%1: Could not open `%2' for input: %3"),
                   binName(), name, strerror(errno)) << endl;
@@ -58,15 +60,14 @@ istream* openForInput(istream*& dest, const string& name) throw(Cleanup) {
        cin may have strange effects.) */
     dest = reinterpret_cast<istream*>(&cin);
     return 0;
-  } else {
-    dest = new ifstream(name.c_str(), ios::binary);
-    if (!*dest) {
-      cerr << subst(_("%1: Could not open `%2' for input: %3"),
-                    binName(), name, strerror(errno)) << endl;
-      throw Cleanup(3);
-    }
-    return dest;
   }
+  dest = new ifstream(name.c_str(), ios::binary);
+  if (!*dest) {
+    cerr << subst(_("%1: Could not open `%2' for input: %3"),
+                  binName(), name, strerror(errno)) << endl;
+    throw Cleanup(3);
+  }
+  return dest;
 }
 
 /* Ensure that an output file is not already present. Should use this
@@ -87,10 +88,12 @@ int willOutputTo(const string& name, bool optForce,
 
 #if !HAVE_WORKING_FSTREAM /* ie istream and bistream are not the same */
 bostream* openForOutput(bostream*& dest, const string& name) throw(Cleanup) {
-  if (name == "-")
-    dest = new bofstream(stdout);
-  else
-    dest = new bofstream(name.c_str(), ios::binary);
+  if (name == "-") {
+    static bofstream stdoutStream(stdout);
+    dest = &stdoutStream;
+    return 0;
+  }
+  dest = new bofstream(name.c_str(), ios::binary);
   if (!*dest) {
     cerr << subst(_("%1: Could not open `%2' for output: %3"),
                   binName(), name, strerror(errno)) << endl;

@@ -285,7 +285,7 @@ Zibstream& Zibstream::read(byte* dest, size_t n) {
       const char* cur = hdr;
       byte x;
       while (*cur != '\0' && *stream) {
-        *stream >> x; // Any errors handled below, after end of while()
+        x = stream->get(); // Any errors handled below, after end of while()
         if (*cur != x) { // Reached end of file or non-DATA part
           stream->seekg(hdr - cur, ios::cur);
           delete[] buf;

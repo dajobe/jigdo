@@ -365,7 +365,7 @@ namespace {
              << otherFile << " at offset " << otherOff << '\n';
         //cerr << (void*)files[otherFile].data << "..."
         // << (void*)(files[otherFile].data+otherLen) << endl;
-        o.seekp(otherOff, ios::beg);
+        o.seekp(static_cast<uint64>(otherOff), ios::beg);
         writeBytes(o, files[otherFile].data, otherLen);
         if (!o) cerr << "Aargh - write() failed! (" << strerror(errno)
                      << ')' << endl;
@@ -383,7 +383,7 @@ namespace {
     Rand rand(nr);
     cheatMrNice();
     bofstream img(TORTURE_DIR "image", ios::binary);
-    bofstream info(TORTURE_DIR "image"EXTSEPS"info");
+    ofstream info(TORTURE_DIR "image"EXTSEPS"info");
     size_t mem = 0;
     imageMatches.resize(0);
     while (mem < MAX_IMAGE) {
@@ -392,7 +392,7 @@ namespace {
         // an area of random data
         size_t size = static_cast<size_t>(rand.get(18));
         for (size_t i = 0; i < size; ++i)
-          img << static_cast<byte>(rand.get(8) ^ 0xff);
+          img.put(static_cast<byte>(rand.get(8) ^ 0xff));
         mem += size;
       } else if (x < 2*85) {
         // a complete file

@@ -446,7 +446,12 @@ namespace {
        when it is compressed again by jigdo, it will get slightly
        larger. */
     Zibstream data(*templ, readAmount + 8*1024);
+#   if HAVE_WORKING_FSTREAM
     if (img == 0) img = &cout; // EEEEEK!
+#   else
+    static bifstream stdinStream(stdin);
+    if (img == 0) img = &stdinStream;
+#   endif
 
     JigdoDesc::ImageInfo& imageInfo =
         dynamic_cast<JigdoDesc::ImageInfo&>(*files.back());

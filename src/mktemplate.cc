@@ -137,12 +137,21 @@ namespace {
 
   // Write lower 48 bits of x to s in little-endian order
   void write48(bostream& s, uint64 x) {
+#   if 0
     s << static_cast<byte>(x & 0xff)
       << static_cast<byte>((x >> 8) & 0xff)
       << static_cast<byte>((x >> 16) & 0xff)
       << static_cast<byte>((x >> 24) & 0xff)
       << static_cast<byte>((x >> 32) & 0xff)
       << static_cast<byte>((x >> 40) & 0xff);
+#   else
+    s.put(static_cast<byte>( x        & 0xff));
+    s.put(static_cast<byte>((x >> 8)  & 0xff));
+    s.put(static_cast<byte>((x >> 16) & 0xff));
+    s.put(static_cast<byte>((x >> 24) & 0xff));
+    s.put(static_cast<byte>((x >> 32) & 0xff));
+    s.put(static_cast<byte>((x >> 40) & 0xff));
+#   endif
   }
 
 } // namespace
