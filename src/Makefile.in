@@ -206,7 +206,8 @@ logtest@exe@:	util/debug.o util/log.o util/logtest.o util/string-utf.o
 		$(LD) -o $@ util/log.o util/logtest.o util/string-utf.o \
 		    util/debug.o $(LDFLAGS) $(GTKLIBS)
 
-gtk/interface.cc gtk/interface.hh: $(srcdir)/../jigdo.glade
+gtk/interface.cc gtk/interface.hh: $(srcdir)/../jigdo.glade \
+			$(srcdir)/../scripts/glade-filter.awk
 		cd $(srcdir)/.. \
 		    && $(GLADECODE) "jigdo.glade"
 		$(AWK) -f "$(srcdir)/../scripts/glade-filter.awk" \
