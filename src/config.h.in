@@ -119,6 +119,14 @@
 // On native MinGW32, redefine stat to _stati64 for big file support
 #undef stat
 
+/* Big file support is broken in the libstdc++ on GCC 3.x, x<4. There's a
+   rather gruesome workaround in bstream.hh for that case. */
+#if __GNUC__ == 3 && __GNUC_MINOR__ < 4
+#  define HAVE_WORKING_FSTREAM 0
+#else
+#  define HAVE_WORKING_FSTREAM 1
+#endif
+
 // Define to 1 to compile in lots of additional run-time checks
 #ifndef DEBUG
 #define DEBUG 0

@@ -1,11 +1,10 @@
 Changelog for Jigsaw Download                               -*- Text -*-
 ------------------------------------------------------------------------
 
-jigdo 0.7.1 -- Richard Atterer, 
+Current CVS version:
 
-removed "too many files missing, won't attempt to download them from
-fallback mirror" logic in jigdo-lite because it was broken
-
+  - removed "too many files missing, won't attempt to download them
+    from fallback mirror" logic in jigdo-lite because it was broken
   - .jigdo file format: Semantics of multiple [Image] sections have
     changed: Formerly, the idea was that one .jigdo could provide
     multiple images, but the idea never caught on and the idea "one
