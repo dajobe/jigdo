@@ -97,3 +97,9 @@ bool isRealUrl(const string& s) {
   unsigned l = findLabelColon(s);
   return l > 0 && s.length() >= l + 3 && s[l + 1] == '/' && s[l + 2] == '/';
 }
+//______________________________________________________________________
+
+bool isLabelUrl(const string& s) {
+  unsigned l = findLabelColon(s);
+  return l > 0 && s.length() >= l + 3 && s[l + 1] != '/' && s[l + 2] != '/';
+}

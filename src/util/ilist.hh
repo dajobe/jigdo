@@ -85,6 +85,15 @@ public:
     x.iListBase_prev->iListBase_next = &x;
     x.iListBase_next->iListBase_prev = &x;
   }
+  void push_front(T& x) {
+    // Object must not already be a list member
+    Assert(x.iListBase_prev == 0 && x.iListBase_next == 0);
+
+    x.iListBase_prev = &e;
+    x.iListBase_next = e.iListBase_next;
+    x.iListBase_prev->iListBase_next = &x;
+    x.iListBase_next->iListBase_prev = &x;
+  }
 
   T& front() const { return *static_cast<T*>(e.iListBase_next); }
   T& back() const { return *static_cast<T*>(e.iListBase_prev); }

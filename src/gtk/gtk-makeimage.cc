@@ -160,6 +160,7 @@ void GtkMakeImage::job_deleted() { }
 void GtkMakeImage::job_succeeded() { }
 
 void GtkMakeImage::job_failed(const string& message) {
+  debug("job_failed: %1", message);
   treeViewStatus = subst(_("<b>%E1</b>"), message);
   status = message;
   progress = _("Failed:");
@@ -169,7 +170,9 @@ void GtkMakeImage::job_failed(const string& message) {
 }
 
 void GtkMakeImage::job_message(const string& message) {
+  debug("job_message: %1", message);
   treeViewStatus = message;
+  status = message;
   gtk_tree_store_set(jobList()->store(), row(),
                      JobList::COLUMN_STATUS, treeViewStatus.c_str(),
                      -1);
@@ -178,6 +181,7 @@ void GtkMakeImage::job_message(const string& message) {
 void GtkMakeImage::makeImageDl_new(
     Job::DataSource* childDownload, const string& uri,
     const string& destDesc) {
+  debug("makeImageDl_new: %1", uri);
 // # if DEBUG
 //   msg("GtkMakeImage::makeImageDl_new", 0);
 // # endif
@@ -192,13 +196,12 @@ void GtkMakeImage::makeImageDl_new(
 }
 
 void GtkMakeImage::makeImageDl_finished(Job::DataSource* src) {
-  debug("makeImageDl_finished");
   // mid.io.listeners()
   for (IList<Job::DataSource::IO>::iterator i = src->io.listeners().begin(),
          e = src->io.listeners().end(); i != e; ++i) {
     GtkSingleUrl* child = dynamic_cast<GtkSingleUrl*>(&*i);
     if (child != 0) {
-      debug("Child finished");
+      debug("makeImageDl_finished: %1", src->location());
       child->childIsFinished();
     }
   }

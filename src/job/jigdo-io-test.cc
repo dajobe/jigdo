@@ -118,8 +118,8 @@ namespace {
     MemData* result = 0;
     typedef MakeImageDl::ChildList::const_iterator Iter;
     for (Iter i = m.children().begin(), e = m.children().end(); i != e; ++i){
-      if (i->source()->location() == url) {
-        result = dynamic_cast<MemData*>(i->source());
+      if (i->get()->source()->location() == url) {
+        result = dynamic_cast<MemData*>(i->get()->source());
         break;
       }
     }
@@ -206,7 +206,7 @@ MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md,
   if (i == www.end()) contents = 0; else contents = i->second;
 
   auto_ptr<MemData> dl(new MemData(0, url, contents));
-  Child* c = new Child(this, &childrenVal, dl.get(), false, MD5());
+  Child* c = new Child(this, &childrenVal, dl.get(), 0);
   dl.release();
   c->childSuccFail = true;
   return c;
@@ -239,11 +239,11 @@ void MakeImageDl::childFailed(Child* childDl, DataSource::IO*) {
   // No: delete childDl;
 }
 
-void MakeImageDl::childSucceeded(Child* childDl, DataSource::IO* /*chldIo*/) {
-  msg("childSucceeded: %1",
-      childDl->source() ? childDl->source()->location() :"[deleted source]");
-  // No: delete childDl;
-}
+// void MakeImageDl::childSucceeded(Child* childDl, DataSource::IO* /*chldIo*/) {
+//   msg("childSucceeded: %1",
+//       childDl->source() ? childDl->source()->location() :"[deleted source]");
+//   // No: delete childDl;
+// }
 
 void MakeImageDl::setImageSection(string* imageName, string*, string*,
                                   string*, MD5**) {
@@ -258,6 +258,13 @@ void MakeImageDl::jigdoFinished() {
 void Job::MakeImageDl::killAllChildren() {
   debug("killAllChildren");
 }
+
+void MakeImageDl::Child::job_deleted() { }
+void MakeImageDl::Child::job_succeeded() { }
+void MakeImageDl::Child::job_failed(const string&) { }
+void MakeImageDl::Child::job_message(const string&) { }
+void MakeImageDl::Child::dataSource_dataSize(uint64) { }
+void MakeImageDl::Child::dataSource_data(const byte*, unsigned, uint64) { }
 //======================================================================
 
 // Basic check: Does it find the image section?

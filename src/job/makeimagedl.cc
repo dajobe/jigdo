@@ -64,7 +64,7 @@ MakeImageDl::MakeImageDl(/*IO* ioPtr,*/ const string& jigdoUri,
       jigdoUrl(jigdoUri), jigdoIo(0), childrenVal(), dest(destination),
       tmpDirVal(), mi(),
       imageNameVal(), imageInfoVal(), imageShortInfoVal(), templateUrlVal(),
-      templateMd5Val(0) {
+      templateMd5Val(0), callbackId(0) {
   // Remove all trailing '/' from dest dir, even if result empty
   unsigned destLen = dest.length();
   while (destLen > 0 && dest[destLen - 1] == DIRSEP) --destLen;
@@ -73,7 +73,7 @@ MakeImageDl::MakeImageDl(/*IO* ioPtr,*/ const string& jigdoUri,
   /* Create name of temporary dir.
      Directory name: "jigdo-" followed by md5sum of .jigdo URL */
   MD5Sum md;
-  md.update(reinterpret_cast<const byte*>(jigdoUri.c_str()),
+  md.update(reinterpret_cast<const byte*>(jigdoUri.data()),
             jigdoUri.length()).finish();
 
   Base64String b64;
@@ -92,6 +92,7 @@ MakeImageDl::MakeImageDl(/*IO* ioPtr,*/ const string& jigdoUri,
 
 Job::MakeImageDl::~MakeImageDl() {
   debug("~MakeImageDl");
+  if (callbackId != 0) g_source_remove(callbackId);
   killAllChildren();
   delete jigdoIo;
   delete templateMd5Val;
@@ -101,7 +102,7 @@ Job::MakeImageDl::~MakeImageDl() {
 void Job::MakeImageDl::killAllChildren() {
   // Delete all our children. NB ~Child will remove child from the list
   while (!childrenVal.empty()) {
-    Child* x = &childrenVal.front();
+    Child* x = childrenVal.front().get();
 #   if DEBUG
     /* childFailed() or childSucceeded() MUST always be called for a Child.
        Exception: May delete the MakeImageDl without calling this for its
@@ -147,10 +148,10 @@ void MakeImageDl::run() {
     //x                                     destDesc) );
     jigdoIo = new JigdoIO(childDl.get(), jigdoUrl/*, frontend.get()*/);
     //x childDl->setChildIo(jio);
-    childDl->source()->io.addListener(*jigdoIo);
     //x frontend.release();
     //x if (io) io->job_message(&info);
     IOSOURCE_SEND(IO, io, job_message, (info));
+    childDl->source()->io.addListener(*jigdoIo);
     (childDl.release())->source()->run();
   }
 }
@@ -188,67 +189,89 @@ void MakeImageDl::writeReadMe() {
 }
 //______________________________________________________________________
 
-void MakeImageDl::appendLeafname(string* s, bool contentMd, const MD5& md) {
+/* Return filename for content md5sum cache entry:
+   "/home/x/jigdo-blasejfwe/c-nGJ2hQpUNCIZ0fafwQxZmQ" */
+string MakeImageDl::cachePathnameContent(const MD5& md, bool isFinished,
+                                         bool isC) {
   Base64String x;
-  *s += (contentMd ? "c-" : "u-");
-  (*s).swap(x.result());
-  x.write(md, 16).flush();
-  (*s).swap(x.result());
+  x.result() = tmpDir();
+  x.result() += DIRSEP;
+  if (isC) x.result() += 'c'; else x.result() += 'u';
+  if (isFinished) x.result() += '-'; else x.result() += '~';
+  x.write(md, 16);
+  x.flush();
+  return x.result();
 }
+
+/* Return filename for URL cache entry:
+   "/home/x/jigdo-blasejfwe/u-nGJ2hQpUNCIZ0fafwQxZmQ" */
+string MakeImageDl::cachePathnameUrl(const string& url, bool isFinished) {
+  Base64String x;
+  x.result() = tmpDir();
+  x.result() += DIRSEP;
+  x.result() += 'u';
+  if (isFinished) x.result() += '-'; else x.result() += '~';
+  static MD5Sum nameMd;
+  nameMd.reset()
+        .update(reinterpret_cast<const byte*>(url.data()), url.length())
+        .finishForReuse();
+  x.write(nameMd.digest(), 16);
+  x.flush();
+  return x.result();
+}
+
+// void MakeImageDl::appendLeafname(string* s, bool contentMd, const MD5& md) {
+//   Base64String x;
+//   *s += (contentMd ? "c-" : "u-");
+//   (*s).swap(x.result());
+//   x.write(md, 16).flush();
+//   (*s).swap(x.result());
+// }
 //______________________________________________________________________
 
 MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md,
                                           string* leafnameOut) {
-  debug("childFor: %L1", url);
+  debug("childFor: %L1, md %2",
+        url, (md == 0 ? string("unknown") : md->toString()));
 
   msg("TODO: Maintain cache of active children; if URL requested 2nd time, "
       "add child which waits for 1st to finish");
 
-  bool contentMdKnown = (md != 0);
-  MD5 cacheMd; // Will contain md5sum of either file URL or file contents
-  Base64String b64;
-  if (contentMdKnown) {
-    // Create leafname from md ("c" for "content")
-    b64.result() = "c-";
-    b64.write(*md, 16).flush();
-    cacheMd = *md;
-  } else {
-    // Create leafname from url ("u" for "url")
-    b64.result() = "u-";
-    MD5Sum nameMd;
-    nameMd.update(reinterpret_cast<const byte*>(url.c_str()),
-                  url.length()).finish();
-    b64.write(nameMd.digest(), 16).flush();
-    cacheMd = nameMd;
-  }
-  string* leafname;
-  if (leafnameOut == 0) {
-    leafname = &b64.result();
-  } else {
-    leafnameOut->swap(b64.result());
-    leafname = leafnameOut;
-  }
-  string destDesc = subst(_("Cache entry %1 in %2"), leafname, tmpDir());
+  *leafnameOut = "TODO makeimagedl.cc:235";
 
-  // Check whether file already present in cache, i.e. in tmpDir
-  string filename = tmpDir();
-  filename += DIRSEP;
-  filename += *leafname;
+  if (md != 0) {
+    // "c-": Check whether data with that _checksum_ already finished in cache
+    string filename = cachePathnameContent(*md);
+    string destDesc = subst(_("Cache entry %1"), filename);
+    struct stat fileInfo;
+    if (stat(filename.c_str(), &fileInfo) == 0) {
+      Child* c = childForCompletedContent(fileInfo, filename, md);
+      IOSOURCE_SEND(IO, io, makeImageDl_new, (c->source(), url, destDesc));
+      return c;
+    }
+  }
+
+// Check whether file already present in cache, i.e. in tmpDir
+//   string filename = tmpDir();
+//   filename += DIRSEP;
+//   filename += *leafname;
+
+  // "u-": Check whether data with that _source_URL_ already finished in cache
+  string filename = cachePathnameUrl(url);
+  string destDesc = subst(_("Cache entry %1"), filename);
   struct stat fileInfo;
-  int statResult = stat(filename.c_str(), &fileInfo);
-  if (statResult == 0) {
-    Child* c = childForCompleted(fileInfo, filename, contentMdKnown, cacheMd);
+  if (stat(filename.c_str(), &fileInfo) == 0) {
+    Child* c = childForCompletedUrl(fileInfo, filename, md);
     IOSOURCE_SEND(IO, io, makeImageDl_new, (c->source(), url, destDesc));
     return c;
   }
 
   /* statResult != 0, we assume this means "no such file or directory".
-     Now check whether a download is already under way, or if a half-finished
-     download was aborted earlier. */
+     "u~": Now check whether a download is already under way, or if a
+     half-finished download was aborted earlier. */
   toggleLeafname(&filename);
-  toggleLeafname(leafname);
-  statResult = stat(filename.c_str(), &fileInfo);
-  if (statResult == 0) {
+//   toggleLeafname(leafname);
+  if (stat(filename.c_str(), &fileInfo) == 0) {
     Child* c = childForSemiCompleted(fileInfo, filename);
     IOSOURCE_SEND(IO, io, makeImageDl_new, (c->source(), url, destDesc));
     return c;
@@ -261,14 +284,13 @@ MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md,
                                     ios::binary|ios::in|ios::out|ios::trunc);
   if (!*f) {
     string err = subst(_("Could not open `%L1' for output: %L2"),
-                       leafname, strerror(errno));
+                       filename, strerror(errno));
     generateError(err);
     return 0;
   }
   auto_ptr<SingleUrl> dl(new SingleUrl(url));
   dl->setDestination(f, 0, 0);
-  Child* c = new Child(this, &childrenVal, dl.get(), contentMdKnown,
-                       cacheMd);
+  Child* c = new Child(this, &childrenVal, dl.get(), md);
   IOSOURCE_SEND(IO, io, makeImageDl_new, (dl.get(), url, destDesc));
   dl.release();
   return c;
@@ -276,9 +298,8 @@ MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md,
 //______________________________________________________________________
 
 // Cache contains already completed download for requested URL/md5sum
-MakeImageDl::Child* MakeImageDl::childForCompleted(
-    const struct stat& fileInfo, const string& filename, bool contentMdKnown,
-    const MD5& cacheMd) {
+MakeImageDl::Child* MakeImageDl::childForCompletedUrl(
+    const struct stat& fileInfo, const string& filename, const MD5* md) {
   if (!S_ISREG(fileInfo.st_mode)) {
     // Something messed with the cache dir
     string err = subst(_("Invalid cache entry: `%L1' is not a file"),
@@ -292,12 +313,11 @@ MakeImageDl::Child* MakeImageDl::childForCompleted(
 
   cacheEntryAge = 0; // TODO - FIXME - remove this once if-mod-since impl.
 
-  if (contentMdKnown || cacheEntryAge < CACHE_ENTRY_AGE_NOIFMODSINCE) {
-    // Data with that MD5 known - no need to go on the net, imm. return it
+  if (cacheEntryAge < CACHE_ENTRY_AGE_NOIFMODSINCE) {
+    // Data fetched very recently - no need to go on the net, imm. return it
     debug("childFor: already have %L1", filename);
     auto_ptr<CachedUrl> dl(new CachedUrl(filename, 0));
-    Child* c = new Child(this, &childrenVal, dl.get(), contentMdKnown,
-                         cacheMd);
+    Child* c = new Child(this, &childrenVal, dl.get(), md);
     dl.release();
     return c;
   } else {
@@ -307,6 +327,26 @@ MakeImageDl::Child* MakeImageDl::childForCompleted(
     Assert(false); return 0;
 
   }
+}
+//____________________
+
+// Cache contains already completed download for requested URL/md5sum
+MakeImageDl::Child* MakeImageDl::childForCompletedContent(
+    const struct stat& fileInfo, const string& filename, const MD5* md) {
+  if (!S_ISREG(fileInfo.st_mode)) {
+    // Something messed with the cache dir
+    string err = subst(_("Invalid cache entry: `%L1' is not a file"),
+                       filename);
+    generateError(err);
+    return 0;
+  }
+
+  // Data with that MD5 known - no need to go on the net, imm. return it
+  debug("childFor: already have md %L1", filename);
+  auto_ptr<CachedUrl> dl(new CachedUrl(filename, 0));
+  Child* c = new Child(this, &childrenVal, dl.get(), md);
+  dl.release();
+  return c;
 }
 //______________________________________________________________________
 
@@ -332,27 +372,38 @@ MakeImageDl::Child* MakeImageDl::childForSemiCompleted(
 }
 //______________________________________________________________________
 
-// frontend can be null
-void MakeImageDl::childSucceeded(Child* childDl, DataSource::IO* /*chldIo*/) {
+/* Called by Child when the download has succeeded: Rename a '~' download to
+   '-' to indicate that it is complete. */
+void MakeImageDl::singleUrlFinished(Child* c) {
 # if DEBUG
-  childDl->childSuccFail = true;
+  c->childSuccFail = true;
 # endif
-  //x if (frontend != 0)
-  //x   io->makeImageDl_finished(childDl->source(), frontend);
-  IOSOURCE_SEND(IO, io, makeImageDl_finished, (childDl->source()));
 
-  if (dynamic_cast<SingleUrl*>(childDl->source()) == 0) return;
+  Paranoid(dynamic_cast<SingleUrl*>(c->source()) != 0);
 
-  // Rename u~... to u-... for SingleUrls
-  string destName = tmpDir();
-  destName += DIRSEP;
-  appendLeafname(&destName, childDl->contentMd, childDl->md);
-  string srcName(destName);
-  toggleLeafname(&srcName);
-  debug("mv %1 %2", srcName, destName);
+  debug("singleUrlFinished: %1", c->source()->location());
+  string srcName = cachePathnameUrl(c->source()->location(), false); // "u~"
+  string destName;
+
+  if (c->checkContent) {
+    // Compare desired md to actual mdCheck
+    c->mdCheck.finish();
+    if (c->md == c->mdCheck) {
+      debug("singleUrlFinished: Checksum OK: %1", c->md.toString());
+      destName = cachePathnameContent(c->md); // Rename to "c-"
+    } else {
+      debug("singleUrlFinished: Checksum mismatch, computed=%1 expected=%2",
+            c->mdCheck.toString(), c->md.toString());
+      // In this case, let code below rename to "u-"
+    }
+  }
+  if (destName.empty())
+    destName = cachePathnameUrl(c->source()->location()); // Rename to "u-"
+
+  debug("singleUrlFinished: mv %1 %2", srcName, destName);
 
   // On Windows, cannot rename open file, so ensure it is closed
-  childDl->deleteSource();
+  c->deleteSource();
 
   int status = rename(srcName.c_str(), destName.c_str());
   if (status != 0) {
@@ -362,31 +413,30 @@ void MakeImageDl::childSucceeded(Child* childDl, DataSource::IO* /*chldIo*/) {
     generateError(err);
     return;
   }
-
-  // Must not delete any part of JigdoIO tree while any other is still live
-  //x if (dynamic_cast<JigdoIO*>(childDl->childIo()) == 0) delete childDl;
 }
+//______________________________________________________________________
 
-void MakeImageDl::childFailed(Child* childDl, DataSource::IO*) {
+void MakeImageDl::childFailed(Child* c, DataSource::IO*) {
 # if DEBUG
-  childDl->childSuccFail = true;
+  c->childSuccFail = true;
 # endif
   //x if (frontend != 0)
   //x   io->makeImageDl_finished(childDl->source(), frontend);
-  IOSOURCE_SEND(IO, io, makeImageDl_finished, (childDl->source()));
+  IOSOURCE_SEND(IO, io, makeImageDl_finished, (c->source()));
 
   // Delete partial output file if it is empty
-  string name = tmpDir();
-  name += DIRSEP;
-  appendLeafname(&name, childDl->contentMd, childDl->md);
-  toggleLeafname(&name);
-  childDl->deleteSource();
+  if (dynamic_cast<SingleUrl*>(c) != 0) {
+    string filename = cachePathnameUrl(c->source()->location(), false);
+    c->deleteSource();
+    debug("rm -f %1", filename);
+    remove(filename.c_str());
+  }
 
   // FIXME: Uncomment if() once if-mod-since resume implemented
 //   struct stat fileInfo;
 //   if (stat(name.c_str(), &fileInfo) == 0 && fileInfo.st_size == 0) {
-  debug("rm -f %1", name);
-  remove(name.c_str());
+//   debug("rm -f %1", name);
+//   remove(name.c_str());
 //   } else {
 //     debug("NO rm -f %1", name);
 //   }
@@ -411,13 +461,28 @@ void MakeImageDl::setImageSection(string* imageName, string* imageInfo,
   //x if (io) io->makeImageDl_haveImageSection();
   IOSOURCE_SEND(IO, io, makeImageDl_haveImageSection, ());
 }
+//______________________________________________________________________
 
-/* All .jigdo data available now. At this point, the only children that we
-   ever started were all SingleUrls with JigdoIOs attached to them, so we can
-   delete all jigdo-downloading children simply by deleting all children. */
 void MakeImageDl::jigdoFinished() {
   debug("jigdoFinished");
+  callbackId = g_idle_add_full(G_PRIORITY_HIGH_IDLE, &jigdoFinished_callback,
+                               (gpointer)this, NULL);
+}
 
+gboolean MakeImageDl::jigdoFinished_callback(gpointer mi) {
+  MakeImageDl* self = static_cast<MakeImageDl*>(mi);
+  self->jigdoFinished2();
+  return FALSE; // "Don't call me again"
+}
+
+/* All .jigdo data available now - this is called by JigdoIO. At this point,
+   the only children that we ever started were all SingleUrls with JigdoIOs
+   attached to them, so we can delete all jigdo-downloading children simply
+   by deleting all children. */
+void MakeImageDl::jigdoFinished2() {
+  debug("jigdoFinished2");
+
+#if 0
   // Delete all JigdoIO objects
   delete jigdoIo;
   jigdoIo = 0;
@@ -425,7 +490,7 @@ void MakeImageDl::jigdoFinished() {
   typedef ChildList::iterator Iter;
   Iter i = childrenVal.begin();
   while (i != childrenVal.end()) {
-    Child* x = &*i;
+    Child* x = i->get();
     ++i;
 #   if DEBUG
     if (!x->childSuccFail)
@@ -449,23 +514,22 @@ void MakeImageDl::jigdoFinished() {
     }
 #endif
   }
+#endif
 
   if (finalState()) return; // I.e. there was an error
 
   Paranoid(stateVal == DOWNLOADING_JIGDO);
   stateVal = DOWNLOADING_TEMPLATE;
 
-  // Template download
-  unsigned labelLen = findLabelColon(templateUrlVal);
-  if (labelLen == 0 // relative URL, methinks
-      || isRealUrl(templateUrlVal)) {
+  /* Template download. Relative template URLs have already been made
+     absolute by jigdo-io */
+  if (isRealUrl(templateUrlVal)) {
     // Template is a single absolute or relative URL
-    string templUrl;
-    uriJoin(&templUrl, jigdoUri(), templateUrlVal);
-    debug("Template: <%1>", templUrl);
+    debug("Template: <%1>", templateUrlVal);
     // Run .template download
     string leafname;
-    auto_ptr<Child> childDl(childFor(templUrl, 0, &leafname));
+    auto_ptr<Child> childDl(childFor(templateUrlVal, templateMd5Val,
+                                     &leafname));
     if (childDl.get() != 0) {
       string info = _("Retrieving .template");
 //       string destDesc = subst(destDescTemplate(), leafname, info);
@@ -477,12 +541,55 @@ void MakeImageDl::jigdoFinished() {
 //         io->job_message(&info);
 //       }
       IOSOURCE_SEND(IO, io, job_message, (info));
+      //nah: childDl->source()->io.addListener(new TemplateIO(this));
       (childDl.release())->source()->run();
     }
   } else {
     debug("Template: %1", templateUrlVal);
     // Template is a Label:something mapping
-    debug("TODO hzdcoe");
+    generateError("Label:some.template unimplemented", ERROR);
+    debug("Label:some.template unimplemented");
   }
 
+}
+//______________________________________________________________________
+
+/* Template download finished. This just means that the data was downloaded,
+   need to verify its md5sum if appropriate. */
+// void MakeImageDl::templateFinished() {
+//   debug("MakeImageDl::templateFinished()");
+// }
+//______________________________________________________________________
+
+void MakeImageDl::Child::job_deleted() { }
+
+void MakeImageDl::Child::job_succeeded() {
+  debug("Child::job_succeeded: %1", source()->location());
+# if DEBUG
+  childSuccFail = true;
+# endif
+  IOSOURCE_SEND(MakeImageDl::IO, master()->io,
+                makeImageDl_finished, (source()));
+
+  // For SingleUrls, maybe rename cache entry
+  if (dynamic_cast<SingleUrl*>(source()) != 0)
+    master()->singleUrlFinished(this);
+  // singleUrlSucceeded() calls this - also call it for other sources
+  deleteSource();
+
+//   if (master()->state() == DOWNLOADING_TEMPLATE)
+//     master()->templateFinished();
+}
+
+void MakeImageDl::Child::job_failed(const string&) { }
+
+void MakeImageDl::Child::job_message(const string&) { }
+
+void MakeImageDl::Child::dataSource_dataSize(uint64) { }
+
+void MakeImageDl::Child::dataSource_data(const byte* data, unsigned size,
+                                         uint64) {
+  if (checkContent) return;
+  // Desired checksum is in md; calculate actual checksum in mdCheck
+  mdCheck.update(data, size);
 }

@@ -130,7 +130,7 @@ void JigdoIO::job_succeeded() {
   XStatus st = imgSect_eof();
   if (st.xfailed()) return;
   //x if (frontend != 0) frontend->job_succeeded();
-  master()->childSucceeded(childDl, this);
+  //master()->childSucceeded(childDl, this);
   if (st.returned(1)) master()->jigdoFinished(); // Causes "delete this"
 }
 
@@ -648,7 +648,10 @@ void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
       if (!templateUrl.empty()) return generateError(_("Value redefined"));
       if (value.empty()) return generateError(_("Missing argument"));
       // Immediately turn template URL into absolute URL if necessary
-      uriJoin(&templateUrl, urlVal, value.front());
+      if (isLabelUrl(value.front()))
+        templateUrl = value.front();
+      else
+        uriJoin(&templateUrl, urlVal, value.front());
     } else if (*label == "Template-MD5Sum") {
       if (templateMd5 != 0) return generateError(_("Value redefined"));
       if (value.empty()) return generateError(_("Missing argument"));

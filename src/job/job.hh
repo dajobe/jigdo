@@ -138,7 +138,10 @@ public:
   /** Does not delete the listeners. */
   //~IOSource() { typename IList<SomeIO>::const_iterator _i; }
   ~IOSource() { IOSOURCE_SENDt(SomeIO, *this, job_deleted, ()); }
-  void addListener(SomeIO& l) { Assert(&l != 0); list.push_back(l); }
+  /** Add an IO object which listens to calls going via this IOSource. NB,
+      this adds l to the *front* of the list, so it will be called before
+      listeners that were registered earlier. */
+  void addListener(SomeIO& l) { Assert(&l != 0); list.push_front(l); }
   const IList<SomeIO>& listeners() const { return list; };
   IList<SomeIO>& listeners() { return list; };
   bool empty() const { return list.empty(); }

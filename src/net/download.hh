@@ -141,6 +141,7 @@ private:
   char* curlError; // Curl error string buffer
 
   string uriVal; // Careful: Includes a trailing null byte!
+  string uriValWithoutNull;
   uint64 resumeOffsetVal;
   uint64 currentSize;
   Output* outputVal; // Usually points to a Job::SingleUrl
@@ -199,7 +200,9 @@ public:
 };
 //______________________________________________________________________
 
-const string& Download::uri() const { return uriVal; }
+const string& Download::uri() const {
+  return uriValWithoutNull;
+}
 
 Download::Output* Download::output() const { return outputVal; }
 void Download::setOutput(Download::Output* o) { outputVal = o; }

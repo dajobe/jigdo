@@ -122,8 +122,8 @@ void SingleUrl::download_dataSize(uint64 n) {
 bool SingleUrl::writeToDestStream(uint64 off, const byte* data,
                                   unsigned size) {
   if (destStream() == 0 /*|| stopLaterId != 0*/) return SUCCESS;
-  debug("writeToDestStream %1 %2 bytes at offset %3",
-        destStream(), size, off);
+  //debug("writeToDestStream %1 %2 bytes at offset %3",
+  //      destStream(), size, off);
 
   // Never go beyond destEndOff
   unsigned realSize = size;

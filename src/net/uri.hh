@@ -30,5 +30,11 @@ unsigned findLabelColon(const string& s);
 /** Return true iff the absolute URL is a "real" HTTP/FTP/.. url, as opposed
     to a label name followed by a path. */
 bool isRealUrl(const string& s);
+//______________________________________________________________________
+
+/** Return true iff the absolute URL is a Label:some/path URL, i.e. there's a
+    colon before the first '/', and that colon is not followed by two
+    slashes. */
+bool isLabelUrl(const string& s);
 
 #endif
