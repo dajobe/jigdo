@@ -37,7 +37,7 @@ jigdo 0.7.1 -- Richard Atterer, 20 Jun 2004
   - Added unit tests for many parts of the code, with support in
     depend.awk
   - Fixed bug in html-beautify.awk
-  - Vanity meter reports 25000 lines of code in 120 files
+  - Vanity meter reports 26000 lines of code in 120 files
 
 jigdo 0.7.0 -- Richard Atterer, 05 May 2003
 
