@@ -31,16 +31,16 @@
 #include <string.h>
 #include <assert.h>
 
-#if 1
+#ifdef G_OS_WIN32
 /*______________________________________________________________________*/
 
 /* Timeout for the fds passed to glib's poll() call, in millisecs.
    curl_multi_fdset(3) says we should call curl_multi_perform() at regular
    intervals. */
-#define GLIBCURL_TIMEOUT 100000
+#define GLIBCURL_TIMEOUT 500
 
-#define D(_args) fprintf _args;
-/* #define D(_args) */
+/* #define D(_args) fprintf _args; */
+#define D(_args)
 
 /* A structure which "derives" (in glib speak) from GSource */
 typedef struct CurlGSource_ {
@@ -52,7 +52,7 @@ typedef struct CurlGSource_ {
   GMutex* mutex; /* Not held by selectThread whenever it is waiting */
 
   gboolean callPerform; /* TRUE => Call curl_multi_perform() Real Soon */
-  gint cpLocked;
+  gint gtkBlockAndWait;
   gboolean selectRunning; /* FALSE => selectThread terminates */
 
   /* For data returned by curl_multi_fdset */
@@ -91,7 +91,7 @@ void glibcurl_init() {
   curlSrc->selectThread = 0;
   curlSrc->cond = g_cond_new();
   curlSrc->mutex = g_mutex_new();
-  curlSrc->cpLocked = 0;
+  curlSrc->gtkBlockAndWait = 0;
 
   /* Init libcurl */
   curl_global_init(CURL_GLOBAL_ALL);
@@ -100,14 +100,29 @@ void glibcurl_init() {
 /*______________________________________________________________________*/
 
 void glibcurl_cleanup() {
+  D((stderr, "glibcurl_cleanup\n"));
   /* You must call curl_multi_remove_handle() and curl_easy_cleanup() for all
      requests before calling this. */
 /*   assert(curlSrc->callPerform == 0); */
 
+  /* All easy handles must be finished */
+
+  /* Lock before accessing selectRunning/selectThread */
+  g_mutex_lock(curlSrc->mutex);
+  curlSrc->selectRunning = FALSE;
+  while (curlSrc->selectThread != NULL) {
+    g_mutex_unlock(curlSrc->mutex);
+    g_thread_yield();
+    g_cond_signal(curlSrc->cond); /* Make the select thread shut down */
+    g_thread_yield();
+    g_mutex_lock(curlSrc->mutex); /* Wait until it has shut down */
+  }
+  g_mutex_unlock(curlSrc->mutex);
+
+  assert(curlSrc->selectThread == NULL);
+
   g_cond_free(curlSrc->cond);
   g_mutex_free(curlSrc->mutex);
-  /* All easy handles must be finished */
-  assert(curlSrc->selectThread == NULL);
 
   curl_multi_cleanup(curlSrc->multiHandle);
   curlSrc->multiHandle = 0;
@@ -155,8 +170,6 @@ void glibcurl_set_callback(GlibcurlCallback function, void* data) {
 
 static gpointer selectThread(gpointer data) {
   int fdCount;
-/*   int multiCount; */
-/*   CURLMcode x; */
   struct timeval timeout;
 
   D((stderr, "selectThread\n"));
@@ -179,10 +192,7 @@ static gpointer selectThread(gpointer data) {
                      &curlSrc->fdExc, &timeout);
     D((stderr, "selectThread: select() fdCount=%d\n", fdCount));
 
-    /* PROBLEM: Ensure prepare() is called SOON. Call below doesn't work. */
-/*     g_mutex_unlock(curlSrc->mutex); */
-
-    g_atomic_int_inc(&curlSrc->cpLocked); /* "GTK thread, block!" */
+    g_atomic_int_inc(&curlSrc->gtkBlockAndWait); /* "GTK thread, block!" */
     /* GTK thread will almost immediately block in prepare() */
     D((stderr, "selectThread: waking up GTK thread\n"));
     g_main_context_wakeup(NULL);
@@ -205,47 +215,40 @@ static gpointer selectThread(gpointer data) {
    not a problem, we use g_main_context_wakeup to wake it up */
 /* Returns TRUE iff it holds the mutex lock */
 gboolean prepare(GSource* source, gint* timeout) {
-  D((stderr, "prepare: callPerform=%d, thread=%p\n",
-     curlSrc->callPerform, curlSrc->selectThread));
+/*   D((stderr, "prepare: callPerform=%d, thread=%p\n", */
+/*      curlSrc->callPerform, curlSrc->selectThread)); */
 
   *timeout = -1;
 
-  if (g_atomic_int_dec_and_test(&curlSrc->cpLocked)) {
+  if (g_atomic_int_dec_and_test(&curlSrc->gtkBlockAndWait)) {
     /* The select thread wants us to block */
     D((stderr, "prepare: trying lock\n"));
     g_mutex_lock(curlSrc->mutex);
     D((stderr, "prepare: got lock\n"));
     return TRUE;
   } else {
-    g_atomic_int_inc(&curlSrc->cpLocked);
+    g_atomic_int_inc(&curlSrc->gtkBlockAndWait);
   }
+
+  if (!curlSrc->callPerform) return FALSE;
 
   /* Always dispatch if callPerform */
-  if (curlSrc->callPerform) {
-    D((stderr, "prepare: trying lock 2\n"));
-    /* Problem: We can block up to GLIBCURL_TIMEOUT msecs here, until the
-       select() call returns. */
-    g_mutex_lock(curlSrc->mutex);
-    D((stderr, "prepare: got lock 2\n"));
-    curlSrc->callPerform = FALSE;
-    if (curlSrc->selectThread == NULL) {
-      D((stderr, "prepare: starting select thread\n"));
-      /* Note that the thread will stop soon because we hold mutex */
-      curlSrc->selectThread = g_thread_create(&selectThread, curlSrc, FALSE,
-                                              NULL);
-      assert(curlSrc->selectThread != NULL);
-    }
-    return TRUE;
+  D((stderr, "prepare: trying lock 2\n"));
+  /* Problem: We can block up to GLIBCURL_TIMEOUT msecs here, until the
+     select() call returns. However, under Win32 this does not appear to be a
+     problem (don't know why) - it _does_ tend to block the GTK thread under
+     Linux. */
+  g_mutex_lock(curlSrc->mutex);
+  D((stderr, "prepare: got lock 2\n"));
+  curlSrc->callPerform = FALSE;
+  if (curlSrc->selectThread == NULL) {
+    D((stderr, "prepare: starting select thread\n"));
+    /* Note that the thread will stop soon because we hold mutex */
+    curlSrc->selectThread = g_thread_create(&selectThread, curlSrc, FALSE,
+                                            NULL);
+    assert(curlSrc->selectThread != NULL);
   }
-  return FALSE;
-
-/*   if (curlSrc->selectThread == NULL) return FALSE; */
-
-  /* Test whether selectThread wants us to dispatch. We can tell that it's
-     waiting in g_cond_wait() by the fact that mutex is unlocked.
-     Locked by selectThread => return FALSE here, do nothing.
-     Otherwise, lock it, return TRUE */
-/*   return g_mutex_trylock(curlSrc->mutex); */
+  return TRUE;
 }
 /*______________________________________________________________________*/
 
@@ -283,7 +286,7 @@ void finalize(GSource* source) {
 }
 /*======================================================================*/
 
-#else
+#else /* !G_OS_WIN32 */
 
 /* Number of highest allowed fd */
 #define GLIBCURL_FDMAX 127

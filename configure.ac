@@ -326,10 +326,9 @@ if test "$jigdo_gui" = "yes"; then
         AC_MSG_RESULT([   * Installed version of GTK+ is too old])
         jigdo_gui_failed
     fi
-    dnl GTKCFLAGS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 --cflags 2>/dev/null`"
-    GTKCFLAGS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 gthread-2.0 --cflags 2>/dev/null`"
-    dnl GTKLIBS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 --libs 2>/dev/null`"
-    GTKLIBS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 gthread-2.0 --libs 2>/dev/null`"
+    if test "$is_windows" = yes; then gth="gthread-2.0"; else gth=""; fi
+    GTKCFLAGS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 $gth --cflags 2>/dev/null`"
+    GTKLIBS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 $gth --libs 2>/dev/null`"
 fi
 
 dnl dnl The following adds flags for libwww
