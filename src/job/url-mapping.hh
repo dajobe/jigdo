@@ -104,7 +104,7 @@ UrlMapping::UrlMapping() : urlVal(), prepVal(0), nextVal(0), tries(0),
                            triesFailed(0)/*, weight(0)*/ { }
 
 void UrlMapping::insertNext(UrlMapping* um) {
-  Paranoid(um->nextVal.isNull());
+  Paranoid(um != 0 && um->nextVal.isNull());
   um->nextVal = nextVal;
   nextVal = um;
 }

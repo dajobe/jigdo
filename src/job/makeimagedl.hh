@@ -149,6 +149,11 @@ public:
       definition. */
   Status addServer(const string& label, vector<string>& value);
 
+# if DEBUG
+  /** Output the graph built up by addPart()/addServer(). */
+  void dumpJigdoInfo();
+# endif
+
   /** Return child download object which contains a DataSource which produces
       the data of the requested URL. That returned object is usually a newly
       started download, except if the file (or its beginning) was already

@@ -420,6 +420,7 @@ void MakeImageDl::jigdoFinished() {
         debug("childFailed()/Succeeded() not called for %1",
               x->source() ? x->source()->location() : "[deleted source]");
       x->childSuccFail = true; // Avoid failed assert
+      dumpJigdoInfo();
 #     endif
       debug("jigdoFinished: delete %1", x);
       delete x;
@@ -447,7 +448,8 @@ ServerUrlMapping* MakeImageDl::findOrCreateServerUrlMapping(
   ServerUrlMapping* s = new ServerUrlMapping();
   /* Initialize the url for label "http" with "http:"; addServer() below will
      recognize this special case. */
-  servers.insert(i, make_pair(label, makeSmartPtr(s)));
+  SmartPtr<ServerUrlMapping> ss(s);
+  servers.insert(i, make_pair(label, ss));
   label += ':';
   s->setUrl(label);
   return s;
@@ -467,8 +469,10 @@ void MakeImageDl::addPart(const MD5& md, vector<string>& value) {
     p->setUrl(url, colon + 1);
   }
   // Insert entry in "parts"
+  SmartPtr<PartUrlMapping> pp(p);
   pair<PartMap::iterator, bool> x =
-    parts.insert(make_pair(md, makeSmartPtr(p)));
+    parts.insert(make_pair(md, pp));
+  Paranoid(x.first->first == md);
   if (!x.second) {
     // entry for md already present in parts, add p to its linked list
     x.first->second->insertNext(p);
@@ -487,18 +491,21 @@ Status MakeImageDl::addServer(const string& label, vector<string>& value) {
      except in the case where findOrCreateServerUrlMapping() has created a
      dummy entry during previous processing of a [Parts] section. */
   ServerUrlMapping* s;
+  ServerUrlMapping* mappingList; // Ptr to head of linked list for label
   ServerMap::iterator i = servers.lower_bound(label);
   if (i == servers.end() || i->first != label) {
     // Create object and start a new linked list; add list head to "servers"
-    s = new ServerUrlMapping();
-    servers.insert(i, make_pair(label, makeSmartPtr(s)));
+    s = mappingList = new ServerUrlMapping();
+    SmartPtr<ServerUrlMapping> ss(s);
+    servers.insert(i, make_pair(label, ss));
   } else {
     const string& somepath = i->second->url();
     if (!somepath.empty() && somepath[somepath.length() - 1] == ':') {
       // List head is dummy; use it directly
-      s = i->second.get();
+      s = mappingList = i->second.get();
     } else {
       // Create object and add it to existing linked list
+      mappingList = i->second.get();
       s = new ServerUrlMapping();
       i->second->insertNext(s);
     }
@@ -516,7 +523,7 @@ Status MakeImageDl::addServer(const string& label, vector<string>& value) {
     // Check whether this is a recursive definition
     UrlMapping* i = prep;
     do {
-      if (i == s) { // Cycle detected
+      if (i == mappingList) { // Cycle detected
         // Break cycle, leave s in nonsensical state. Maybe also delete prep
         s->setPrepend(0);
         return FAILED;
@@ -526,3 +533,31 @@ Status MakeImageDl::addServer(const string& label, vector<string>& value) {
   }
   return OK;
 }
+//______________________________________________________________________
+
+#if DEBUG
+void MakeImageDl::dumpJigdoInfo() {
+  for (PartMap::iterator i = parts.begin(), e = parts.end(); i != e; ++i) {
+    UrlMapping* p = i->second.get();
+    debug("Part %1: %2 + \"%3\"",
+          i->first.toString(), p->prepend(), p->url());
+    while (p->next() != 0) {
+      p = p->next();
+      debug("                             %1 + \"%2\"",
+            p->prepend(), p->url());
+    }
+  }
+
+  for (ServerMap::iterator i = servers.begin(), e = servers.end();
+       i != e; ++i) {
+    UrlMapping* p = i->second.get();
+    debug("Server %1 (%2): %3 + \"%4\"",
+          p, i->first, p->prepend(), p->url());
+    while (p->next() != 0) {
+      p = p->next();
+      debug("    %1 + \"%2\"",
+            p->prepend(), p->url());
+    }
+  }
+}
+#endif
