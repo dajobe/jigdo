@@ -63,6 +63,7 @@ if test "$GXX" = yes; then
         AC_MSG_RESULT([   * 3.3! If you compile jigdo on Linux (and maybe])
         AC_MSG_RESULT([   * other OSes), it might not be able to create])
         AC_MSG_RESULT([   * files bigger than 2 GB, such as DVD images.])
+        AC_MSG_RESULT([   * (Try GCC 2.95 or GCC 3.4 or later)])
     esac
 fi
 AC_SUBST(IF_GXX2)
@@ -205,16 +206,16 @@ AC_ARG_WITH(libdb,
 AC_MSG_RESULT(\"$jigdo_libdb\")
 if test "$jigdo_libdb" = "yes"; then
     AC_CHECK_HEADER(db.h, have_db_h="yes", have_db_h="no")
-    AC_MSG_CHECKING(libdb major version)
-    printf "#include <db.h>\nDB_VERSION_MAJOR\n" >conftest.c
-    set `eval $ac_cpp conftest.c | egrep '^ *[[0-9]] *$'`; v="$1"
-    AC_MSG_RESULT($v)
+    AC_MSG_CHECKING(for libdb version in db.h)
+    printf "#include <db.h>\nDB_VERSION_MAJOR DB_VERSION_MINOR\n" >conftest.c
+    set `eval $ac_cpp conftest.c | egrep '^ *[[0-9]] *'`; v="$1"; vv="$2"
+    AC_MSG_RESULT($v.$vv)
     if test "$v" -ne 3 -a "$v" -ne 4; then
         AC_MSG_RESULT([   * Warning: jigdo is only known to work with libdb])
-        AC_MSG_RESULT([   * version 3 or 4 - maybe you should upgrade.])
+        AC_MSG_RESULT([   * version 3 or 4 - maybe you should up/downgrade.])
         installDevel "libdb4.2" "libdb4"
     fi
-    for db in "db-$v" "db$v" "db"; do
+    for db in "db-$v.$vv" "db$v.$vv" "db-$v" "db$v" "db"; do
         AC_MSG_CHECKING(for db_create in lib$db)
         AC_TRY_COMPILE([#include <db.h>], db_create(0, 0, 0),
                        have_libdb="$db", have_libdb="no")
