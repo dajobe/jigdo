@@ -92,9 +92,10 @@ fetchAndMerge() {
 # input <prompt string> <default value>
 input() {
   prompt=""
+  REPLY=""
   if strNotEmpty "$2"; then prompt=" [$2]"; fi
   printf "%s%s: " "$1" "$prompt"
-  $readLine REPLY
+  if $nonInteractive; then echo; else $readLine REPLY; fi
   if strEmpty "$REPLY"; then REPLY="$2"; fi
 }
 #______________________________________________________________________
@@ -230,7 +231,7 @@ fetchTemplate() {
   echo ".template file, and that .template file has changed on the server in"
   echo "the meantime. In this case, you may be able to fix the problem by"
   echo "deleting the .template file and restarting jigdo-lite."
-  $readLine REPLY
+  input ""
   case $REPLY in *42*) return 0;; esac
   $error 1
 }
@@ -383,8 +384,7 @@ scanFiles() {
       if strNotEmpty "$4"; then echo "  4: $4"; fi
       if strNotEmpty "$5"; then echo "  5: $5"; fi
     fi
-    printf "Files to scan: "
-    $readLine filesToScan
+    input "Files to scan"; filesToScan="$REPLY"
     if strEmpty "$filesToScan"; then return 0; fi
     # Do not add supplied string to menu if...
     case "$filesToScan" in
@@ -522,7 +522,7 @@ imageDownload() {
     echo "ARE GOING TO BE DELETED (possibly after having been copied to the"
     echo "image, if they are of interest for it). If you do not want this"
     echo "to happen, press Ctrl-C now. Otherwise, press Return to proceed."
-    $readLine REPLY
+    input ""
   fi
 
   if $askQuestions; then
@@ -643,7 +643,7 @@ imageDownload() {
     echo "Press Ctrl-C to abort. (If you re-run jigdo-lite later, it will"
     echo "resume from here, the downloaded data is not lost if you press"
     echo "Ctrl-C now.)"
-    $readLine REPLY
+    input ""
 
   done
   finished
@@ -708,6 +708,7 @@ fi
 
 # Process command line switches
 batch=false
+nonInteractive=false
 while true; do
   case "$1" in
   --help|-h)
@@ -716,6 +717,8 @@ while true; do
     echo "  -h  --help       Print this message"
     echo "  -v  --version    Output version information"
     echo "      --scan PATH  Don't ask for \"Files to scan\", use this path"
+    echo "      --noask      \"Press Return automatically\" for all "
+    echo "                   questions, accepting the offered defaults"
     exit 0;;
   --version|-v)
     echo
@@ -724,6 +727,9 @@ while true; do
   --scan)
     opt_filesToScan="$2"
     shift 2;;
+  --noask)
+    nonInteractive=true
+    shift 1;;
   *)
     break;;
     esac

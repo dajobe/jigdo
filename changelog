@@ -3,6 +3,8 @@ Changelog for Jigsaw Download                               -*- Text -*-
 
 Current CVS version
 
+  - jigdo-lite: --noask switch to allow running jigdo-lite from cron
+    jobs
   - Fix for compilation on 64 bit architectures
 
 jigdo 0.7.1 -- Richard Atterer, 20 Jun 2004
