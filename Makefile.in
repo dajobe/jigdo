@@ -130,7 +130,8 @@ Makefile:	Makefile.in configure jigdo.spec
 		sh config.status # update Makefile from Makefile.in
 
 configure:	configure.in
-		cd $(srcdir) && autoconf
+		cd "$(srcdir)" && autoconf
+		rm -f config.cache
 
 # allow "make CXXFLAGS=-O0" while staying compatible with non-GNU-make
 .EXPORT_ALL_VARIABLES: ;
