@@ -8,6 +8,7 @@
   the file COPYING for details.
 
   #test-deps glibcurl/glibcurl.o net/uri.o compat.o
+  #test-ldflags $(CURLLIBS)
 
 */
 
