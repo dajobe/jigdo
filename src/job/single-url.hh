@@ -19,7 +19,6 @@
 #include <bstream-counted.hh>
 #include <datasource.hh>
 #include <download.hh>
-#include <job.hh>
 #include <nocopy.hh>
 #include <progress.hh>
 //______________________________________________________________________

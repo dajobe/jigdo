@@ -58,7 +58,7 @@ JigdoConfig::JigdoConfig(const char* jigdoFile, ProgressReporter& pr)
     : config(0), serverMap(), freporter(pr, jigdoFile) {
   ifstream f(jigdoFile);
   if (!f) {
-    string err = subst(_("Could not open `%1' (%2)"),
+    string err = subst(_("Could not open `%1' for input: %2"),
                        jigdoFile, (errno != 0 ? strerror(errno) : ""));
     freporter.reporter->error(err);
     return;

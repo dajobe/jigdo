@@ -72,8 +72,8 @@ protected:
   inline JobList* jobList() const;
   /** Iterator for our row in the list. Do not modify the returned value,
       copy it instead! (It is non-const because various gtk functions which
-      read it are incorrectly declared non-const.) NB: The returned iter is
-      UNINITIALIZED until the JobLine is added to a JobList! */
+      read it are incorrectly(?) declared non-const.) NB: The returned iter
+      is UNINITIALIZED until the JobLine is added to a JobList! */
   inline GtkTreeIter* row();
 
   /** Register a tick handler. The handler will be called every

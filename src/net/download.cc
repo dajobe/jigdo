@@ -401,21 +401,21 @@ int Download::afterFilter(HTRequest* request, HTResponse* /*response*/,
                           void* /*param*/, int status) {
   Download* self = getDownload(request);
 
-#if DEBUG
   const char* msg = "";
+#if DEBUG
   switch (status) {
-  case HT_ERROR: msg = "HT_ERROR"; break;
-  case HT_LOADED: msg = "HT_LOADED"; break;
-  case HT_PARTIAL_CONTENT: msg = "HT_PARTIAL_CONTENT"; break;
-  case HT_NO_DATA: msg = "HT_NO_DATA"; break;
-  case HT_NO_ACCESS: msg = "HT_NO_ACCESS"; break;
-  case HT_NO_PROXY_ACCESS: msg = "HT_NO_PROXY_ACCESS"; break;
-  case HT_RETRY: msg = "HT_RETRY"; break;
-  case HT_PERM_REDIRECT: msg = "HT_PERM_REDIRECT"; break;
-  case HT_TEMP_REDIRECT: msg = "HT_TEMP_REDIRECT"; break;
+  case HT_ERROR: msg = " (HT_ERROR)"; break;
+  case HT_LOADED: msg = " (HT_LOADED)"; break;
+  case HT_PARTIAL_CONTENT: msg = " (HT_PARTIAL_CONTENT)"; break;
+  case HT_NO_DATA: msg = " (HT_NO_DATA)"; break;
+  case HT_NO_ACCESS: msg = " (HT_NO_ACCESS)"; break;
+  case HT_NO_PROXY_ACCESS: msg = " (HT_NO_PROXY_ACCESS)"; break;
+  case HT_RETRY: msg = " (HT_RETRY)"; break;
+  case HT_PERM_REDIRECT: msg = " (HT_PERM_REDIRECT)"; break;
+  case HT_TEMP_REDIRECT: msg = " (HT_TEMP_REDIRECT)"; break;
   }
-  debug("Status %1 (%2) for %3 obj %4", status, msg, self->uri(), self);
 #endif
+  debug("Status %1%2 for %L3 obj %4", status, msg, self->uri(), self);
 
   // Download finished, or server dropped connection on us
   if (status >= 0) {

@@ -43,7 +43,7 @@ istream* openForInput(istream*& dest, const string& name) throw(Cleanup) {
   } else {
     dest = new ifstream(name.c_str(), ios::binary);
     if (!*dest) {
-      cerr << subst(_("%1: Error opening `%2' for input (%3)"),
+      cerr << subst(_("%1: Could not open `%2' for input: %3"),
                     binName(), name, strerror(errno)) << endl;
       throw Cleanup(3);
     }
@@ -74,7 +74,7 @@ ostream* openForOutput(ostream*& dest, const string& name) throw(Cleanup) {
   } else {
     dest = new ofstream(name.c_str(), ios::binary);
     if (!*dest) {
-      cerr << subst(_("%1: Error opening `%2' for output (%3)"),
+      cerr << subst(_("%1: Could not open `%2' for output: %3"),
                     binName(), name, strerror(errno)) << endl;
       throw Cleanup(3);
     }

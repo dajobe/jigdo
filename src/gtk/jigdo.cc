@@ -108,10 +108,10 @@ inline void cmdOptions(int argc, char* argv[]) {
     "                   wget/lynx settings\n"
     "  -v  --version    Output version info\n"
     "  --debug[=all|=UNIT1,UNIT2...|=help]\n"
-    "                   [make-template] Print debugging information for\n"
-    "                   all units, or for specified units, or print list\n"
-    "                   of units. Can use `~', e.g. `all,~libwww'\n"
-    "  --no-debug       [make-template] No debugging info [default]\n"),
+    "                   Print debugging information for all units, or for\n"
+    "                   specified units, or print list of units.\n"
+    "                   Can use `~', e.g. `all,~libwww'\n"
+    "  --no-debug       No debugging info [default]\n"),
     binaryName) << endl;
     exit(0);
   }

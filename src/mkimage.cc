@@ -898,7 +898,7 @@ int JigdoDesc::makeImage(JigdoCache* cache, const string& imageFile,
     img = 0; // Cannot do "img = &cout", so img==0 is special case: stdout
   }
   if (img != 0 && !*img) {
-    string err = subst(_("Error opening `%1' for output (%2)"),
+    string err = subst(_("Could not open `%1' for output: %2"),
                        name, strerror(errno));
     reporter.error(err);
     return 3; // Permanent failure

@@ -39,6 +39,7 @@ GtkSingleUrl::GtkSingleUrl(const string& uriStr, const string& destDesc,
     singleUrl(0) { }
 
 GtkSingleUrl::~GtkSingleUrl() {
+  debug("~GtkSingleUrl");
   callRegularly(0);
   if (jobList()->isWindowOwner(this))
     setNotebookPage(GUI::window.pageOpen);
@@ -114,7 +115,7 @@ void GtkSingleUrl::openOutputAndRun(bool pragmaNoCache) {
   if (!*destStream) {
     MessageBox* m = new MessageBox(MessageBox::ERROR, MessageBox::OK,
       _("Error accessing destination"),
-      subst(_("It was not possible to open `%LE1' for output: %LE2"),
+      subst(_("Could not open `%LE1' for output: %LE2"),
             dest, strerror(errno)));
     m->show();
     state = ERROR;
@@ -157,7 +158,7 @@ void GtkSingleUrl::openOutputAndResume() {
   debug("openOutputAndResume: statResult=%1, %2", statResult,
         strerror(errno));
   treeViewStatus = _("<b>Open of output file failed</b>");
-  string error = subst(_("Could not open output file: %L1"),
+  string error = subst(_("Could not open output file: %LE1"),
                        strerror(errno));
   failedPermanently(&error);
 }
@@ -177,7 +178,7 @@ void GtkSingleUrl::startResume() {
   if (!*destStream) {
     // An error occurred
     treeViewStatus = _("<b>Open of output file failed</b>");
-    string error = subst(_("Could not open output file: %L1"),
+    string error = subst(_("Could not open output file: %LE1"),
                          strerror(errno));
     failedPermanently(&error);
     return;
@@ -249,7 +250,8 @@ void GtkSingleUrl::stop() {
 
 void GtkSingleUrl::percentDone(uint64* cur, uint64* total) {
   if (job == 0 || job->progress()->dataSize() == 0) {
-    *cur = *total = 0;
+    if (state == SUCCEEDED) *cur = *total = 1;
+    else *cur = *total = 0;
   } else {
     *cur = job->progress()->currentSize();
     *total = job->progress()->dataSize();

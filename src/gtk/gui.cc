@@ -358,8 +358,8 @@ void on_jigdo_stopButton_enter(GtkButton*, gpointer) {
 void on_jigdo_restartButton_enter(GtkButton*, gpointer) {
   gtk_label_set_markup(GTK_LABEL(GUI::window.jigdo_buttonInfo),
                        _("<b>Restart</b> download and processing of "
-                         "<tt>.jigdo</tt> - the data downloaded so "
-                         "far is discarded"));
+                         "<tt>.jigdo</tt> - the <tt>.jigdo</tt> data "
+                         "downloaded so far (and only it) is discarded"));
 }
 void on_jigdo_closeButton_enter(GtkButton*, gpointer) {
   gtk_label_set_markup(GTK_LABEL(GUI::window.jigdo_buttonInfo),

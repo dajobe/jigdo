@@ -37,7 +37,8 @@ class Job::JigdoIO : NoCopy, public Job::DataSource::IO, Gunzip::IO {
 public:
   /** Create a new JigdoIO which is owned by m, gets data from download (will
       register itself with download's IOPtr) and passes it on to childIo.
-      @param m "master" object which owns us
+      @param c Object which owns us (it is the MakeImageDl's child, but our
+      master)
       @param download Gives the data of the .jigdo file to us
       @param childIo Provided by the frontend, e.g. a GtkSingleUrl object */
   JigdoIO(MakeImageDl::Child* c, DataSource::IO* frontendIo);
@@ -65,6 +66,13 @@ private:
   inline JigdoIO* imgSectCandidate() const;
   /** Set the ptr to the image section candidate object */
   inline void setImgSectCandidate(JigdoIO* c);
+
+  // Create error message with URL and line number
+  void generateError(const char* msg);
+  // True after above was called
+  inline bool failed() const;
+  // Called by gunzip_data(): New .jigdo line ready. Arg is empty on exit.
+  void jigdoLine(string* l);
 
   // Virtual methods from DataSource::IO
   virtual void job_deleted();
@@ -103,6 +111,7 @@ private:
   Gunzip gunzip;
 
   unsigned line; // Line number, for error messages
+  string section; // Section name, empty if none yet, single null byte if err
 
   // Info about first image section of this .jigdo, if any
   unsigned imageSectionLine; // 0 if no [Image] found yet
@@ -137,5 +146,9 @@ void Job::JigdoIO::setImgSectCandidate(JigdoIO* c) {
 
 Job::MakeImageDl* Job::JigdoIO::master() const { return childDl->master(); }
 Job::DataSource*  Job::JigdoIO::source() const { return childDl->source(); }
+
+bool Job::JigdoIO::failed() const {
+  return (section.size() == 1 && section[0] == '\0');
+}
 
 #endif

@@ -13,6 +13,7 @@
 
 #include <config.h>
 
+#include <configfile.hh>
 #include <debug.hh>
 #include <jigdo-io.hh>
 #include <log.hh>
@@ -35,7 +36,7 @@ JigdoIO::JigdoIO(MakeImageDl::Child* c, DataSource::IO* frontendIo)
 JigdoIO::~JigdoIO() {
   debug("~JigdoIO");
   if (source() != 0) master()->childFailed(childDl, this, frontend);
-  // childDl->deleteSource(); will be called by the Child which owns us
+  // deleteSource(); will be called by the Child which owns us
 }
 //______________________________________________________________________
 
@@ -51,6 +52,7 @@ Job::IO* JigdoIO::job_removeIo(Job::IO* rmIo) {
   } else if (frontend != 0) {
     Job::IO* c = frontend->job_removeIo(rmIo);
     Paranoid(c == 0 || dynamic_cast<DataSource::IO*>(c) != 0);
+    debug("job_removeIo frontend=%1", c);
     frontend = static_cast<DataSource::IO*>(c);
   }
   return this;
@@ -63,6 +65,7 @@ void JigdoIO::job_deleted() {
 }
 
 void JigdoIO::job_succeeded() {
+  if (failed()) return;
   if (frontend != 0) {
     frontend->job_succeeded();
     master()->childSucceeded(childDl, this, frontend);
@@ -126,6 +129,7 @@ void JigdoIO::gunzip_needOut(Gunzip*) {
 void JigdoIO::gunzip_data(Gunzip*, byte* decompressed, unsigned size) {
 //   // If an error happened earlier, ignore this call to gunzip_data()
 //   if (gunzipBuf == 0) return;
+  if (failed()) return;
 
   // Look for end of line.
   byte* p = decompressed;
@@ -142,10 +146,7 @@ void JigdoIO::gunzip_data(Gunzip*, byte* decompressed, unsigned size) {
       if (g_utf8_validate(lineChars, p - stringStart, NULL) != TRUE)
         throw Error(_("Input .jigdo data is not valid UTF-8"));
       line.append(lineChars, p - stringStart);
-      debug("jigdo line: `%1'", line);
-//       configFile().push_back();
-//       swap(configFile().back(), line);
-line.erase();
+      jigdoLine(&line);
       ++p;
       stringStart = p;
       continue;
@@ -165,10 +166,7 @@ line.erase();
     if (g_utf8_validate(lineChars, p - stringStart, NULL) != TRUE)
       throw Error(_("Input .jigdo data is not valid UTF-8"));
     line.append(lineChars, p - stringStart);
-    debug("jigdo line: \"%1\"", line);
-//     configFile().push_back();
-//     swap(configFile().back(), line);
-line.erase();
+    jigdoLine(&line);
     // Trick: To ignore remainder of huge line, prepend a comment char '#'
     gunzipBuf[0] = '#';
     gunzip.setOut(gunzipBuf + 1, GUNZIP_BUF_SIZE - 1);
@@ -186,4 +184,67 @@ line.erase();
 
 void JigdoIO::gunzip_failed(string* message) {
   throw Error(*message, true);
+}
+//______________________________________________________________________
+
+void JigdoIO::generateError(const char* msg) {
+  string err;
+  err = subst(_("%1 (line %2 in %3)"), msg, line,
+              (source() != 0 ? source()->location().c_str() : "?") );
+  if (frontend) frontend->job_failed(&err);
+  err = _("Error scanning .jigdo file contents");
+  master()->generateError(&err);
+  //master()->childFailed(childDl, this, frontend);
+  section.assign("", 1); Paranoid(failed());
+}
+//______________________________________________________________________
+
+// New line of jigdo data arrived. This is similar to ConfigFile::rescan()
+void JigdoIO::jigdoLine(string* l) {
+  debug("\"%1\"", l);
+  string s;
+  s.swap(*l);
+  if (failed()) return;
+
+  ++line;
+
+  string::const_iterator x = s.begin(), end = s.end();
+  // Empty line, or only contains '#' comment
+  if (ConfigFile::advanceWhitespace(x, end)) return;
+
+  bool inComment = (section == "Comment" || section == "comment");
+  if (*x != '[') {
+    if (inComment) ;
+    // TODO
+    return;
+  }
+
+  ++x; // Advance beyond the '['
+  if (ConfigFile::advanceWhitespace(x, end)) { // Skip space after '['
+    generateError(_("No closing `]' for section name"));
+    return;
+  }
+  string::const_iterator s1 = x; // s1 points to start of section name
+  while (x != end && *x != ']' && !ConfigFile::isWhitespace(*x) && *x != '['
+         && *x != '=' && *x != '#') ++x;
+  string::const_iterator s2 = x; // s2 points to end of section name
+  if (ConfigFile::advanceWhitespace(x, end)) {
+    generateError(_("No closing `]' for section name"));
+    return;
+  }
+  section.assign(s1, s2);
+  debug("Section `%1'", section);
+  // In special case of "Include", format differs: URL after section name
+  if (section == "Include") {
+    while (x != end && *x != ']') ++x; // Skip URL
+  }
+  if (*x != ']') {
+    generateError(_("Section name invalid"));
+    return;
+  }
+  ++x; // Advance beyond the ']'
+  if (!ConfigFile::advanceWhitespace(x, end)) {
+    generateError(_("Invalid characters after closing `]'"));
+    return;
+  }  
 }

@@ -163,7 +163,7 @@ JigdoCache::JigdoCache(const string& cacheFileName, size_t expiryInSeconds,
     if (!cacheFileName.empty())
       cacheFile = new CacheFile(cacheFileName.c_str());
   } catch (DbError e) {
-    string err = subst(_("Could not open cache file: %1"), e.message);
+    string err = subst(_("Could not open cache file: %L1"), e.message);
     reporter.error(err);
   }
 }
@@ -280,7 +280,7 @@ const MD5* FilePart::getSumsRead(JigdoCache* c, size_t blockNr) {
       err = _("Error opening file `-' "
               "(using standard input not allowed here)");
     } else {
-      err = subst(_("Error opening `%1' for input - excluded"), name);
+      err = subst(_("Could not open `%L1' for input - excluded"), name);
       if (errno != 0) {
         err += " (";
         err += strerror(errno);

@@ -16,9 +16,11 @@
 #include <config.h>
 
 #include <stdio.h>
+#include <time.h>
 #include <fstream>
 #include <memory>
 
+#include <cached-url.hh>
 #include <compat.hh>
 #include <jigdo-io.hh>
 #include <log.hh>
@@ -31,6 +33,21 @@ using namespace Job;
 //______________________________________________________________________
 
 DEBUG_UNIT("makeimagedl")
+
+namespace {
+
+  /* Normally, when an URL is already in the cache, we send out an
+     If-Modified-Since request to check whether it has changed on the server.
+     Exception: If cache entry was created no longer than this many seconds
+     ago, do *not* send any request, just assume it has not changed on the
+     server. */
+  const time_t CACHE_ENTRY_AGE_NOIFMODSINCE = 5;
+
+  /* Name prefix to use when creating temporary directory. A checksum of the
+     source .jigdo URL will be appended. */
+  const char* const TMPDIR_PREFIX = "jigdo-";
+
+}
 
 MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
                          const string& destination)
@@ -48,10 +65,10 @@ MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
   md.update(reinterpret_cast<const byte*>(jigdoUri.c_str()),
             jigdoUri.length()).finish();
 
-  debug("ctor a %1 %2", md.toString(), jigdoUri);
   Base64String b64;
   b64.result() = dest;
-  b64.result() += DIRSEPS "jigdo-";
+  b64.result() += DIRSEP;
+  b64.result() += TMPDIR_PREFIX;
   // Halve number of bits by XORing bytes. (Would a real CRC64 be better??)
   byte cksum[8];
   const byte* digest = md.digest();
@@ -63,7 +80,7 @@ MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
 //______________________________________________________________________
 
 Job::MakeImageDl::~MakeImageDl() {
-  //delete jigdo;
+  delete jigdo;
 }
 //______________________________________________________________________
 
@@ -209,7 +226,7 @@ MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md,
   BfstreamCounted* f = new BfstreamCounted(filename.c_str(),
                                     ios::binary|ios::in|ios::out|ios::trunc);
   if (!*f) {
-    string err = subst(_("Could not open `%L1': %L2"),
+    string err = subst(_("Could not open `%L1' for output: %L2"),
                        leafname, strerror(errno));
     generateError(&err);
     return 0;
@@ -225,23 +242,33 @@ MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md,
 // Cache contains already completed download for requested URL/md5sum
 MakeImageDl::Child* MakeImageDl::childForCompleted(
     const struct stat& fileInfo, const string& filename, bool contentMdKnown,
-    const MD5& /*cacheMd*/) {
+    const MD5& cacheMd) {
   if (!S_ISREG(fileInfo.st_mode)) {
     // Something messed with the cache dir
     string err = subst(_("Invalid cache entry: `%L1' is not a file"),
                        filename);
-    io->job_failed(&err);
+    generateError(&err);
     return 0;
   }
-  if (contentMdKnown) {
+
+  int cacheEntryAge = time(0) - fileInfo.st_mtime;
+  debug("childFor: cache entry is %1 secs old", cacheEntryAge);
+
+  cacheEntryAge = 0; // TODO - FIXME - remove this once if-mod-since impl.
+
+  if (contentMdKnown || cacheEntryAge < CACHE_ENTRY_AGE_NOIFMODSINCE) {
     // Data with that MD5 known - no need to go on the net, imm. return it
     debug("childFor: already have %L1", filename);
-    Assert(false); return 0;
+    auto_ptr<CachedUrl> dl(new CachedUrl(0, filename, 0));
+    Child* c = new Child(this, dl.get(), contentMdKnown, cacheMd);
+    dl.release();
+    return c;
   } else {
     /* Data for URL fetched before. If less than IF_MOD_SINCE seconds ago,
        just return it, else do an If-Modified-Since request. */
     debug("childFor: if-mod-since %L1", filename);
     Assert(false); return 0;
+
   }
 }
 //______________________________________________________________________
@@ -252,7 +279,7 @@ MakeImageDl::Child* MakeImageDl::childForSemiCompleted(
     // Something messed with the cache dir
     string err = subst(_("Invalid cache entry: `%L1' is not a file"),
                        filename);
-    io->job_failed(&err);
+    generateError(&err);
     return 0;
   }
   debug("childFor: already have partial %L1", filename);
@@ -273,7 +300,9 @@ void MakeImageDl::childSucceeded(
   if (frontend != 0)
     io->makeImageDl_finished(childDl->source(), frontend);
 
-  // Rename u~... to u-...
+  if (dynamic_cast<SingleUrl*>(childDl->source()) == 0) return;
+
+  // Rename u~... to u-... for SingleUrls
   string destName = tmpDir();
   destName += DIRSEP;
   appendLeafname(&destName, childDl->contentMd, childDl->md);

@@ -248,10 +248,10 @@ void JobList::assertValid() const {
     }
     ok = gtk_tree_model_iter_next_depth(GTK_TREE_MODEL(store()), &row);
   }
-  Assert(realEntryCount == entryCount());
-  Assert(realSize == size());
   if (realSize != size())
     debug("realSize=%1 size()=%2", realSize, size());
+  Assert(realEntryCount == entryCount());
+  Assert(realSize == size());
   Assert(entryCount() <= size());
   Assert(realNeedTicks == needTicks);
 }

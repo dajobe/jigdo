@@ -49,9 +49,9 @@ SingleUrl::~SingleUrl() {
   }
 }
 
-const Progress* Job::SingleUrl::progress() const { return &progressVal; }
+const Progress* SingleUrl::progress() const { return &progressVal; }
 
-const string& Job::SingleUrl::location() const { return download.uri(); }
+const string& SingleUrl::location() const { return download.uri(); }
 //______________________________________________________________________
 
 void SingleUrl::setResumeOffset(uint64 resumeOffset) {

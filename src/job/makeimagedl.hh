@@ -3,9 +3,9 @@
   |_) /|  Copyright (C) 2003  |  richard@
   | \/¯|  Richard Atterer     |  atterer.net
   ¯ '` ¯
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License, version 2. See
-  the file COPYING for details.
+  This program is free software; you can redistribute it and/or modify it
+  under the terms of the GNU General Public License, version 2. See the file
+  COPYING for details.
 
   Download .jigdo/.template and file URLs. MakeImageDl takes care of
   downloading the data from the appropriate places and then passes it to its
