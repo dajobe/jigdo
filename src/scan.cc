@@ -506,6 +506,10 @@ void JigdoCache::addFile(const string& name) {
   //cerr << "addFile: " << fileUri << ' ' << path << '|' << nameRest << endl;
   //____________________
 
+  //cerr<<"SPLIT into `"<<path<<"' and `"<<nameRest<<"'"<<endl;
+  //for (LocationPathSet::iterator i = locationPaths.begin(); i != locationPaths.end(); ++i)
+  //  cerr <<"  PATHS: "<<i->getPath()<<" = "<<i->getLabel()<<endl;
+
   // If necessary, create a label for the path before "//"
   static string emptylabel;
   LocationPath tmp(path, emptylabel, fileUri);
