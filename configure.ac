@@ -37,9 +37,9 @@ AC_PROG_AWK
 AC_LANG_C
 AC_PROG_CC
 dnl Add -Wno-unused-parameter to CFLAGS if supported
-ORIG_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -Wno-unused-parameter" # GCC >=3.0
-AC_TRY_COMPILE(, int x = 0, , CFLAGS="$ORIG_CFLAGS")
+dnl ORIG_CFLAGS="$CFLAGS"
+dnl CFLAGS="$CFLAGS -Wno-unused-parameter" # GCC >=3.0
+dnl AC_TRY_COMPILE(, int x = 0, , CFLAGS="$ORIG_CFLAGS")
 AC_LANG_CPLUSPLUS
 AC_PROG_CXX
 CFLAGS=`echo "$CFLAGS" | sed 's/\(^\| \)-g\( \|$\)/ /'`
