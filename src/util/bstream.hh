@@ -162,7 +162,7 @@ bifstream::bifstream(const char* name, ios::openmode m) : bistream() {
   open(name, m);
 }
 
-void bifstream::open(const char* name, ios::openmode m) {
+void bifstream::open(const char* name, ios::openmode DEBUG_ONLY_PARAM(m)) {
   Paranoid((m & ios::binary) != 0 && f == 0);
   f = fopen(name, "rb");
 }

@@ -542,5 +542,9 @@ void finalize(GSource* source) {
 #endif
 /*______________________________________________________________________*/
 
-void glibcurl_add_proxy(const gchar *protocol, const gchar *proxy) { }
-void glibcurl_add_noproxy(const gchar *host) { }
+void glibcurl_add_proxy(const gchar* protocol, const gchar* proxy) {
+  if (protocol == 0 && proxy == 0) return; // NOP; to avoid warning
+}
+void glibcurl_add_noproxy(const gchar* host) {
+  if (host == 0) return; // NOP; to avoid warning
+}
