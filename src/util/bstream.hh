@@ -57,10 +57,10 @@ class bios {
 public:
   operator void*() const { return fail() ? (void*)0 : (void*)(-1); }
   int operator!() const { return fail(); }
-  bool fail() const { return f == 0 || ferror(f) != 0; }
+  bool fail() const { return f == 0 || feof(f) != 0 || ferror(f) != 0; }
   //Incorrect: bool bad() const { return fail(); }
   bool eof() const { return f == 0 || feof(f) != 0; }
-  bool good() const { return f != 0 && feof(f) == 0 && ferror(f) == 0; }
+  bool good() const { return !fail(); } // Incorrect?
   void close() { fclose(f); f = 0; }
   ~bios() { fclose(f); }
 protected:
@@ -72,8 +72,7 @@ protected:
 class bostream : virtual public bios {
 public:
   inline int put(int c) { return putc(c, f); }
-  inline bostream& seekp(uint64 off, ios::seekdir dir = ios::beg);
-  inline bostream& seekp(int off, ios::seekdir dir);
+  inline bostream& seekp(long off, ios::seekdir dir = ios::beg);
   inline bostream& write(const char* p, streamsize n);
 protected:
   bostream() { }
@@ -84,8 +83,7 @@ class bistream : virtual public bios {
 public:
   inline int get();
   inline int peek();
-  inline bistream& seekg(uint64 off, ios::seekdir dir = ios::beg);
-  inline bistream& seekg(int off, ios::seekdir dir);
+  inline bistream& seekg(long off, ios::seekdir dir = ios::beg);
   inline uint64 tellg() const;
   inline void getline(string& l);
   inline bistream& read(char* p, streamsize n);
@@ -138,7 +136,7 @@ int bistream::peek() {
   return r;
 }
 
-bistream& bistream::seekg(uint64 off, ios::seekdir dir) {
+bistream& bistream::seekg(long off, ios::seekdir dir) {
   if (fail()) return *this;
   int whence;
   if (dir == ios::beg)
@@ -152,15 +150,7 @@ bistream& bistream::seekg(uint64 off, ios::seekdir dir) {
   return *this;
 }
 
-bistream& bistream::seekg(int off, ios::seekdir dir) {
-  Paranoid(off < 0 && dir == ios::end);
-  if (fail()) return *this;
-  int r = fseek(f, off, SEEK_END);
-  Assert((r == -1) == (ferror(f) != 0));
-  return *this;
-}
-
-bostream& bostream::seekp(uint64 off, ios::seekdir dir) {
+bostream& bostream::seekp(long off, ios::seekdir dir) {
   if (fail()) return *this;
   int whence;
   if (dir == ios::beg)
@@ -170,14 +160,6 @@ bostream& bostream::seekp(uint64 off, ios::seekdir dir) {
   else
     { Assert(false); whence = SEEK_SET; }
   int r = fseek(f, off, whence);
-  Assert((r == -1) == (ferror(f) != 0));
-  return *this;
-}
-
-bostream& bostream::seekp(int off, ios::seekdir dir) {
-  Paranoid(off < 0 && dir == ios::end);
-  if (fail()) return *this;
-  int r = fseek(f, off, SEEK_END);
   Assert((r == -1) == (ferror(f) != 0));
   return *this;
 }
