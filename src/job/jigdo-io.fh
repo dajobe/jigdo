@@ -1,0 +1,23 @@
+/* $Id$ -*- C++ -*-
+  __   _
+  |_) /|  Copyright (C) 2003  |  richard@
+  | \/¯|  Richard Atterer     |  atterer.net
+  ¯ '` ¯
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License, version 2. See
+  the file COPYING for details.
+
+  IO object for .jigdo downloads; download, gunzip, interpret
+
+  Data (=downloaded bytes, status info) flows as follows:
+  class:       Download -> SingleUrl -> JigdoIO -> GtkSingleUrl
+  data member:              source        this        frontend
+
+  The JigdoIO owns the SingleUrl (and the Download *object* inside it), but
+  it doesn't own the GtkSingleUrl.
+
+*/
+
+namespace Job {
+  class JigdoIO;
+}
