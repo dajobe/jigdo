@@ -274,6 +274,64 @@ MakeImageDl can only be deleted by the same MakeImageDl. This means
 that the GUI code which handles SingleURL GTK+ visualization must
 distinguish between a "child mode" and "non-child mode".
 
+
+MakeImageDl
+~~~~~~~~~~~
+This serves as an example (and it's the most complicated one) of how
+the frontend in gtk/ is decoupled from the application logic in job/
+and other dirs.
+
+Basic idea: In the object that makes data available (e.g. SingleUrl in
+the case of a HTTP/FTP download), maintain a pointer to a
+SingleUrl::IO object. SingleUrl::IO is an abstract class, to be
+implemented by the "consumer" of the data. This consumer is fed the
+data via calls to virtual methods like
+SingleUrl::IO::singleUrl_data(). There are many IO classes; Job::IO is
+their base (see job.hh). Implementers of SingleUrl::IO include
+GtkSingleUrl (GTK+ frontend) and JigdoIO (decompression of .jigdo
+data.)
+
+Often, there is more than one consumer, resulting in chains or even
+trees of consumers. For example, when downloading .jigdo data, the
+SingleUrl creates the data (more accurately its Download does) and
+writes it to disc. Next, the MakeImageDl wants to have a look at the
+data and interpret the sections inside the .jigdo, which it does by
+registering a JigdoIO with the SingleUrl. In order to notify the
+frontend of any news, the JigdoIO in turn forwards the calls to
+another IO, e.g. a GtkSingleUrl, which will modify GTK+ widgets as
+necessary. (The IO objects of the frontend are always at the end of
+the chains.)
+
+In the most complicated scenario, the downloaded data must also be
+decompressed by the JigdoIO, resulting in the following flow of data -
+the "->" can be interpreted both as "an IO* points this way" and
+"information flows this way":
+                                     -> Gunzip -> JigdoIO
+  Download -> SingleUrl -> JigdoIO -|
+                                     -> GtkSingleUrl
+
+It might be confusing that JigdoIO appears twice; this is because the
+same JigdoIO object has a double role as consumer of the SingleUrl
+data and as consumer of the uncompressed data of the Gunzip it owns.
+
+
+MakeImageDl's job is to start downloads as necessary and to pump their
+data into the MakeImage object it owns. MakeImage then creates the
+output image.
+
+With dataSourceFor(), MakeImageDl is a factory of DataSource objects. A
+DataSource can be either a download (SingleUrl) or a "dummy" spooler
+object which just reads data from a file in the cache (CachedUrl).
+After creation of the DataSource, an appropriate consumer for the
+downloaded data (e.g. a JigdoIO) is attached to it, and ownership of
+the DataSource is even transferred to the consumer JigdoIO.
+
+JigdoIO and its related classes are helpers of the MakeImageDl. They
+hold a pointer to their "master" MakeImageDl and notify it whenever
+downloads fail or succeed. The MakeImageDl can act as necessary, e.g.
+because the complete information of the .jigdo file is available to it,
+it can retry the failed download, but use a different server.
+
 --
   __   _
   |_) /|  Richard Atterer
