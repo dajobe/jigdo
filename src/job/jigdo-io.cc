@@ -314,8 +314,8 @@ gboolean JigdoIO::childFailed_callback(gpointer data) {
    imgSectCandidate()==this, then that section is the first such section in
    depth-first-order in the whole tree.
 
-   If instead we encounter an [Include], that included file /might/ contain
-   an image section, so we descend by setting imgSectCandidate() to the newly
+   If instead we encounter an [Include], the included file /might/ contain an
+   image section, so we descend by setting imgSectCandidate() to the newly
    created child download. However, it can turn out the child does not
    actually contain an image section. In this case, we go back up to its
    parent.
@@ -669,9 +669,26 @@ void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
       imageInfo.assign(*data, valueOff, 5000);
     }
 
-  } else {
+  } else if (section == "Parts") {
 
-    debug("Section name `%1' unknown - ignoring section", section);
+    // TODO
+#if 0
+    Base64In<ArrayOut> decoder;
+    decoder.result().set(templateMd5->sum);
+      decoder << value.front();
+      if (decoder.result().cur == 0
+          || decoder.result().cur != decoder.result().end) {
+        delete templateMd5; templateMd5 = 0;
+        return generateError(_("Invalid Template-MD5Sum argument"));
+      }
+      // For security, double-check the value
+      Base64String b64;
+      b64.write(templateMd5->sum, 16).flush();
+      if (b64.result() != value.front()) {
+        debug("b64='%1' value='%2'", b64.result(), value.front());
+        return generateError(_("Invalid Template-MD5Sum argument"));
+      }
+#endif
 
   } // endif (section == "Something")
 

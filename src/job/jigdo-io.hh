@@ -10,6 +10,7 @@
   IO object for .jigdo downloads; download, gunzip, interpret
 
   Data (=downloaded bytes, status info) flows as follows:
+
   class:       Download ->    SingleUrl      -> JigdoIO -> GtkSingleUrl
   data member:             childDl->source()      this        frontend
 

@@ -33,6 +33,18 @@ MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
       templateMd5Val(0) { }
 Job::MakeImageDl::~MakeImageDl() { }
 
+void MakeImageDl::setImageSection(string* imageName, string* imageInfo,
+    string* imageShortInfo, string* templateUrl, MD5** templateMd5) {
+  msg("setImageSection templateUrl=%1", templateUrl);
+  Paranoid(!haveImageSection());
+  imageNameVal.swap(*imageName);
+  imageInfoVal.swap(*imageInfo);
+  imageShortInfoVal.swap(*imageShortInfo);
+  templateUrlVal.swap(*templateUrl);
+  templateMd5Val = *templateMd5; *templateMd5 = 0;
+
+  if (io) io->makeImageDl_haveImageSection();
+}
 //======================================================================
 
 void Download::uriJoin(string* dest, const string&, const string& rel) {
