@@ -96,7 +96,7 @@ void GUI::create() {
   string banner = subst(_(
     "<span weight=\"bold\" foreground=\"black\">"
     "<span size=\"x-large\">Jigsaw Download %F1</span>\n"
-    "Copyright 2001-2003 Richard Atterer\n"
+    "Copyright 2001-2004 Richard Atterer\n"
     "http://atterer.net/jigdo</span>"), JIGDO_VERSION);
   gtk_label_set_markup(aboutJigdoLabel, banner.c_str());
   gtk_label_set_justify(aboutJigdoLabel, GTK_JUSTIFY_CENTER);

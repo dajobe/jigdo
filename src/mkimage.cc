@@ -909,7 +909,7 @@ int JigdoDesc::makeImage(JigdoCache* cache, const string& imageFile,
   Assert(files.back()->type() == IMAGE_INFO);
   uint64 imageSize = files.back()->size();
   totalBytes = imageSize;
-# if WINDOWS
+# if 0 /* # if WINDOWS */
   /* The C++ STL of the MinGW 1.1 gcc port for Windows doesn't support
      files >2GB. Fail early and with a clear error message... */
   if (imageSize >= (1U<<31))

@@ -46,10 +46,10 @@ All the following steps happen on the build machine, i.e. under Linux.
   now on. There will be subdirectories $GTKWIN/include, $GTKWIN/lib
   etc. (unzip might ask whether to overwrite some files which are
   present in >1 of the archives - your answer doesn't matter.)
-- Unfortunately, not all packages follow the include/lib convention.
-  As of this writing, you need to move the various files inside the
-  libiconv directory into the appropriate subdirectories, i.e. *.h
-  into include, *.dll and *.lib into lib etc.
+- If the zlib distribution does not ship with a lib/libzdll.a file or
+  similar for mingw, generate it as suggested in its USAGE.txt, with a
+  command like this from within the $GTKWIN directory:
+  i586-mingw32msvc-dlltool -D zlib1.dll -d lib/zlib.def -l lib/libzdll.a
 - Install libwww. The easy way to do this is to get a binary package
   from the jigdo homepage <http://atterer.net/jigdo/>. Unpack into a
   dir $LIBWWW (can be the same as $GTKWIN, doesn't matter), then edit
@@ -63,12 +63,17 @@ All the following steps happen on the build machine, i.e. under Linux.
 - configure jigdo --without-libdb --with-pkg-config-prefix=$GTKWIN
   --with-uint64=unsigned_long_long --disable-nls
 
+In order for Windows to pick up the DLLs that the compiled .exe files
+depend on, the easiest way is to copy (or symlink) the .exe to
+$GTKWIN/bin, and to run it from there. Depending on your zlib
+distribution, you may also have to move zlib1.dll from $GTKWIN to
+$GTKWIN/bin.
+
 Using samba, I export the directory with the cross-compiled binaries
 to another machine running Windows - very useful because tests are
 possible immediately after compilation. By the way, another very
 useful tool in this situation is "Synergy", it allows you to share a
 keyboard and mouse between the Linux and Windows machines.
-
 
 
 Building jigdo-file and jigdo under Windows

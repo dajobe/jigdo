@@ -7,7 +7,7 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  #test-deps job/datasource.o util/gunzip.o util/configfile.o
+  #test-deps job/datasource.o util/gunzip.o util/configfile.o util/md5sum.o util/glibc-md5.o
   job/jigdo-io.o
 */
 
@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include <makeimagedl.hh>
+#include <md5sum.hh>
 
 #include <jigdo-io.hh>
 /* Cannot link against jigdo-io.o, because this is not always compiled with
@@ -268,7 +269,7 @@ void testSimple() {
     "[Image]\n"
     "Filename=image\n"
     "Template=image.template\n"
-    "Template-MD5Sum=HUWsoTZVu7DncodE2evGJw\n"
+    "Template-MD5Sum=h5FAyHqEsvXSTuGUNdhzJw\n"
     "xx       =       8\\ 9 a b c' \"'\"d' e\" #ffo\n"
     "ShortInfo='\"Debian GNU/Linux 3.0 r1 \\\"Woody\\\" - i386 B-$num\"'\n"
     "Info='Generated on Sun, 16 Mar 2003 04:45:40 -0700'\n"
@@ -276,7 +277,7 @@ void testSimple() {
     "[Image]\n"
     "Filename=image\n"
     "Template=image.template\n"
-    "Template-MD5Sum=HUWsoTZVu7DncodE2evGJw\n"
+    "Template-MD5Sum=h5FAyHqEsvXSTuGUNdhzJw\n"
     "\n"
     "[Parts]\n"
     "FsGFXNwcbCdvWTamkRdp7g=X:part4\n"
@@ -319,7 +320,7 @@ void testMinimal() {
     "[Image]\n"
     "Filename=image\n"
     "Template=image.template\n"
-    "Template-MD5Sum=HUWsoTZVu7DncodE2evGJw"));
+    "Template-MD5Sum=h5FAyHqEsvXSTuGUNdhzJw"));
   MakeImageDl m(0, "", "");
   imgSectLogged.clear();
   Child* a = m.childFor("http://minimal");
@@ -365,7 +366,7 @@ void testFork() {
     "[Image]\n"
     "Filename=image\n"
     "Template=image.template\n"
-    "Template-MD5Sum=HUWsoTZVu7DncodE2evGJw"));
+    "Template-MD5Sum=h5FAyHqEsvXSTuGUNdhzJw"));
   www.insert(make_pair("http://fork1",
     "# yada\n"
     "[Servers]\n"
@@ -453,7 +454,7 @@ void testBetween() {
     "[Image]\n"
     "Filename=image\n"
     "Template=image.template\n"
-    "Template-MD5Sum=HUWsoTZVu7DncodE2evGJw\n"
+    "Template-MD5Sum=h5FAyHqEsvXSTuGUNdhzJw\n"
     "[Include http://fork1]\n"));
 
   msg("---------------------------------------- testBetween");

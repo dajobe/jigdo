@@ -60,8 +60,10 @@ bool JigdoFileCmd::optHex = false;
 string JigdoFileCmd::optDebug;
 AnyReporter* JigdoFileCmd::optReporter = 0;
 string JigdoFileCmd::optMatchExec;
-#if !WINDOWS
-string JigdoFileCmd::binaryName; // of the program
+#if WINDOWS
+  const char* const JigdoFileCmd::binaryName = "jigdo-file";
+#else
+  string JigdoFileCmd::binaryName;
 #endif
 //______________________________________________________________________
 

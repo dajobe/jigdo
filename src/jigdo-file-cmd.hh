@@ -59,7 +59,7 @@ class JigdoFileCmd {
 
   // Command line options, to be used by the jigdo-file commands
 # if WINDOWS
-  static const char* const binaryName = "jigdo-file";
+  static const char* const binaryName;
 # else
   friend const string& binName();
   static string binaryName; // of the program

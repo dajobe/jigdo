@@ -71,6 +71,32 @@ AC_SUBST(IF_NOGXX2)
 AC_PROG_INSTALL
 dnl ____________________
 
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_TYPE_SIZE_T
+AC_C_BIGENDIAN
+AC_MSG_CHECKING(whether we are compiling for Windows)
+AC_EGREP_CPP(poorsoul, [
+#if defined WINNT || defined __WINNT || defined __WINNT__ || defined WIN32 \
+    || defined _WIN32 || defined __WIN32 || defined __WIN32__
+  poorsoul
+#endif], is_windows=yes, is_windows=no)
+AC_MSG_RESULT($is_windows)
+if test "$is_windows" = yes; then
+    AC_DEFINE(WINDOWS)
+    exe=".exe"
+    IF_WINDOWS=""
+    IF_UNIX="#"
+else
+    AC_DEFINE(UNIX)
+    exe=""
+    IF_WINDOWS="#"
+    IF_UNIX=""
+fi
+AC_SUBST(exe)
+AC_SUBST(IF_WINDOWS)
+AC_SUBST(IF_UNIX)
+dnl ____________________
+
 AC_CACHE_CHECK(whether the C++ compiler is recent enough,
                jigdo_cv_prog_cxx_recent,
     AC_TRY_COMPILE(
@@ -189,14 +215,18 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS(stddef.h unistd.h limits.h string.h)
 
 dnl Checks for libraries and accompanying header files
-AC_CHECK_LIB(z, zlibVersion, have_zlib="yes", have_zlib="no")
+
+AC_CHECK_LIB(z, zlibVersion, have_zlib="-lz", have_zlib="no")
+if test "$is_windows" = yes; then
+    AC_CHECK_LIB(zdll, zlibVersion, have_zlib="-lzdll", )
+fi
 AC_CHECK_HEADER(zlib.h, have_zlib_h="yes", have_zlib_h="no")
 if test "$have_zlib" = "no" -o "$have_zlib_h" = "no"; then
     AC_MSG_RESULT([   * Please install zlib, it is needed by all of the])
     AC_MSG_RESULT([   * programs.])
     installDevel "zlib1g" "zlib"
 fi
-if test "$have_zlib" = "yes"; then LIBS="-lz $LIBS"; fi
+if test "$have_zlib" != "no"; then LIBS="$have_zlib $LIBS"; fi
 
 
 AC_MSG_CHECKING(for value of --with-libdb)
@@ -310,9 +340,18 @@ if test "$jigdo_gui" = "yes"; then
         [[6-9]*|5.[4-9]*|5.[1-9][0-9]*|5.3.[2-9]*|5.3.[1-9][0-9]*])
             LIBWWWCFLAGS="`libwww-config --cflags 2>/dev/null`"
             LIBWWWLIBS="`libwww-config --libs 2>/dev/null`"
-            dnl Some versions of libwww-config include "-I/usr/include" in their
-            dnl --cflags output, which completely upsets some versions of GCC.
+            dnl Some versions of libwww-config include "-I/usr/include" in
+            dnl their --cflags output, which completely upsets some versions
+            dnl of GCC.
             LIBWWWCFLAGS=`echo " $LIBWWWCFLAGS " | sed -e 's% -I/usr/include/* % %'`
+            dnl If we are cross-compiling for Windows and the wrong
+            dnl (ie host system's) libwww-config was executed above, we
+            dnl may need to turn -lz from its output into -lzdll. Yuk,
+            dnl that's hacky, but then it'll save people some trouble
+            case "$is_windows $LIBS " in
+                yes*"-lzdll "*)
+                    LIBWWWLIBS=`echo " $LIBWWWLIBS " | sed -e 's% -lz % -lzdll %'`
+            esac
             ;;
         *)
         AC_MSG_RESULT([   * libwww not installed, or the installed version])
@@ -330,32 +369,6 @@ AC_SUBST(GTKCFLAGS)
 AC_SUBST(GTKLIBS)
 AC_SUBST(LIBWWWCFLAGS)
 AC_SUBST(LIBWWWLIBS)
-dnl ____________________
-
-dnl Checks for typedefs, structures, and compiler characteristics.
-AC_TYPE_SIZE_T
-AC_C_BIGENDIAN
-AC_MSG_CHECKING(whether we are compiling for Windows)
-AC_EGREP_CPP(poorsoul, [
-#if defined WINNT || defined __WINNT || defined __WINNT__ || defined WIN32 \
-    || defined _WIN32 || defined __WIN32 || defined __WIN32__
-  poorsoul
-#endif], is_windows=yes, is_windows=no)
-AC_MSG_RESULT($is_windows)
-if test "$is_windows" = yes; then
-    AC_DEFINE(WINDOWS)
-    exe=".exe"
-    IF_WINDOWS=""
-    IF_UNIX="#"
-else
-    AC_DEFINE(UNIX)
-    exe=""
-    IF_WINDOWS="#"
-    IF_UNIX=""
-fi
-AC_SUBST(exe)
-AC_SUBST(IF_WINDOWS)
-AC_SUBST(IF_UNIX)
 dnl ____________________
 
 dnl Both MinGW32 and glib declare 'struct dirent' and 'struct DIR'. If

@@ -22,6 +22,7 @@
 #include <makeimagedl.hh>
 #include <md5sum.hh>
 #include <mimestream.hh>
+#include <url-part.hh>
 //______________________________________________________________________
 
 DEBUG_UNIT("jigdo-io")
@@ -672,24 +673,23 @@ void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
   } else if (section == "Parts") {
 
     // TODO
-#if 0
+    if (value.empty()) return generateError(_("Missing argument"));
+    MD5 md5;
     Base64In<ArrayOut> decoder;
-    decoder.result().set(templateMd5->sum);
-      decoder << value.front();
+    decoder.result().set(md5.sum);
+      decoder << *label;
       if (decoder.result().cur == 0
           || decoder.result().cur != decoder.result().end) {
-        delete templateMd5; templateMd5 = 0;
-        return generateError(_("Invalid Template-MD5Sum argument"));
+        return generateError(_("Invalid MD5Sum in Parts section"));
       }
       // For security, double-check the value
       Base64String b64;
-      b64.write(templateMd5->sum, 16).flush();
-      if (b64.result() != value.front()) {
-        debug("b64='%1' value='%2'", b64.result(), value.front());
-        return generateError(_("Invalid Template-MD5Sum argument"));
+      b64.write(md5.sum, 16).flush();
+      if (b64.result() != *label) {
+        debug("x b64='%1' value='%2'", b64.result(), *label);
+        return generateError(_("Invalid MD5Sum in Parts section"));
       }
-#endif
-
+      debug("PART %1 -> %2", md5.toString(), value.front());
   } // endif (section == "Something")
 
 }
