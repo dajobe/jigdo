@@ -113,6 +113,9 @@ CGI-like program for on-the-fly creation from .jigdo/.template files:
 
 ".rawtemplate" support:
 
+  NOTE: This is now being tackled by Steve McIntyre, see
+  <http://www.einval.com/~steve/software/JTE/>
+
   It is possible to make .jigdo creation for Debian CDs much faster
   by hacking mkisofs to support more direct output of .jigdo/.template
   files:
