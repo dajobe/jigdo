@@ -22,14 +22,13 @@ void uriJoin(string* dest, const string& base, const string& rel);
 
 //______________________________________________________________________
 
-inline unsigned findLabelColon(const string& s) {
-  string::const_iterator i = s.begin(), e = s.end();
-  while (i != e) {
-    if (*i == '/' || static_cast<unsigned char>(*i) <= ' ') return 0;
-    if (*i == ':') return i - s.begin();
-    ++i;
-  }
-  return 0;
-}
+/** Return offset of first ':' in string if it is preceded by characters
+    other than '/', space or control characters, otherwise return 0. */
+unsigned findLabelColon(const string& s);
+//______________________________________________________________________
+
+/** Return true iff the absolute URL is a "real" HTTP/FTP/.. url, as opposed
+    to a label name followed by a path. */
+bool isRealUrl(const string& s);
 
 #endif

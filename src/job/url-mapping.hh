@@ -26,19 +26,24 @@
 #endif
 
 #include <config.h>
-#include <nocopy.hh>
-#include <smartptr.hh>
 
-#include <set> /* For multiset */
+#include <string>
+#include <map>
+#include <vector>
 
 #include <debug.hh>
+#include <md5sum.hh>
+#include <nocopy.hh>
+#include <smartptr.hh>
+#include <status.hh>
 #include <url-mapping.fh>
 //______________________________________________________________________
 
+/** Mapping md5sum => list of files */
 class UrlMapping : public SmartPtrBase, public NoCopy {
 public:
   /** url is overwritten! */
-  inline UrlMapping();
+  UrlMapping();
   virtual ~UrlMapping() = 0;
 
   /** Set value of url part, starting with offset url[pos], up to n
@@ -59,6 +64,17 @@ public:
   inline void insertNext(UrlMapping* um);
   inline UrlMapping* next() const { return nextVal.get(); }
 
+  /** Various knobs for the scoring algorithm */
+
+  /** If two servers are rated equal by the scoring algorithm, the order in
+      which the servers are tried should be random. Otherwise, if gazillions
+      of people try to download the same thing using default settings (e.g.
+      no country preference), the first server in its list shouldn't be hit
+      too hard. In practice, we achieve randomisation by initializing the
+      weight with a small random value. */
+  static const double RANDOM_INIT_LOWER = -.125;
+  static const double RANDOM_INIT_UPPER = .125;
+
 private:
   string urlVal; // Part of URL
   SmartPtr<UrlMapping> prepVal; // URL(s) to prepend to this one, or null
@@ -77,7 +93,7 @@ private:
      Does not change throughout the whole jigdo download. Can get <0. The
      higher the value, the higher the preference that will be given to this
      mapping. */
-  //int weight;
+  double weight;
 };
 //______________________________________________________________________
 
@@ -100,8 +116,44 @@ class PartUrlMapping : public UrlMapping {
 };
 //______________________________________________________________________
 
-UrlMapping::UrlMapping() : urlVal(), prepVal(0), nextVal(0), tries(0),
-                           triesFailed(0)/*, weight(0)*/ { }
+class UrlMap {
+public:
+  /** Add info about a mapping line inside one of the [Parts] sections in the
+      .jigdo sections. The first entry of "value" is the URL (absolute,
+      relative to baseUrl or in "Label:some/path form). The remaining "value"
+      entries are assumed to be options, and ignored ATM. */
+  void addPart(const string& baseUrl, const MD5& md, vector<string>& value);
+
+  /** Add info about a [Servers] line, cf addPart(). For a line
+      "Foobar=Label:some/path" in the [Servers] section:
+      @param label == "Foobar"
+      @param value arguments; value.front()=="Label:some/path"
+      @return failed() iff the line results in a recursive server
+      definition. */
+  Status addServer(const string& baseUrl, const string& label,
+                   vector<string>& value);
+
+  /** Output the graph built up by addPart()/addServer() to the log. */
+  void dumpJigdoInfo();
+
+  /* [Parts] lines in .jigdo data; for each md5sum, there's a linked list of
+     PartUrlMappings */
+  typedef map<MD5, SmartPtr<PartUrlMapping> > PartMap;
+  /* [Servers] lines in .jigdo data; for each label string, there's a linked
+     list of ServerUrlMappings */
+  typedef map<string, SmartPtr<ServerUrlMapping> > ServerMap;
+
+  const PartMap& parts() const { return partsVal; }
+  const ServerMap& servers() const { return serversVal; }
+
+private:
+  ServerUrlMapping* findOrCreateServerUrlMapping(const string& url,
+                                                 unsigned colon);
+
+  PartMap partsVal;
+  ServerMap serversVal;
+};
+//______________________________________________________________________
 
 void UrlMapping::insertNext(UrlMapping* um) {
   Paranoid(um != 0 && um->nextVal.isNull());

@@ -13,31 +13,18 @@
 
 */
 
-#define DEBUG 1
+#include <config.h>
+
 #include <debug.hh>
 #include <log.hh>
 #include <uri.hh>
-//______________________________________________________________________
-
-#include <makeimagedl-graph.cc>
-
-MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
-                         const string& destination)
-    : io(ioPtr), stateVal(DOWNLOADING_JIGDO),
-      jigdoUrl(jigdoUri), childrenVal(), dest(destination),
-      tmpDirVal(), mi(),
-      imageNameVal(), imageInfoVal(), imageShortInfoVal(), templateUrlVal(),
-      templateMd5Val(0) {
-}
-
-Job::MakeImageDl::~MakeImageDl() {
-}
+#include <url-mapping.hh>
 //______________________________________________________________________
 
 namespace {
 
   // Record certain lines of the log
-  const char* const UNIT = "makeimagedl-graph";
+  const char* const UNIT = "url-mapping";
   string logged;
   bool unitEnabled = false; // Was the unit enabled with --debug?
   void loggerPut(const string& unitName, unsigned char unitNameLen,
@@ -72,18 +59,18 @@ namespace {
   const string base = "http://baseurl/";
 
   // Add part
-  inline void ap(MakeImageDl& dl, const MD5& md, const char* s) {
+  inline void ap(UrlMap& m, const MD5& md, const char* s) {
     vector<string> v;
     v.push_back(s);
-    dl.addPart(base, md, v);
+    m.addPart(base, md, v);
   }
 
   // Add server
-  inline void as(MakeImageDl& dl, const char* label, const char* s,
+  inline void as(UrlMap& m, const char* label, const char* s,
                  Status expectedReturnCode = OK) {
     vector<string> v;
     v.push_back(s);
-    Status result = dl.addServer(base, label, v);
+    Status result = m.addServer(base, label, v);
     Assert(result == expectedReturnCode);
   }
 
@@ -92,22 +79,19 @@ namespace {
 } // namespace
 //______________________________________________________________________
 
-using namespace Job;
-
 void test1() {
-  string dummy;
-  MakeImageDl dl(0, dummy, dummy);
-  as(dl, "LabelA", "http://myserver.org/");
-  as(dl, "LabelA", "ftp://mirror.myserver.org/");
-  as(dl, "LabelB", "LabelC:subdirectory/");
-  as(dl, "LabelC", "http://some.where.com/jigdo/");
-  ap(dl, md[0], "X:part0");
-  ap(dl, md[1], "X:part1");
-  ap(dl, md[0], "LabelB:some/path/part2");
-  as(dl, "X", "X=http://localhost:8000/~richard/ironmaiden/");
-  ap(dl, md[2], "X:part2");
+  UrlMap m;
+  as(m, "LabelA", "http://myserver.org/");
+  as(m, "LabelA", "ftp://mirror.myserver.org/");
+  as(m, "LabelB", "LabelC:subdirectory/");
+  as(m, "LabelC", "http://some.where.com/jigdo/");
+  ap(m, md[0], "X:part0");
+  ap(m, md[1], "X:part1");
+  ap(m, md[0], "LabelB:some/path/part2");
+  as(m, "X", "X=http://localhost:8000/~richard/ironmaiden/");
+  ap(m, md[2], "X:part2");
   logged.erase();
-  dl.dumpJigdoInfo();
+  m.dumpJigdoInfo();
   expect("Part AQIDBAUGBwgJCgsMDQ4PEA: X + `part0'\n"
          "Part AQIDBAUGBwgJCgsMDQ4PEA: LabelB + `some/path/part2'\n"
          "Part ERITFBUWFxgZGhscHR4fIA: X + `part1'\n"
@@ -123,14 +107,13 @@ void test1() {
 }
 
 void test2() {
-  string dummy;
-  MakeImageDl dl(0, dummy, dummy);
-  as(dl, "A", "B");
-  as(dl, "A", "C:");
-  as(dl, "A", "D:");
-  as(dl, "C", "foobar");
+  UrlMap m;
+  as(m, "A", "B");
+  as(m, "A", "C:");
+  as(m, "A", "D:");
+  as(m, "C", "foobar");
   logged.erase();
-  dl.dumpJigdoInfo();
+  m.dumpJigdoInfo();
   expect("Server A: http + `//baseurl/B'\n"
          "Server A: D + `'\n"
          "Server A: C + `'\n"
@@ -141,28 +124,26 @@ void test2() {
 
 void test3() {
   // Loops disallowed
-  string dummy;
-  MakeImageDl dl(0, dummy, dummy);
-  as(dl, "asdf", "foo:x");
-  as(dl, "foo", "asdf:y", FAILED);
+  UrlMap m;
+  as(m, "asdf", "foo:x");
+  as(m, "foo", "asdf:y", FAILED);
   logged.erase();
-  dl.dumpJigdoInfo();
+  m.dumpJigdoInfo();
   expect("Server asdf: foo + `x'\n"
          "Server foo:  + `y'\n"); // Not useful, avoids loop
 }
 
 void test4() {
   // Loops disallowed
-  string dummy;
-  MakeImageDl dl(0, dummy, dummy);
-  as(dl, "a", "b:");
-  as(dl, "b", "c:");
-  as(dl, "c", "d:");
-  as(dl, "d", "foo:");
-  as(dl, "d", "bar:");
-  as(dl, "d", "a:", FAILED);
+  UrlMap m;
+  as(m, "a", "b:");
+  as(m, "b", "c:");
+  as(m, "c", "d:");
+  as(m, "d", "foo:");
+  as(m, "d", "bar:");
+  as(m, "d", "a:", FAILED);
   logged.erase();
-  dl.dumpJigdoInfo();
+  m.dumpJigdoInfo();
   expect("Server a: b + `'\n"
          "Server b: c + `'\n"
          "Server bar:  + `bar:'\n"

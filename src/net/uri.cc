@@ -12,6 +12,7 @@
 #include <config.h>
 
 #include <uri.hh>
+#include <compat.hh>
 //______________________________________________________________________
 
 /** Create a new URI from an absolute base URI and a relative URI. (rel can
@@ -30,4 +31,23 @@ void uriJoin(string* dest, const string& base, const string& rel) {
       dest->assign(base, 0, n + 1);
     *dest += rel;
   }
+}
+//______________________________________________________________________
+
+unsigned findLabelColon(const string& s) {
+  string::const_iterator i = s.begin(), e = s.end();
+  while (i != e) {
+    if (*i == '/' || static_cast<unsigned char>(*i) <= ' ') return 0;
+    if (*i == ':') return i - s.begin();
+    ++i;
+  }
+  return 0;
+}
+//______________________________________________________________________
+
+bool isRealUrl(const string& s) {
+  return compat_compare(s, 0, 6, "http:/", 6) == 0
+    || compat_compare(s, 0, 6, "https:/", 7) == 0
+    || compat_compare(s, 0, 5, "ftp:/", 5) == 0
+    || compat_compare(s, 0, 5, "ftps:/", 6) == 0;
 }

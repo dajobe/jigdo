@@ -92,6 +92,11 @@ MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
 
 Job::MakeImageDl::~MakeImageDl() {
   debug("~MakeImageDl");
+  killAllChildren();
+}
+//______________________________________________________________________
+
+void Job::MakeImageDl::killAllChildren() {
   // Delete all our children. NB ~Child will remove child from the list
   while (!childrenVal.empty()) {
     Child* x = &childrenVal.front();
@@ -379,17 +384,6 @@ void MakeImageDl::childFailed(
 }
 //______________________________________________________________________
 
-namespace {
-
-  bool isUrl(const string& s) {
-    return compat_compare(s, 0, 6, "http:/", 6) == 0
-      || compat_compare(s, 0, 6, "https:/", 7) == 0
-      || compat_compare(s, 0, 5, "ftp:/", 5) == 0
-      || compat_compare(s, 0, 5, "ftps:/", 6) == 0;
-  }
-
-}
-
 /* Info from first [Image] in include tree available - display it, start
    template download now if possible */
 void MakeImageDl::setImageSection(string* imageName, string* imageInfo,
@@ -403,20 +397,9 @@ void MakeImageDl::setImageSection(string* imageName, string* imageInfo,
   templateMd5Val = *templateMd5; *templateMd5 = 0;
 
   if (io) io->makeImageDl_haveImageSection();
-
-  /* If the template URL is a regular URL (not a "Label:path/x" string), we
-     can immediately start the .template download. */
-  unsigned labelLen = findLabelColon(templateUrlVal);
-  if (labelLen == 0 // relative URL, methinks
-      || isUrl(templateUrlVal)) {
-    string templ;
-    uriJoin(&templ, jigdoUri(), templateUrlVal);
-    debug("Template: %1", templ);
-  }
 }
 
-/* All .jigdo data available now - if we didn't download template above, do
-   so now. */
+/* All .jigdo data available now */
 void MakeImageDl::jigdoFinished() {
   debug("jigdoFinished");
   typedef ChildList::iterator Iter;
@@ -430,17 +413,42 @@ void MakeImageDl::jigdoFinished() {
         debug("childFailed()/Succeeded() not called for %1",
               x->source() ? x->source()->location() : "[deleted source]");
       x->childSuccFail = true; // Avoid failed assert
-      dumpJigdoInfo();
+      urlMap.dumpJigdoInfo();
 #     endif
       debug("jigdoFinished: delete %1", x);
       delete x;
     }
   }
 
-  // Still need to start template download?
+  Paranoid(stateVal == DOWNLOADING_JIGDO);
+  stateVal = DOWNLOADING_TEMPLATE;
+
+  // Template download
   unsigned labelLen = findLabelColon(templateUrlVal);
-  if (labelLen != 0 && isUrl(templateUrlVal)) {
+  if (labelLen == 0 // relative URL, methinks
+      || isRealUrl(templateUrlVal)) {
+    // Template is a single absolute or relative URL
+    string templUrl;
+    uriJoin(&templUrl, jigdoUri(), templateUrlVal);
+    debug("Template: <%1>", templUrl);
+    // Run .template download
+    string leafname;
+    auto_ptr<Child> childDl(childFor(templUrl, 0, &leafname));
+    if (childDl.get() != 0) {
+      string info = _("Retrieving .template data");
+      string destDesc = subst(destDescTemplate(), leafname, info);
+      if (io) {
+        DataSource::IO* frontend =
+          io->makeImageDl_new(childDl->source(), templUrl, destDesc);
+        childDl->setChildIo(frontend);
+        io->job_message(&info);
+      }
+      (childDl.release())->source()->run();
+    }
+  } else {
     debug("Template: %1", templateUrlVal);
+    // Template is a Label:something mapping
 #warning TODO
   }
+
 }

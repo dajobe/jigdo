@@ -33,7 +33,7 @@
 #include <nocopy.hh>
 #include <single-url.hh>
 #include <status.hh>
-#include <url-mapping.fh>
+#include <url-mapping.hh>
 //______________________________________________________________________
 
 /**
@@ -74,7 +74,6 @@ public:
 
   enum State {
     DOWNLOADING_JIGDO,
-    DOWNLOADING_JIGDO_TEMPLATE,
     DOWNLOADING_TEMPLATE,
     FINAL_STATE, // Value isn't actually used; all below are final states:
     ERROR
@@ -91,6 +90,9 @@ public:
 
   /** Destroy this MakeImageDl and all its children. */
   ~MakeImageDl();
+
+  /** Destroy all children. */
+  void killAllChildren();
 
   /** Start downloading. First creates a new download for the .jigdo data,
       then the .template data, etc. */
@@ -135,23 +137,8 @@ public:
       non-empty?) */
   inline bool haveImageSection() const;
 
-  /** Add info about a mapping line inside one of the [Parts] sections in the
-      .jigdo sections. The first entry of "value" is the URL (absolute,
-      relative to baseUrl or in "Label:some/path form). The remaining "value"
-      entries are assumed to be options, and ignored ATM. */
-  void addPart(const string& baseUrl, const MD5& md, vector<string>& value);
-
-  /** Add info about a [Servers] line, cf addPart(). For a line
-      "Foobar=Label:some/path" in the [Servers] section:
-      @param label == "Foobar"
-      @param value arguments; value.front()=="Label:some/path"
-      @return failed() iff the line results in a recursive server
-      definition. */
-  Status addServer(const string& baseUrl, const string& label,
-                   vector<string>& value);
-
-  /** Output the graph built up by addPart()/addServer() to the log. */
-  void dumpJigdoInfo();
+  /** Graph structure describing the contents of the .jigdo file. */
+  UrlMap urlMap;
 
   /** Return child download object which contains a DataSource which produces
       the data of the requested URL. That returned object is usually a newly
@@ -240,9 +227,6 @@ private: // Really private
   Child* childForSemiCompleted(const struct stat& fileInfo,
                                const string& filename);
 
-  ServerUrlMapping* findOrCreateServerUrlMapping(const string& url,
-                                                 unsigned colon);
-
   static const char* destDescTemplateVal;
 
   State stateVal; // State, e.g. "downloading jigdo file", "error"
@@ -261,15 +245,6 @@ private: // Really private
   string imageInfoVal, imageShortInfoVal;
   string templateUrlVal;
   MD5* templateMd5Val;
-
-  /* [Parts] lines in .jigdo data; for each md5sum, there's a linked list of
-     PartUrlMappings */
-  typedef map<MD5, SmartPtr<PartUrlMapping> > PartMap;
-  PartMap parts;
-  /* [Servers] lines in .jigdo data; for each label string, there's a linked
-     list of ServerUrlMappings */
-  typedef map<string, SmartPtr<ServerUrlMapping> > ServerMap;
-  ServerMap servers;
 };
 //______________________________________________________________________
 

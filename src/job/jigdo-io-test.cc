@@ -7,7 +7,7 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  #test-deps job/datasource.o util/gunzip.o util/configfile.o util/md5sum.o util/glibc-md5.o net/uri.o
+  #test-deps job/datasource.o util/gunzip.o util/configfile.o util/md5sum.o util/glibc-md5.o net/uri.o job/url-mapping.o
 */
 
 #define DEBUG 1
@@ -241,14 +241,6 @@ void MakeImageDl::setImageSection(string* imageName, string*, string*,
                                   string*, MD5**) {
   Paranoid(!haveImageSection());
   imageNameVal.swap(*imageName);
-}
-
-void MakeImageDl::addPart(const string&, const MD5&, vector<string>&) {
-  //debug("addPart %1 -> %2", md.toString(), value.front());
-}
-Status MakeImageDl::addServer(const string&, const string&,
-                              vector<string>&) {
-  return OK;
 }
 
 void MakeImageDl::jigdoFinished() {

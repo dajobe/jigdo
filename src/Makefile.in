@@ -47,9 +47,9 @@ debug-programs = @IF_DEBUG@ torture@exe@ \
 		@IF_GUI@ glibcurl/glibcurl-example@exe@
 #libwww-hacks =	@IF_LIBWWW_HACKS@ net/libwww-HTFTP.o net/libwww-HTHost.o
 windows-res =	@IF_WINDOWS@ jigdo.res
-test-programs =	job/jigdo-io-test@exe@ job/makeimagedl-graph-test@exe@ \
-		job/makeimagedl-info-test@exe@ \
-		net/download-test@exe@ net/proxyguess-test@exe@ \
+test-programs =	job/jigdo-io-test@exe@ \
+		job/makeimagedl-info-test@exe@ job/url-mapping-test@exe@ \
+		net/proxyguess-test@exe@ net/uri-test@exe@ \
 		util/rsyncsum-test@exe@ util/gunzip-test@exe@ \
 		util/log-test@exe@ util/md5sum-test@exe@ \
 		util/mimestream-test@exe@ util/string-utf-test@exe@

@@ -12,3 +12,5 @@
 class UrlMapping;
 class ServerUrlMapping;
 class PartUrlMapping;
+
+class UrlMap;
