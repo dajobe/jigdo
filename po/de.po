@@ -5,15 +5,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: jigdo\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2003-09-24 10:43+0200\n"
-"PO-Revision-Date: 2003-09-24 12:06+0200\n"
+"POT-Creation-Date: 2004-06-20 21:35+0200\n"
+"PO-Revision-Date: 2004-06-20 21:35+0200\n"
 "Last-Translator: RA\n"
 "Language-Team: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: gtk/gui.cc:187
+#: gtk/interface.cc:431 gtk/interface.cc:947
+msgid "\n"
+msgstr "\n"
+
+#: gtk/gui.cc:198
 #, c-format
 msgid ""
 "\n"
@@ -26,7 +30,7 @@ msgstr ""
 "\tHomepage von Jigsaw Download: http://atterer.net/jigdo\n"
 "\n"
 
-#: jigdo-file.cc:282
+#: jigdo-file.cc:284
 msgid ""
 "\n"
 "Copyright (C) 2001-2003 Richard Atterer <http://atterer.net>\n"
@@ -49,7 +53,7 @@ msgstr ""
 "\n"
 ".jigdo-Daten werden heruntergeladen - bitte warten..."
 
-#: jigdo-file.cc:350
+#: jigdo-file.cc:352
 msgid ""
 "\n"
 "Further options: (can append 'k', 'M', 'G' to any BYTES argument)\n"
@@ -129,7 +133,7 @@ msgstr ""
 "  --hex            [md5sum, list-template] Prüfsummen hexadezimal statt\n"
 "                   als Base64 ausgeben\n"
 
-#: jigdo-file.cc:312
+#: jigdo-file.cc:314
 msgid ""
 "\n"
 "Important options:\n"
@@ -182,7 +186,7 @@ msgstr ""
 "      --cache=DATEI\n"
 "                   Puffer für Informationen über gescannte Dateien\n"
 
-#: gtk/gui.cc:186
+#: gtk/gui.cc:197
 msgid ""
 "\n"
 "Jigsaw Download License\n"
@@ -190,7 +194,7 @@ msgstr ""
 "\n"
 "Lizenz von Jigsaw Download\n"
 
-#: jigdo-file.cc:290
+#: jigdo-file.cc:292
 msgid ""
 "\n"
 "Usage: %1 COMMAND [OPTIONS] [FILES...]\n"
@@ -211,7 +215,7 @@ msgstr ""
 "  print-missing pm Gibt nach make-image die Dateien aus, die zur\n"
 "                   Wiederherstellung des Image noch benötigt werden\n"
 
-#: jigdo-file.cc:337
+#: jigdo-file.cc:339
 msgid ""
 "      --no-cache   Do not cache information about scanned files\n"
 "      --cache-expiry=SECONDS[h|d|w|m|y]\n"
@@ -229,7 +233,7 @@ msgstr ""
 "  -h  --help       Kurzen Hilfetext ausgeben\n"
 "  -H  --help-all   Diesen Hilfetext ausgeben\n"
 
-#: jigdo-file.cc:344
+#: jigdo-file.cc:346
 msgid ""
 "  -h  --help       Output this help\n"
 "  -H  --help-all   Output more detailed help\n"
@@ -237,11 +241,11 @@ msgstr ""
 "  -h  --help       Diesen Hilfetext ausgeben\n"
 "  -H  --help-all   Detaillierteren Hilfetext ausgeben\n"
 
-#: jigdo-file.cc:347
+#: jigdo-file.cc:349
 msgid "  -v  --version    Output version info"
 msgstr "  -v  --version    Versionsnummer ausgeben"
 
-#: jigdo-file.cc:308
+#: jigdo-file.cc:310
 msgid ""
 "  list-template ls Print low-level listing of contents of template\n"
 "                   data or tmp file\n"
@@ -249,7 +253,7 @@ msgstr ""
 "  list-template ls Low-level-Informationen über Inhalt von\n"
 "                   template- oder tmp-Datei ausgeben\n"
 
-#: jigdo-file.cc:300
+#: jigdo-file.cc:302
 msgid ""
 "  print-missing-all pma\n"
 "                   Print all URIs for each missing file\n"
@@ -260,7 +264,7 @@ msgstr ""
 "  scan sc          Dateien scannen und Informationen über sie in\n"
 "                   Puffer aufnehmen\n"
 
-#: jigdo-file.cc:304
+#: jigdo-file.cc:306
 msgid ""
 "  verify ver       Check whether image matches checksum from template\n"
 "  md5sum md5       Print MD5 checksums similar to md5sum(1)\n"
@@ -277,22 +281,22 @@ msgstr " Bytes)"
 msgid " of "
 msgstr " von "
 
-#: gtk/interface.cc:237 gtk/interface.cc:251 gtk/interface.cc:502
-#: gtk/interface.cc:519 gtk/interface.cc:536 gtk/interface.cc:545
-#: gtk/interface.cc:1027 gtk/interface.cc:1036 gtk/interface.cc:1045
-#: gtk/interface.cc:1054
+#: gtk/interface.cc:246 gtk/interface.cc:263 gtk/interface.cc:513
+#: gtk/interface.cc:523 gtk/interface.cc:542 gtk/interface.cc:552
+#: gtk/interface.cc:1065 gtk/interface.cc:1075 gtk/interface.cc:1085
+#: gtk/interface.cc:1095
 msgid "#"
 msgstr "#"
 
-#: gtk/interface.cc:590
+#: gtk/interface.cc:627
 msgid "#<b>ShortInfo</b>"
 msgstr "#<b>ShortInfo</b>"
 
-#: gtk/interface.cc:554
+#: gtk/interface.cc:589
 msgid "#Download"
 msgstr "#Download"
 
-#: gtk/interface.cc:599
+#: gtk/interface.cc:635
 msgid ""
 "#Info\n"
 "x\n"
@@ -304,15 +308,15 @@ msgstr ""
 "x\n"
 "x"
 
-#: gtk/interface.cc:1070
+#: gtk/interface.cc:1111
 msgid "#Jigdo"
 msgstr "#Jigdo"
 
-#: gtk/interface.cc:344
+#: gtk/interface.cc:355
 msgid "#Open"
 msgstr "#Öffnen"
 
-#: gtk/interface.cc:402
+#: gtk/interface.cc:417
 msgid "#Reuse"
 msgstr "#Wiederverwenden"
 
@@ -325,11 +329,11 @@ msgstr "%, "
 msgid "%02d:%02d:%02d remaining"
 msgstr "%02d:%02d:%02d verbleibende Zeit"
 
-#: job/jigdo-io.cc:262 job/jigdo-io.cc:271
+#: job/jigdo-io.cc:263 job/jigdo-io.cc:272
 msgid "%1 (at end of %3)"
 msgstr "%1 (am Ende von %3)"
 
-#: job/jigdo-io.cc:262 job/jigdo-io.cc:271
+#: job/jigdo-io.cc:263 job/jigdo-io.cc:272
 msgid "%1 (line %2 in %3)"
 msgstr "%1 (Zeile %2 in %3)"
 
@@ -341,19 +345,19 @@ msgstr "%1 Tage und %2 Stunden"
 msgid "%1 hours and %2 minutes"
 msgstr "%1 Stunden und %2 Minuten"
 
-#: jigdo-file-cmd.cc:308
+#: jigdo-file-cmd.cc:342
 msgid "%1 list-template: %2"
 msgstr "%1 list-template: %2"
 
-#: jigdo-file-cmd.cc:282
+#: jigdo-file-cmd.cc:316
 msgid "%1 list-template: --template not specified.\n"
 msgstr "%1 list-template: --template muss angegeben werden.\n"
 
-#: jigdo-file-cmd.cc:287
+#: jigdo-file-cmd.cc:321
 msgid "%1 list-template: Sorry, cannot read from standard input.\n"
 msgstr "%1 list-template: Sorry, kann nicht von stdin lesen.\n"
 
-#: jigdo-file-cmd.cc:246
+#: jigdo-file-cmd.cc:280
 msgid ""
 "%1 make-image: Not both --image and --template specified.\n"
 "(Attempt to deduce missing names failed.)\n"
@@ -361,15 +365,15 @@ msgstr ""
 "%1 make-image: Es wurde nicht sowohl --image als auch --template\n"
 "angegeben. (Versuch, die Dateinamen zu raten, schlug fehl.)\n"
 
-#: jigdo-file-cmd.cc:195
+#: jigdo-file-cmd.cc:229
 msgid "%1 make-template: Could not read `%2' (%3)"
 msgstr "%1 make-template: Konnte »%2« nicht lesen (%3)"
 
-#: jigdo-file-cmd.cc:233
+#: jigdo-file-cmd.cc:267
 msgid "%1 make-template: Could not write `%2' (%3)"
 msgstr "%1 make-template: Konnte »%2« nicht schreiben (%3)"
 
-#: jigdo-file-cmd.cc:168 jigdo-file-cmd.cc:405
+#: jigdo-file-cmd.cc:202 jigdo-file-cmd.cc:439
 msgid ""
 "%1 make-template: Not all of --image, --jigdo, --template specified.\n"
 "(Attempt to deduce missing names failed.)\n"
@@ -381,23 +385,23 @@ msgstr ""
 msgid "%1 minutes"
 msgstr "%1 Minuten"
 
-#: jigdo-file-cmd.cc:442
+#: jigdo-file-cmd.cc:476
 msgid "%1 print-missing: %2"
 msgstr "%1 print-missing: %2"
 
-#: jigdo-file-cmd.cc:520
+#: jigdo-file-cmd.cc:554
 msgid "%1 scan: Please specify a --cache file.\n"
 msgstr "%1 scan: Bitte geben Sie eine Datei für --cache an.\n"
 
-#: jigdo-file-cmd.cc:346
+#: jigdo-file-cmd.cc:380
 msgid "%1 verify: %2"
 msgstr "%1 verify: %2"
 
-#: jigdo-file-cmd.cc:352
+#: jigdo-file-cmd.cc:386
 msgid "%1 verify: Invalid template data - corrupted file?"
 msgstr "%1 verify: Ungültige template-Daten - kaputte Datei?"
 
-#: jigdo-file-cmd.cc:325
+#: jigdo-file-cmd.cc:359
 msgid ""
 "%1 verify: Not both --image and --template specified.\n"
 "(Attempt to deduce missing names failed.)\n"
@@ -405,33 +409,33 @@ msgstr ""
 "%1 verify: Es wurde nicht sowohl --image als auch --template\n"
 "angegeben. (Versuch, die Dateinamen zu raten, schlug fehl.)\n"
 
-#: jigdo-file-cmd.cc:314 jigdo-file-cmd.cc:358
+#: jigdo-file-cmd.cc:348 jigdo-file-cmd.cc:392
 msgid "%1: %2"
 msgstr "%1: %2"
 
-#: jigdo-file-cmd.cc:46
+#: jigdo-file-cmd.cc:44 jigdo-file-cmd.cc:65
 msgid "%1: Could not open `%2' for input: %3"
 msgstr "%1: Fehler beim Öffnen von »%2« zur Eingabe: %3"
 
-#: jigdo-file-cmd.cc:77
+#: jigdo-file-cmd.cc:96 jigdo-file-cmd.cc:111
 msgid "%1: Could not open `%2' for output: %3"
 msgstr "%1: Fehler beim Öffnen von »%2« zur Ausgabe: %3"
 
-#: jigdo-file-cmd.cc:120
+#: jigdo-file-cmd.cc:154
 msgid "%1: Invalid argument to --label: `%2'"
 msgstr "%1: Ungültiges Argument für --label: »%2«"
 
-#: jigdo-file.cc:547
+#: jigdo-file.cc:549
 msgid ""
 "%1: Invalid argument to --report (allowed: default noprogress quiet grep)"
 msgstr ""
 "%1: Ungültiges Argument für --report (Erlaubt: default noprogress quiet grep)"
 
-#: jigdo-file-cmd.cc:102
+#: jigdo-file-cmd.cc:136
 msgid "%1: Invalid argument to --uri: `%2'"
 msgstr "%1: Ungültiges Argument für --uri: »%2«"
 
-#: jigdo-file.cc:647
+#: jigdo-file.cc:649
 msgid ""
 "%1: Invalid command `%2'\n"
 "(Must be one of:%3)"
@@ -439,29 +443,29 @@ msgstr ""
 "%1: Ungültiges Kommando »%2«\n"
 "(Muss eines der Folgenden sein:%3)"
 
-#: jigdo-file.cc:408
+#: jigdo-file.cc:410
 msgid "%1: Invalid size specifier `%2'"
 msgstr "%1: Ungültige Größenangabe »%2«"
 
-#: jigdo-file.cc:434
+#: jigdo-file.cc:436
 msgid "%1: Invalid time specifier `%2'"
 msgstr "%1: Ungültige Zeitspanne »%2«"
 
-#: jigdo-file.cc:694
+#: jigdo-file.cc:696
 msgid "%1: Out of memory - aborted."
 msgstr "%1: Nicht genug Speicher - Abbruch."
 
-#: jigdo-file-cmd.cc:64
+#: jigdo-file-cmd.cc:82
 msgid "%1: Output file `%2' already exists - delete it or use --force"
 msgstr ""
 "%1: Ausgabedatei »%2« existiert bereits - löschen Sie sie oder benutzen Sie "
 "--force"
 
-#: jigdo-file.cc:604
+#: jigdo-file.cc:606
 msgid "%1: Please specify a command"
 msgstr "%1: Bitte geben Sie ein Kommando an"
 
-#: jigdo-file.cc:702
+#: jigdo-file.cc:704
 msgid "%1: Try `%1 -h' or `man jigdo-file' for more information"
 msgstr "%1: Weitere Informationen mit »%1 -h« oder »man jigdo-file«"
 
@@ -490,7 +494,7 @@ msgstr ", Pause"
 msgid ", stalled"
 msgstr ", Stillstand"
 
-#: gtk/interface.cc:676
+#: gtk/interface.cc:709
 msgid "..."
 msgstr "..."
 
@@ -516,11 +520,11 @@ msgstr "<b>%E1</b>"
 msgid "<b>%EF1</b> (%EF2)"
 msgstr "<b>%EF1</b> (%EF2)"
 
-#: gtk/interface.cc:737
+#: gtk/interface.cc:768
 msgid "<b>?</b>: Reuse files"
 msgstr "<b>?</b>: Dateien wiederverwenden"
 
-#: gtk/gui.cc:378
+#: gtk/gui.cc:389
 msgid ""
 "<b>Close</b> this download and all its children, and remove them from the "
 "list below"
@@ -528,11 +532,11 @@ msgstr ""
 "Download <b>Schließen</b> und ihn zusammen mit ihm zugeordneten Downloads "
 "aus der Liste unten entfernen"
 
-#: gtk/gui.cc:326
+#: gtk/gui.cc:337
 msgid "<b>Close</b> this download and remove it from the list below"
 msgstr "Download <b>Schließen</b> und ihn aus der Liste unten entfernen"
 
-#: gtk/gui.cc:357
+#: gtk/gui.cc:368
 msgid ""
 "<b>Continue</b> all child downloads (after Pause) or <b>Resume</b> them "
 "(after Stop or error)"
@@ -540,13 +544,13 @@ msgstr ""
 "Downloads <b>Fortsetzen</b> (nach Pause) oder <b>Wieder aufnehmen</b> (nach "
 "Stop oder Fehler)"
 
-#: gtk/gui.cc:307
+#: gtk/gui.cc:318
 msgid "<b>Continue</b> download (after Pause) or <b>Resume</b> it (after Stop)"
 msgstr ""
 "Download <b>Fortsetzen</b> (nach Pause) oder <b>Wieder aufnehmen</b> (nach "
 "Stop)"
 
-#: gtk/interface.cc:581
+#: gtk/interface.cc:617
 msgid ""
 "<b>Note: Even though some data is already being downloaded, you\n"
 "need to complete step 2 before the actual file download can start!</b>"
@@ -558,24 +562,24 @@ msgstr ""
 msgid "<b>Open of output file failed</b>"
 msgstr "<b>Öffnen der Ausgabedatei fehlgeschlagen</b>"
 
-#: gtk/gui.cc:362
+#: gtk/gui.cc:373
 msgid "<b>Pause</b> all child downloads, but leave connections to servers open"
 msgstr "<b>Pause</b> der Downloads, Verbindung zum Server bleibt offen"
 
-#: gtk/gui.cc:312
+#: gtk/gui.cc:323
 msgid "<b>Pause</b> download, but leave connection to server open"
 msgstr "<b>Pause</b> des Downloads, Verbindung zum Server bleibt offen"
 
-#: gtk/interface.cc:511 gtk/interface.cc:1003
+#: gtk/interface.cc:580 gtk/interface.cc:1038
 msgid "<b>Progress  </b>"
 msgstr "<b>Verlauf  </b>"
 
-#: gtk/gui.cc:321
+#: gtk/gui.cc:332
 msgid "<b>Restart</b> download - the data downloaded so far is discarded"
 msgstr ""
 "<b>Neustart</b> des Downloads - bisher Heruntergeladenes wird verworfen"
 
-#: gtk/gui.cc:372
+#: gtk/gui.cc:383
 msgid ""
 "<b>Restart</b> download and processing of <tt>.jigdo</tt> - the <tt>.jigdo</"
 "tt> data downloaded so far (and only it) is discarded"
@@ -583,39 +587,39 @@ msgstr ""
 "<b>Neustart</b> des Downloads der <tt>.jigdo</tt>-Datei - bisher "
 "heruntergeladene <tt>.jigdo</tt>-Daten (und nur sie) werden verworfen"
 
-#: gtk/interface.cc:652
+#: gtk/interface.cc:685
 msgid "<b>Reuse local files for generation of %1:</b>"
 msgstr "<b>Lokale Dateien zur Generierung von %1 wiederverwenden:</b>"
 
-#: gtk/interface.cc:494 gtk/interface.cc:995
+#: gtk/interface.cc:571 gtk/interface.cc:1029
 msgid "<b>Saving to  </b>"
 msgstr "<b>Speichern in  </b>"
 
-#: gtk/interface.cc:753
-msgid "<b>Select servers to download data for %1 from:</b>"
-msgstr "<b>Auswahl der Server, von denen %1 heruntergeladen wird:</b>"
+#: gtk/interface.cc:783
+msgid "<b>Select servers to download data from:</b>"
+msgstr "<b>Auswahl der Server, von denen heruntergeladen wird:</b>"
 
-#: gtk/interface.cc:528 gtk/interface.cc:1011
+#: gtk/interface.cc:533 gtk/interface.cc:1047
 msgid "<b>Status  </b>"
 msgstr "<b>Status  </b>"
 
-#: gtk/gui.cc:367
+#: gtk/gui.cc:378
 msgid "<b>Stop</b> download by closing connections of all children"
 msgstr "<b>Stop</b> der Downloads, Verbindung wird geschlossen"
 
-#: gtk/gui.cc:317
+#: gtk/gui.cc:328
 msgid "<b>Stop</b> download by closing the connection"
 msgstr "<b>Stop</b> des Downloads, Verbindung wird geschlossen"
 
-#: gtk/interface.cc:818
+#: gtk/interface.cc:847
 msgid "<b>Type of server:   </b>"
 msgstr "<b>Art des Servers:   </b>"
 
-#: gtk/interface.cc:486 gtk/interface.cc:1019
+#: gtk/interface.cc:562 gtk/interface.cc:1056
 msgid "<b>URL  </b>"
 msgstr "<b>URL  </b>"
 
-#: gtk/interface.cc:827
+#: gtk/interface.cc:855
 msgid ""
 "<b>URL(s) for that server:</b> (space-separated list, preferred URLs first)"
 msgstr ""
@@ -626,27 +630,27 @@ msgstr ""
 msgid "<b>Write to output file failed</b>"
 msgstr "<b>Schreiben in die Ausgabedatei schlug fehl</b>"
 
-#: gtk/interface.cc:637
+#: gtk/interface.cc:671
 msgid "<b>_1</b>: Information"
 msgstr "<b>_1</b>: Information"
 
-#: gtk/interface.cc:908
+#: gtk/interface.cc:932
 msgid "<b>_2</b>: Select servers"
 msgstr "<b>_2</b>: Server-Auswahl"
 
-#: gtk/interface.cc:1063
+#: gtk/interface.cc:1105
 msgid "<b>_3</b>: Download"
 msgstr "<b>_3</b>: Herunterladen"
 
-#: gtk/interface.cc:902
+#: gtk/interface.cc:927
 msgid "<b>_OK, start download!</b>"
 msgstr "<b>_OK, Herunterladen starten!</b>"
 
-#: gtk/interface.cc:282
+#: gtk/interface.cc:295
 msgid "<b>_Start</b>"
 msgstr "<b>_Start</b>"
 
-#: gtk/gui.cc:95
+#: gtk/gui.cc:106
 msgid ""
 "<span size=\"x-small\">This is Free Software, distributable under the terms "
 "of the GNU GPL v2.</span>"
@@ -654,28 +658,28 @@ msgstr ""
 "<span size=\"x-small\">Dies ist Freie Software, Verbreitung erlaubt gemäß "
 "GNU GPL v2</span>"
 
-#: gtk/gui.cc:86
+#: gtk/gui.cc:97
 #, c-format
 msgid ""
 "<span weight=\"bold\" foreground=\"black\"><span size=\"x-large\">Jigsaw "
 "Download %F1</span>\n"
-"Copyright 2001-2003 Richard Atterer\n"
+"Copyright 2001-2004 Richard Atterer\n"
 "http://atterer.net/jigdo</span>"
 msgstr ""
 "<span weight=\"bold\" foreground=\"black\"><span size=\"x-large\">Jigsaw "
 "Download %F1</span>\n"
-"Copyright 2001-2003 Richard Atterer\n"
+"Copyright 2001-2004 Richard Atterer\n"
 "http://atterer.net/jigdo</span>"
 
-#: job/jigdo-io.cc:605
+#: job/jigdo-io.cc:606
 msgid "A new section must be started after [Include]"
 msgstr "Nach [Include] muss ein neuer Abschnitt begonnen werden"
 
-#: gtk/interface.cc:795
+#: gtk/interface.cc:824
 msgid "Ad_vanced: "
 msgstr "_Fortgeschritten: "
 
-#: gtk/interface.cc:1475
+#: gtk/interface.cc:1521
 msgid "Apply"
 msgstr "Übernehmen"
 
@@ -683,7 +687,7 @@ msgstr "Übernehmen"
 msgid "B"
 msgstr "B"
 
-#: gtk/interface.cc:326 gtk/interface.cc:332 gtk/interface.cc:375
+#: gtk/interface.cc:338 gtk/interface.cc:344 gtk/interface.cc:389
 msgid "Browse..."
 msgstr "Durchsuchen..."
 
@@ -702,15 +706,15 @@ msgstr ""
 "wenn ein »~« vor dem Subsystem-Namen steht, dann wird sie abgeschaltet.\n"
 "Registrierte Subsysteme:"
 
-#: job/makeimagedl.cc:41 job/jigdo-io-test.cc:228
+#: job/makeimagedl.cc:41 job/jigdo-io-test.cc:229
 msgid "Cache entry %1  --  %2"
 msgstr "Cache-Eintrag %1  --  %2"
 
-#: gtk/interface.cc:1480
+#: gtk/interface.cc:1526
 msgid "Cancel"
 msgstr "Schließen"
 
-#: mkimage.cc:858
+#: mkimage.cc:862
 msgid "Cannot create image because of missing files"
 msgstr "Es fehlen noch Dateien zur Erzeugung der Image-Datei"
 
@@ -728,11 +732,15 @@ msgstr ""
 "Kann nicht in »%LE1« speichern - dieses Objekt existiert bereits als "
 "Verzeichnis"
 
+#: gtk/interface.cc:196
+msgid "Change preferences"
+msgstr "Einstellungen ändern"
+
 #: util/gunzip.cc:240 util/gunzip.cc:251 util/gunzip.cc:262 util/gunzip.cc:273
 msgid "Checksum is wrong"
 msgstr "Falsche Prüfsumme"
 
-#: gtk/interface.cc:397
+#: gtk/interface.cc:412
 msgid "Clear cache"
 msgstr "Cache löschen"
 
@@ -740,7 +748,7 @@ msgstr "Cache löschen"
 msgid "Click on lines below to display corresponding info above"
 msgstr "Auf Zeile unten klicken, um Infos über sie oben anzuzeigen"
 
-#: mktemplate.cc:421
+#: mktemplate.cc:430
 msgid "Command supplied with --match-exec failed"
 msgstr "Kommando von --match-exec gab Fehlerstatus zurück"
 
@@ -748,7 +756,7 @@ msgstr "Kommando von --match-exec gab Fehlerstatus zurück"
 msgid "Contacting %L1"
 msgstr "Kontaktiere %L1"
 
-#: mkimage.cc:654
+#: mkimage.cc:658
 msgid ""
 "Copied input files to temporary file `%1' - repeat command and supply more "
 "files to continue"
@@ -764,7 +772,7 @@ msgstr "Eingabedaten sind verfälscht"
 msgid "Could not create temporary directory: %L1"
 msgstr "Temporäres Verzeichnis konnte nicht erzeugt werden: %L1"
 
-#: mkimage.cc:663
+#: mkimage.cc:667
 msgid "Could not move finished image from `%1' to `%2' (%3)"
 msgstr "Fertiges Image konnte nicht von »%1« nach »%2« verschoben werden (%3)"
 
@@ -772,7 +780,7 @@ msgstr "Fertiges Image konnte nicht von »%1« nach »%2« verschoben werden (%3
 msgid "Could not open `%1' for input: %2"
 msgstr "Fehler beim Öffnen von »%1« zur Eingabe: %2"
 
-#: mkimage.cc:901
+#: mkimage.cc:905
 msgid "Could not open `%1' for output: %2"
 msgstr "Fehler beim Öffnen von »%1« zur Ausgabe: %2"
 
@@ -780,11 +788,11 @@ msgstr "Fehler beim Öffnen von »%1« zur Ausgabe: %2"
 msgid "Could not open `%L1' for input - excluded"
 msgstr "Fehler beim Öffnen von »%L1« zur Eingabe - Datei wird ignoriert"
 
-#: job/cached-url.cc:131
+#: job/cached-url.cc:133
 msgid "Could not open `%L1' for input: %L2"
 msgstr "Fehler beim Öffnen von »%L1« zur Eingabe: %L2"
 
-#: job/makeimagedl.cc:257
+#: job/makeimagedl.cc:245
 msgid "Could not open `%L1' for output: %L2"
 msgstr "Fehler beim Öffnen von »%L1« zur Ausgabe: %L2"
 
@@ -802,23 +810,23 @@ msgstr "Cache-Datei konnte nicht geöffnet werden: %L1"
 msgid "Could not open output file: %LE1"
 msgstr "Ausgabedatei konnte nicht geöffnet werden: %LE1"
 
-#: job/cached-url.cc:159
+#: job/cached-url.cc:161
 msgid "Could not read from `%L1': %L2"
 msgstr "Von »%L1« konnte nicht gelesen werden: %L2"
 
-#: job/makeimagedl.cc:353
+#: job/makeimagedl.cc:341
 msgid "Could not rename `%L1' to `%L2': %L3"
 msgstr "Datei »%L1« konnte nicht in »%L2« umbenannt werden: %L3"
 
-#: mktemplate.cc:413
+#: mktemplate.cc:422
 msgid "Could not set up environment for --match-exec command"
 msgstr "Setzen der Umgebungsvariablen für --match-exec fehlgeschlagen"
 
-#: mkimage.cc:635
+#: mkimage.cc:639
 msgid "Could not truncate `%1' (%2)"
 msgstr "Datei »%1« konnte nicht verkürzt werden (%2)"
 
-#: mktemplate.cc:894 zstream.cc:132 zstream.cc:143
+#: mktemplate.cc:913 zstream.cc:132 zstream.cc:143
 msgid "Could not write template data"
 msgstr "Schreiben der template-Daten schlug fehl"
 
@@ -835,7 +843,7 @@ msgstr "Pixmap-Datei »%s« konnte nicht gefunden werden"
 msgid "Data stream active - really abort it?"
 msgstr "Es wird gerade heruntergeladen - wirklich stoppen?"
 
-#: gtk/interface.cc:836
+#: gtk/interface.cc:863
 msgid "Debian"
 msgstr "Debian"
 
@@ -843,15 +851,15 @@ msgstr "Debian"
 msgid "Decompression error"
 msgstr "Fehler beim Dekomprimieren"
 
-#: gtk/interface.cc:1590
+#: gtk/interface.cc:1637
 msgid "Default servers"
 msgstr "Haupt-Server"
 
-#: mkimage.cc:761
+#: mkimage.cc:765
 msgid "Delete/rename the file or use --force"
 msgstr "Löschen Sie die Datei, benennen Sie sie um oder benutzen Sie --force"
 
-#: gtk/interface.cc:1509
+#: gtk/interface.cc:1556
 msgid "Display tooltips"
 msgstr "Tooltips anzeigen"
 
@@ -867,7 +875,7 @@ msgstr "Komplett heruntergeladen - %1 (%2 Bytes)"
 msgid "Download is paused"
 msgstr "Pause beim Herunterladen"
 
-#: job/jigdo-io.cc:144
+#: job/jigdo-io.cc:145
 msgid "Download of .jigdo file failed"
 msgstr ".jigdo-Datei konnte nicht heruntergeladen werden"
 
@@ -879,11 +887,11 @@ msgstr "Herunterladen wurde neu gestartet - warte..."
 msgid "Download was stopped manually"
 msgstr "Herunterladen wurde gestoppt"
 
-#: jigdo-file-cmd.cc:374
+#: jigdo-file-cmd.cc:408
 msgid "ERROR: Checksums do not match, image might be corrupted!"
 msgstr "FEHLER: Prüfsummen nicht gleich, Image könnte Fehler enthalten!"
 
-#: gtk/interface.cc:1602 gtk/interface.cc:1609
+#: gtk/interface.cc:1650 gtk/interface.cc:1657
 msgid ""
 "Enter a list of domains (separated with spaces) for which you do not want to "
 "use the proxies you set up above. Example: \"mycompany.com local.network.lan"
@@ -893,7 +901,7 @@ msgstr ""
 "die obigen Proxies nicht benutzt werden sollen. Beispiel: \"mycompany.com "
 "local.network.lan\""
 
-#: gtk/interface.cc:338
+#: gtk/interface.cc:350
 msgid ""
 "Enter location of <tt>.jigdo</tt> file, and destination directory to save "
 "files to."
@@ -905,11 +913,11 @@ msgstr ""
 msgid "Error"
 msgstr "Fehler"
 
-#: mkimage.cc:611
+#: mkimage.cc:615
 msgid "Error - could not access temporary file"
 msgstr "Fehler - Zugriff auf temporäre Datei schlug fehl"
 
-#: mkimage.cc:539
+#: mkimage.cc:543
 msgid "Error - template data's DESC section invalid"
 msgstr "Fehler - DESC-Abschnitt in template-Daten ungültig"
 
@@ -938,11 +946,11 @@ msgstr ""
 "Fehler beim Entfernen alter Cache-Einträge: %1. Die Cache-Datei könnte "
 "unbrauchbar geworden sein, eventuell sollten Sie sie löschen."
 
-#: mktemplate.cc:885
+#: mktemplate.cc:904
 msgid "Error during compression: %1"
 msgstr "Fehler bei der Komprimierung: %1"
 
-#: gtk/gui.cc:255
+#: gtk/gui.cc:266
 #, c-format
 msgid "Error loading `%LE1': %LE2"
 msgstr "Fehler beim Laden von »%LE1«: %LE2"
@@ -951,7 +959,7 @@ msgstr "Fehler beim Laden von »%LE1«: %LE2"
 msgid "Error opening file `-' (using standard input not allowed here)"
 msgstr "Fehler bei Öffnen von »-« (stdin ist hier nicht erlaubt)"
 
-#: job/jigdo-io.cc:282
+#: job/jigdo-io.cc:283
 msgid "Error processing .jigdo file contents"
 msgstr "Fehler bei der Verarbeitung der .jigdo-Datei"
 
@@ -967,7 +975,7 @@ msgstr "Fehler beim Lesen der Dateinamen von »%1« (%2)"
 msgid "Error reading filenames from standard input (%1)"
 msgstr "Fehler beim Lesen der Dateinamen von stdin (%2)"
 
-#: mkimage.cc:389 mktemplate.cc:309
+#: mkimage.cc:389 mktemplate.cc:318
 msgid "Error reading from `%1' (%2)"
 msgstr "Fehler beim Lesen von »%1« (%2)"
 
@@ -979,7 +987,7 @@ msgstr "Fehler beim Lesen aus Verzeichnis »%1« (%2)"
 msgid "Error reading template data (%1)"
 msgstr "Fehler beim Lesen der Template-Daten - %1"
 
-#: jigdo-file.cc:166
+#: jigdo-file.cc:168
 msgid "Error scanning image - abort"
 msgstr "Fehler beim Scannen der Image-Datei - Abbruch"
 
@@ -987,7 +995,7 @@ msgstr "Fehler beim Scannen der Image-Datei - Abbruch"
 msgid "Error while reading `%1' - file will be ignored (%2)"
 msgstr "Fehler beim Lesen von »%1« - ignoriere Datei (%2)"
 
-#: mkimage.cc:548
+#: mkimage.cc:552
 msgid "Error while writing to `%1' (%2)"
 msgstr "Fehler beim Schreiben in »%1« (%2)"
 
@@ -995,7 +1003,11 @@ msgstr "Fehler beim Schreiben in »%1« (%2)"
 msgid "Error: `%1' does not match checksum in template data"
 msgstr "Fehler: »%1« hat nicht die Prüfsumme, die in der Template-Datei steht"
 
-#: gtk/interface.cc:1561
+#: gtk/interface.cc:203
+msgid "Exit from Jigsaw Download"
+msgstr "Jigsaw Download beenden"
+
+#: gtk/interface.cc:1608
 msgid "FTP proxy"
 msgstr "FTP-Proxy"
 
@@ -1011,19 +1023,19 @@ msgstr "Eingabefeld für Quell-URL bzw -Dateiname ist leer"
 msgid "Finished - fetched %1"
 msgstr "Fertig - %1 heruntergeladen"
 
-#: jigdo-file.cc:176
+#: jigdo-file.cc:178
 msgid "Finished - image size is %1 bytes."
 msgstr "Fertig - Image-Größe ist %1 Bytes."
 
-#: mkimage.cc:829
+#: mkimage.cc:833
 msgid "Found %1 of the %2 files required by the template"
 msgstr "%1 der %2 vom Template benötigten Dateien gefunden"
 
-#: gtk/interface.cc:1552
+#: gtk/interface.cc:1599
 msgid "HTTP proxy"
 msgstr "HTTP-Proxy"
 
-#: gtk/interface.cc:317
+#: gtk/interface.cc:329
 msgid ""
 "If the string you enter does not point to a .jigdo file, jigdo behaves just "
 "like a normal \"download manager\" and saves the file in the destination "
@@ -1033,7 +1045,7 @@ msgstr ""
 "ein normaler »Download-Manager« und speichert die Datei im Zielverzeichnis, "
 "sonst passiert nichts."
 
-#: gtk/interface.cc:324
+#: gtk/interface.cc:336
 msgid ""
 "If you entered a .jigdo URL above, this must be a directory name. For single-"
 "file downloads, it can also be a filename."
@@ -1042,32 +1054,36 @@ msgstr ""
 "Verzeichnisname stehen. Für das Herunterladen einzelner Dateien kann es auch "
 "ein Dateiname sein."
 
-#: mkimage.cc:953
+#: mkimage.cc:957
 msgid "Ignoring existing temporary file `%1' - %2"
 msgstr "Ignoriere bestehende temporäre Datei »%1« - %2"
 
-#: job/jigdodownload.cc:150 job/jigdo-io.cc:225
+#: job/jigdodownload.cc:136 job/jigdo-io.cc:226
 msgid "Input .jigdo data contains invalid control characters"
 msgstr "Name des Labels enthält ungültige Steuerzeichen"
 
-#: job/jigdodownload.cc:138 job/jigdodownload.cc:160 job/jigdo-io.cc:125
-#: job/jigdo-io.cc:214 job/jigdo-io.cc:235
+#: job/jigdodownload.cc:124 job/jigdodownload.cc:146 job/jigdo-io.cc:126
+#: job/jigdo-io.cc:215 job/jigdo-io.cc:236
 msgid "Input .jigdo data is not valid UTF-8"
 msgstr "Bei den .jigdo-Daten handelt es sich nicht um gültiges UTF-8"
 
-#: job/jigdo-io.cc:653
+#: job/jigdo-io.cc:683 job/jigdo-io.cc:690
+msgid "Invalid MD5Sum in Parts section"
+msgstr "Ungültige MD5Sum in Parts-Abschnitt"
+
+#: job/jigdo-io.cc:654 job/jigdo-io.cc:661
 msgid "Invalid Template-MD5Sum argument"
 msgstr "Argument von Template-MD5Sum ungültig"
 
-#: job/makeimagedl.cc:277 job/makeimagedl.cc:310
+#: job/makeimagedl.cc:265 job/makeimagedl.cc:298
 msgid "Invalid cache entry: `%L1' is not a file"
 msgstr "Ungültiger Cache-Eintrag: »%L1« ist keine Datei"
 
-#: job/jigdo-io.cc:507 util/configfile.cc:119
+#: job/jigdo-io.cc:508 util/configfile.cc:119
 msgid "Invalid characters after closing `]'"
 msgstr "Ungültige Zeichen nach schließendem »]«"
 
-#: job/jigdo-io.cc:637
+#: job/jigdo-io.cc:638
 msgid "Invalid image name"
 msgstr "Ungültiger Image-Name"
 
@@ -1076,15 +1092,15 @@ msgstr "Ungültiger Image-Name"
 msgid "Invalid template data - corrupted file?"
 msgstr "Ungültige Template-Daten - Dateiinhalt zerstört?"
 
-#: gtk/interface.cc:1206
+#: gtk/interface.cc:1246
 msgid "Jigdo logo"
 msgstr "Logo von Jigdo"
 
-#: gtk/interface.cc:148
+#: gtk/interface.cc:157
 msgid "Jigsaw Download"
 msgstr "Jigsaw Download"
 
-#: job/makeimagedl.cc:166
+#: job/makeimagedl.cc:154
 msgid ""
 "Jigsaw Download - half-finished download\n"
 "\n"
@@ -1133,7 +1149,7 @@ msgstr ""
 "URL=%1\n"
 "Destination=%2\n"
 
-#: gtk/gui.cc:194
+#: gtk/gui.cc:205
 msgid ""
 "Jigsaw Download is free software; you can redistribute it and/or modify it "
 "under the terms of the GNU General Public License, version 2, as published "
@@ -1153,7 +1169,7 @@ msgstr ""
 "Versionen dieser Bibliothek, die dieselbe Lizenz benutzen) sowie die "
 "Verbreitung der resultierenden Programme.\n"
 
-#: gtk/gui.cc:207
+#: gtk/gui.cc:218
 msgid ""
 "Jigsaw Download uses the World Wide Web Consortium's \"libwww\" library (see "
 "<http://www.w3.org/Library/>), to which the following license applies:\n"
@@ -1198,7 +1214,7 @@ msgstr "Name des Labels enthält ungültiges Zeichen »%1«"
 msgid "Label name is not followed by `='"
 msgstr "Es folgt kein »=« auf den Namen des Labels"
 
-#: gtk/interface.cc:1657
+#: gtk/interface.cc:1705
 msgid "License for Jigsaw Download"
 msgstr "Lizenz von Jigsaw Download"
 
@@ -1218,7 +1234,7 @@ msgstr "Login"
 msgid "Looking up %L1"
 msgstr "Finde Adresse von %L1"
 
-#: job/jigdo-io.cc:541
+#: job/jigdo-io.cc:542
 msgid "Loop of [Include] directives"
 msgstr "Schleife von [Include]-Directiven"
 
@@ -1226,53 +1242,47 @@ msgstr "Schleife von [Include]-Directiven"
 msgid "MB"
 msgstr "MB"
 
-#: jigdo-file.cc:170
+#: jigdo-file.cc:172
 msgid "Match of `%1' at offset %2"
 msgstr "Datei »%1« an Offset %2 gefunden"
 
-#: gtk/interface.cc:1498
+#: gtk/interface.cc:1545
 msgid "Maximum number of simultaneous downloads"
 msgstr "Maximum für Anzahl paralleler Downloads"
 
-#: job/jigdo-io.cc:610 job/jigdo-io.cc:631 job/jigdo-io.cc:640
-#: job/jigdo-io.cc:644
+#: job/jigdo-io.cc:611 job/jigdo-io.cc:632 job/jigdo-io.cc:641
+#: job/jigdo-io.cc:645 job/jigdo-io.cc:676
 msgid "Missing argument"
 msgstr "Argument fehlt"
 
-#: job/jigdo-io.cc:462
+#: job/jigdo-io.cc:463
 msgid "No `=' after first word"
 msgstr "Kein »=« nach dem ersten Wort"
 
-#: job/jigdo-io.cc:436
+#: job/jigdo-io.cc:437
 msgid "No `[Image]' section found in .jigdo data"
 msgstr "Kein »[Image]«-Abschnitt in den .jigdo-Daten gefunden"
 
-#: job/jigdo-io.cc:477 job/jigdo-io.cc:483 util/configfile.cc:95
+#: job/jigdo-io.cc:478 job/jigdo-io.cc:484 util/configfile.cc:95
 #: util/configfile.cc:103
 msgid "No closing `]' for section name"
 msgstr "Keine schließende »]« für Abschnitt-Name"
 
-#: gtk/interface.cc:844
+#: gtk/interface.cc:870
 msgid "Non-US"
 msgstr "Non-US"
 
-#: gtk/interface.cc:362
-msgid ""
-"Note that any directory to be scanned must contain single files which would "
-"otherwise be downloaded - in the case of CD images, you must supply the "
-"directory where the CD is mounted, NOT the name of an .iso file."
-msgstr ""
-"Ein zu scannendes Verzeichnis muss einzelne Dateien enthalten, die ansonsten "
-"heruntergeladen werden müssten - bei CD-Images müssen Sie also das "
-"Verzeichnis angeben, unter dem die CD gemountet ist, NICHT die .iso-Datei."
-
-#: gtk/interface.cc:1470
+#: gtk/interface.cc:1516
 msgid "OK"
 msgstr "OK"
 
-#: jigdo-file-cmd.cc:369
+#: jigdo-file-cmd.cc:403
 msgid "OK: Checksums match, image is good!"
 msgstr "OK: Prüfsummen stimmen überein, Image-Datei ist in Ordnung!"
+
+#: gtk/interface.cc:175
+msgid "Open new .jigdo file or URL"
+msgstr "Neue .jigdo-Datei oder URL öffnen"
 
 #: gtk/gtk-single-url.cc:326
 msgid "Output file exists - overwrite it or resume download?"
@@ -1294,7 +1304,7 @@ msgstr ""
 "Bitte geben Sie einen »http«- oder »ftp«-URL oder den Namen einer <tt>."
 "jigdo</tt>-Datei ein."
 
-#: gtk/gui.cc:229
+#: gtk/gui.cc:240
 msgid ""
 "Please note: The copyright notice below only applies to the text of the GNU "
 "General Public License; the copyright of the program is as specified above. "
@@ -1310,21 +1320,28 @@ msgstr ""
 "\n"
 "\n"
 
-#: gtk/interface.cc:357
+#: gtk/interface.cc:375
 msgid ""
 "Please specify files/directories on the local filesystem to scan. Any files "
 "needed by jigdo templates that are found this way will not have to be "
-"downloaded again."
+"downloaded again.\n"
+"Note that any directory to be scanned must contain single files which would "
+"otherwise be downloaded - in the case of CD images, you must supply the "
+"directory where the CD is mounted, NOT the name of an .iso file."
 msgstr ""
-"Bitte geben Sie Daten/Verzeichnisse im Dateisystem zum Scannen an. Dateien, "
-"die vom Jigdo-Template benötigt und so gefunden werden, müssen nicht mehr "
-"heruntergeladen werden."
+"Bitte lokale Dateien/Verzeichnisse zum Durchsuchen angeben. Von jigdo-"
+"Templates benötigte Dateien, die auf diesem Weg gefunden werden, brauchen "
+"nicht erneut heruntergeladen werden.\n"
+"Hinweis: Durchsuchte Verzeichnisse müssen Dateien enthalten, die andernfalls "
+"heruntergeladen werden müssten - bei CD-Images müssen Sie also das "
+"Verzeichnis angeben, unter dem die CD eingebunden (gemountet) ist, NICHT den "
+"Namen einer .iso-Datei."
 
-#: mkimage.cc:475
+#: mkimage.cc:479
 msgid "Premature end of template data"
 msgstr "Vorzeitiges Ende der Template-Daten"
 
-#: gtk/interface.cc:1535
+#: gtk/interface.cc:1582
 msgid "Remove finished download jobs from list after (seconds)"
 msgstr "Beendete Downloads aus Liste entfernen nach (Sekunden)"
 
@@ -1362,27 +1379,27 @@ msgstr "Herunterladen wieder aufgenommen - überlappender Bereich %1kB"
 msgid "Resuming... %1kB"
 msgstr "Wieder aufnehmen... %1kB"
 
-#: job/jigdo-io.cc:550 job/makeimagedl.cc:133
+#: job/jigdo-io.cc:551 job/makeimagedl.cc:133
 msgid "Retrieving .jigdo data"
 msgstr "Lade .jigdo herunter"
 
-#: gtk/interface.cc:176
+#: gtk/interface.cc:185
 msgid "Reuse files"
 msgstr "Dateien"
 
-#: gtk/interface.cc:1523
+#: gtk/interface.cc:1570
 msgid "Save .jigdo files in destination directory"
 msgstr ".jigdo-Dateien im Zielverzeichnis speichern"
 
-#: gtk/interface.cc:1527
+#: gtk/interface.cc:1574
 msgid "Save .template files in destination directory"
 msgstr ".template-Dateien im Zielverzeichnis speichern"
 
-#: gtk/interface.cc:303
+#: gtk/interface.cc:315
 msgid "Save to"
 msgstr "Speichern in"
 
-#: gtk/interface.cc:177
+#: gtk/interface.cc:186
 msgid ""
 "Scan local filesystems for data needed by jigsaw downloads - useful when "
 "\"upgrading\" e.g. a CD image to a newer version"
@@ -1390,7 +1407,7 @@ msgstr ""
 "Auf Platte nach Dateien suchen, die von Downloads benötigt werden - "
 "nützlich, wenn z.B. CD-Images auf eine neue Version \"aufgefrischt\" werden"
 
-#: job/jigdo-io.cc:504
+#: job/jigdo-io.cc:505
 msgid "Section name invalid"
 msgstr "Abschnitt-Name ungültig"
 
@@ -1398,11 +1415,11 @@ msgstr "Abschnitt-Name ungültig"
 msgid "Section name invalid at character `%1'"
 msgstr "Abschnitt-Name enthält ungültiges Zeichen »%1«"
 
-#: gtk/interface.cc:1391
+#: gtk/interface.cc:1437
 msgid "Select File"
 msgstr "Datei auswählen"
 
-#: gtk/interface.cc:798
+#: gtk/interface.cc:827
 msgid ""
 "Select or enter server URLs for the different types of servers that the ."
 "jigdo file references. You can enter several URLs for each type of server - "
@@ -1412,11 +1429,11 @@ msgstr ""
 "oder geben Sie sie ein. Pro Art können mehrere URLs eingegeben werden - in "
 "diesem Fall wird Jigdo versuchen, den schnellsten zu finden."
 
-#: gtk/interface.cc:785
+#: gtk/interface.cc:814
 msgid "Select the country you live in --->"
 msgstr "Land auswählen, in dem Sie wohnen --->"
 
-#: gtk/interface.cc:772
+#: gtk/interface.cc:801
 msgid ""
 "Select the country you live in. jigdo will then try out all available "
 "servers on your continent. Sooner or later, it should end up using a server "
@@ -1430,11 +1447,11 @@ msgstr ""
 msgid "Server sent more data than expected"
 msgstr "Server schickte mehr Daten als erwartet"
 
-#: gtk/interface.cc:1490
+#: gtk/interface.cc:1536
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: gtk/interface.cc:1453
+#: gtk/interface.cc:1499
 msgid "Settings - Jigsaw Download"
 msgstr "Einstellungen - Jigsaw Download"
 
@@ -1454,7 +1471,7 @@ msgstr ""
 "Es wurden bereits Daten heruntergeladen. Sind Sie sicher, dass sie diese "
 "löschen und das Herunterladen neu starten wollen?"
 
-#: mkimage.cc:916
+#: mkimage.cc:920
 msgid ""
 "Sorry, at the moment the Windows port of jigdo cannot create files bigger "
 "than 2 GB. Use the Linux version."
@@ -1462,7 +1479,7 @@ msgstr ""
 "Leider kann die Windows-Version von jigdo keine Dateien erzeugen, die größer "
 "als 2 GB sind. Benutzen Sie die Linux-Version."
 
-#: gtk/interface.cc:393
+#: gtk/interface.cc:407
 msgid "Start scan"
 msgstr "Scan starten"
 
@@ -1470,11 +1487,11 @@ msgstr "Scan starten"
 msgid "Status"
 msgstr "Status"
 
-#: mkimage.cc:874 mkimage.cc:931
+#: mkimage.cc:878 mkimage.cc:935
 msgid "Successfully created `%1'"
 msgstr "»%1« wurde erfolgreich erzeugt"
 
-#: gtk/interface.cc:1514
+#: gtk/interface.cc:1561
 msgid "Switch to download screen once download of a .jigdo file is complete"
 msgstr ""
 "Zum Download-Dialog schalten, sobald die .jigdo-Datei komplett "
@@ -1506,7 +1523,7 @@ msgstr ""
 msgid "Try %1 of %2 after <b>%E3</b>"
 msgstr "Versuch %1 von %2 nach <b>%E3</b>"
 
-#: gtk/interface.cc:659
+#: gtk/interface.cc:691
 msgid ""
 "UNIMPLEMENTED\n"
 "just click Next..."
@@ -1514,11 +1531,11 @@ msgstr ""
 "NICHT IMPLEMENTIERT\n"
 "Bitte einfach Weiter klicken..."
 
-#: gtk/interface.cc:294
+#: gtk/interface.cc:306
 msgid "URL"
 msgstr "URL"
 
-#: job/jigdo-io.cc:619
+#: job/jigdo-io.cc:620
 msgid ""
 "Upgrade required - this .jigdo file needs a newer version of the jigdo "
 "program"
@@ -1556,8 +1573,8 @@ msgstr ""
 "                   »~« zum Abschalten, z.B. »all,~make-template«\n"
 "  --no-debug       Keine Debug-Info [Voreinstellung]\n"
 
-#: job/jigdo-io.cc:630 job/jigdo-io.cc:639 job/jigdo-io.cc:643
-#: job/jigdo-io.cc:662 job/jigdo-io.cc:666
+#: job/jigdo-io.cc:631 job/jigdo-io.cc:640 job/jigdo-io.cc:644
+#: job/jigdo-io.cc:665 job/jigdo-io.cc:669
 msgid "Value redefined"
 msgstr "Wert mehrmals definiert"
 
@@ -1569,7 +1586,7 @@ msgstr "Warte"
 msgid "Waiting..."
 msgstr "Warte..."
 
-#: jigdo-file-cmd.cc:175
+#: jigdo-file-cmd.cc:209
 msgid ""
 "Warning - no files specified. The template will contain the complete image "
 "contents!"
@@ -1577,7 +1594,7 @@ msgstr ""
 "Achtung - es wurden keine Dateien angegeben. Das Template wird die "
 "kompletten Image-Daten enthalten!"
 
-#: jigdo-file-cmd.cc:300 jigdo-file-cmd.cc:341
+#: jigdo-file-cmd.cc:334 jigdo-file-cmd.cc:375
 msgid "Warning: This does not seem to be a template file"
 msgstr "Achtung: Dies scheint keine Template-Datei zu sein"
 
@@ -1591,7 +1608,7 @@ msgstr ""
 "LE1« %2 Bytes, aber jetzt sind es %3 Bytes. Wollen Sie den Download wirklich "
 "wieder (von Byte %3 an) aufnehmen?"
 
-#: mkimage.cc:850
+#: mkimage.cc:854
 msgid ""
 "Will not create image or temporary file - try again with different input "
 "files"
@@ -1599,7 +1616,7 @@ msgstr ""
 "Es wird keine Image-Datei oder temporäre Datei erzeugt - versuchen Sie es "
 "mit anderen Eingabedateien"
 
-#: mkimage.cc:756
+#: mkimage.cc:760
 msgid "Will not reuse existing temporary file `%1' - %2"
 msgstr "Existierende temporäre Datei »%1« wird nicht verwendet - %2"
 
@@ -1611,10 +1628,10 @@ msgstr "_Abbruch des Datenstroms"
 msgid "_Abort download"
 msgstr "Herunterladen _stoppen"
 
-#: gtk/interface.cc:760
-msgid "_Automatic selection: Use \"netselect\" to find the fastest servers"
+#: gtk/interface.cc:789
+msgid "_Automatic selection: Use \"netselect\" to find the best servers"
 msgstr ""
-"_Automatische Auswahl: Benutze \"netselect\", um den schnellsten Server zu "
+"_Automatische Auswahl: Benutze \"netselect\", um die schnellsten Server zu "
 "finden"
 
 #: gtk/jobline.cc:127
@@ -1629,7 +1646,7 @@ msgstr "_Cool!"
 msgid "_Fantastic!"
 msgstr "_Fantastisch!"
 
-#: gtk/interface.cc:631 gtk/interface.cc:732
+#: gtk/interface.cc:666 gtk/interface.cc:764
 msgid "_Next"
 msgstr "_Weiter"
 
@@ -1645,19 +1662,19 @@ msgstr "_Neustart"
 msgid "_Resume"
 msgstr "_Wieder aufnehmen"
 
-#: gtk/interface.cc:769
+#: gtk/interface.cc:798
 msgid "_Simple selection, by country name: "
 msgstr "_Einfache Auswahl, nach Land: "
 
-#: gtk/interface.cc:699
+#: gtk/interface.cc:732
 msgid "_Start scan"
 msgstr "_Scan starten"
 
-#: mkimage.cc:678
+#: mkimage.cc:682
 msgid "`%1' is not a template file"
 msgstr "»%1« ist keine Template-Datei"
 
-#: job/jigdo-io.cc:524
+#: job/jigdo-io.cc:525
 msgid "`%1=...' line missing in [Image] section"
 msgstr "Zeile »%1=...« fehlt im [Image]-Abschnitt"
 
@@ -1665,11 +1682,11 @@ msgstr "Zeile »%1=...« fehlt im [Image]-Abschnitt"
 msgid "file is too short"
 msgstr "Datei ist zu klein"
 
-#: mkimage.cc:704
+#: mkimage.cc:708
 msgid "it corresponds to a different image/template."
 msgstr "sie gehört zu einem anderen Image/Template."
 
-#: mkimage.cc:701
+#: mkimage.cc:705
 msgid "it was not created by jigdo-file, or is corrupted."
 msgstr "sie wurde nicht von jigdo-file erzeugt oder ist zerstört."
 
@@ -1677,29 +1694,38 @@ msgstr "sie wurde nicht von jigdo-file erzeugt oder ist zerstört."
 msgid "kB"
 msgstr "kB"
 
-#: gtk/interface.cc:1569
+#: gtk/interface.cc:1617
 msgid "no proxy"
 msgstr "kein Proxy"
 
-#: jigdo-file.cc:106
+#: jigdo-file.cc:108
 msgid "scanning"
 msgstr "Scanne"
 
-#: jigdo-file.cc:131
+#: jigdo-file.cc:133
 msgid "scanning image"
 msgstr "Scanne Image"
 
-#: mkimage.cc:706 mkimage.cc:710
+#: mkimage.cc:710 mkimage.cc:714
 msgid "since its creation, the template was regenerated."
 msgstr "seit seiner Erzeugung wurde das Template neu erzeugt."
 
-#: jigdo-file.cc:146
+#: jigdo-file.cc:148
 msgid "verifying image"
 msgstr "Verifiziere Image"
 
-#: jigdo-file.cc:162
+#: jigdo-file.cc:164
 msgid "writing image"
 msgstr "Schreibe Image"
+
+#~ msgid ""
+#~ "Please specify files/directories on the local filesystem to scan. Any "
+#~ "files needed by jigdo templates that are found this way will not have to "
+#~ "be downloaded again."
+#~ msgstr ""
+#~ "Bitte geben Sie Daten/Verzeichnisse im Dateisystem zum Scannen an. "
+#~ "Dateien, die vom Jigdo-Template benötigt und so gefunden werden, müssen "
+#~ "nicht mehr heruntergeladen werden."
 
 #~ msgid ""
 #~ "#\n"
@@ -1761,9 +1787,6 @@ msgstr "Schreibe Image"
 
 #~ msgid "Do _not ask me about this again"
 #~ msgstr "Diese Frage _nicht mehr anzeigen"
-
-#~ msgid "Error - Jigsaw Download"
-#~ msgstr "Fehler - Jigsaw Download"
 
 #~ msgid "Pause"
 #~ msgstr "Pause"
@@ -1860,9 +1883,6 @@ msgstr "Schreibe Image"
 #~ msgid "Cannot save to `%1' because that already exists"
 #~ msgstr "Kann nicht in »%1« speichern - dieses Objekt existiert bereits"
 
-#~ msgid "Change preferences"
-#~ msgstr "Einstellungen ändern"
-
 #~ msgid "Couldn't create replacement pixmap."
 #~ msgstr "Ersatz-Pixmap konnte nicht erzeugt werden."
 
@@ -1883,9 +1903,6 @@ msgstr "Schreibe Image"
 
 #~ msgid "Open new"
 #~ msgstr "Neuer Download"
-
-#~ msgid "Open new .jigdo file or URL"
-#~ msgstr "Neue .jigdo-Datei oder URL öffnen"
 
 #~ msgid "Please enter an URL to download from"
 #~ msgstr "Bitte geben Sie an, von welchem URL heruntergeladen werden soll"
