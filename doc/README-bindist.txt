@@ -64,7 +64,7 @@ updated/added/deleted jigdo files are detected. See
 
 ----------------------------------------------------------------------
 
-Copyright (C) 2001-2003  |  richard@
+Copyright (C) 2001-2004  |  richard@
 Richard Atterer          |  atterer.net
 
   This program is free software; you can redistribute it and/or modify
