@@ -28,11 +28,16 @@ struct IListBase {
   }
   ~IListBase() {
     //msg("~IListBase %1", this);
+    iListBase_remove();
+  }
+  /** May use this to unlink this object from its list, if any */
+  void iListBase_remove() {
     if (iListBase_prev == 0) return;
     iListBase_prev->iListBase_next = iListBase_next;
     iListBase_next->iListBase_prev = iListBase_prev;
     iListBase_prev = iListBase_next = 0;
   }
+/*private:*/
   IListBase* iListBase_prev;
   IListBase* iListBase_next;
 };
