@@ -217,8 +217,8 @@ cvsdist:	Makefile
 		    fi
 		cd jigdo/doc && $(MAKE) -f ../../doc/Makefile
 		rm -f jigdo/doc/*~
-		cd src && $(MAKE) depend mingw gtk/interface.cc
-		cp src/Makedeps src/*.mingw jigdo/src
+		cd src && $(MAKE) depend gtk/interface.cc
+		cp src/Makedeps jigdo/src
 		cp src/gtk/interface.cc src/gtk/interface.hh jigdo/src/gtk
 		cd jigdo/po && $(MAKE) -f ../../po/Makefile update-gmo
 		jdir=jigdo-`read a b v <"$(srcdir)/jigdo.spec" && echo $$v`; \
