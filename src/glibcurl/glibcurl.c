@@ -30,6 +30,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
+#if 1
 /*______________________________________________________________________*/
 
 /* Timeout for the fds passed to glib's poll() call, in millisecs.
@@ -50,6 +52,7 @@ typedef struct CurlGSource_ {
   GMutex* mutex; /* Not held by selectThread whenever it is waiting */
 
   gboolean callPerform; /* TRUE => Call curl_multi_perform() Real Soon */
+  gint cpLocked;
   gboolean selectRunning; /* FALSE => selectThread terminates */
 
   /* For data returned by curl_multi_fdset */
@@ -88,7 +91,8 @@ void glibcurl_init() {
   curlSrc->selectThread = 0;
   curlSrc->cond = g_cond_new();
   curlSrc->mutex = g_mutex_new();
-  
+  curlSrc->cpLocked = 0;
+
   /* Init libcurl */
   curl_global_init(CURL_GLOBAL_ALL);
   curlSrc->multiHandle = curl_multi_init();
@@ -175,14 +179,18 @@ static gpointer selectThread(gpointer data) {
                      &curlSrc->fdExc, &timeout);
     D((stderr, "selectThread: select() fdCount=%d\n", fdCount));
 
-/*     if (fdCount <= 0) continue; */
     /* PROBLEM: Ensure prepare() is called SOON. Call below doesn't work. */
-    g_main_context_wakeup(NULL);
-    D((stderr, "selectThread: Waiting for main to call perform()\n"));
-    g_cond_wait(curlSrc->cond, curlSrc->mutex);
-/*     D((stderr, "selectThread: cond_waited\n")); */
+/*     g_mutex_unlock(curlSrc->mutex); */
 
-/*     if (multiCount == 0) break; */
+    g_atomic_int_inc(&curlSrc->cpLocked); /* "GTK thread, block!" */
+    /* GTK thread will almost immediately block in prepare() */
+    D((stderr, "selectThread: waking up GTK thread\n"));
+    g_main_context_wakeup(NULL);
+
+    /* Now unblock GTK thread, continue after it signals us */
+    D((stderr, "selectThread: pre-wait\n"));
+    g_cond_wait(curlSrc->cond, curlSrc->mutex);
+    D((stderr, "selectThread: post-wait\n"));
 
   } /* endwhile (TRUE) */
 
@@ -195,17 +203,31 @@ static gpointer selectThread(gpointer data) {
 
 /* Returning FALSE may cause the main loop to block indefinitely, but that is
    not a problem, we use g_main_context_wakeup to wake it up */
+/* Returns TRUE iff it holds the mutex lock */
 gboolean prepare(GSource* source, gint* timeout) {
   D((stderr, "prepare: callPerform=%d, thread=%p\n",
      curlSrc->callPerform, curlSrc->selectThread));
-  
+
   *timeout = -1;
+
+  if (g_atomic_int_dec_and_test(&curlSrc->cpLocked)) {
+    /* The select thread wants us to block */
+    D((stderr, "prepare: trying lock\n"));
+    g_mutex_lock(curlSrc->mutex);
+    D((stderr, "prepare: got lock\n"));
+    return TRUE;
+  } else {
+    g_atomic_int_inc(&curlSrc->cpLocked);
+  }
 
   /* Always dispatch if callPerform */
   if (curlSrc->callPerform) {
-    curlSrc->callPerform = FALSE;
-    /* PROBLEM: May block for up to 1 sec if selectThread in select() */
+    D((stderr, "prepare: trying lock 2\n"));
+    /* Problem: We can block up to GLIBCURL_TIMEOUT msecs here, until the
+       select() call returns. */
     g_mutex_lock(curlSrc->mutex);
+    D((stderr, "prepare: got lock 2\n"));
+    curlSrc->callPerform = FALSE;
     if (curlSrc->selectThread == NULL) {
       D((stderr, "prepare: starting select thread\n"));
       /* Note that the thread will stop soon because we hold mutex */
@@ -215,19 +237,19 @@ gboolean prepare(GSource* source, gint* timeout) {
     }
     return TRUE;
   }
+  return FALSE;
 
-  if (curlSrc->selectThread == NULL) return FALSE;
+/*   if (curlSrc->selectThread == NULL) return FALSE; */
 
   /* Test whether selectThread wants us to dispatch. We can tell that it's
      waiting in g_cond_wait() by the fact that mutex is unlocked.
      Locked by selectThread => return FALSE here, do nothing.
      Otherwise, lock it, return TRUE */
-  return g_mutex_trylock(curlSrc->mutex);
+/*   return g_mutex_trylock(curlSrc->mutex); */
 }
 /*______________________________________________________________________*/
 
 /* Called after all the file descriptors are polled by glib. */
-/* Returns TRUE iff it holds the mutex lock */
 gboolean check(GSource* source) {
   return FALSE;
 }
@@ -249,7 +271,6 @@ gboolean dispatch(GSource* source, GSourceFunc callback,
   /* Let selectThread call select() again */
   g_mutex_unlock(curlSrc->mutex);
   g_cond_signal(curlSrc->cond);
-  g_thread_yield();
 
   if (callback != 0) (*callback)(user_data);
 
@@ -262,7 +283,7 @@ void finalize(GSource* source) {
 }
 /*======================================================================*/
 
-#if 0
+#else
 
 /* Number of highest allowed fd */
 #define GLIBCURL_FDMAX 127
