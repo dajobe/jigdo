@@ -9,6 +9,8 @@
 
   Spool data from cache file
 
+  LIGHTLY TESTED ONLY, BOUND TO CONTAIN BUGS
+
 */
 
 #include <config.h>

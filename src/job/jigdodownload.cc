@@ -13,20 +13,6 @@
   URL contains [Include] directives, additional JigdoDownloads will be
   started for each one.
 
-  To deal with [Include], the following happens: Each JigdoDownload has an
-  iterator at which it inserts lines of downloaded data into the MakeImage's
-  JigdoConfig. When an [Include] is encountered and the maximum allowed level
-  of includes is not yet reached, a new JigdoDownload is set up to insert
-  lines just *before* the [Include] line, and only to remove that [Include]
-  line when the download has successfully completed.
-
-  When asked for e.g. the filename of the output file, MakeImage needs to
-  access the *first* [Image] section in the .jigdo data, regardless of
-  whether that appears in the top-level .jigdo file or a file included from
-  there. It must ignore any further [Image] sections. So while searching
-  through the data, it'll stop at any [Include] and say "[Image]" not yet
-  found.
-
 */
 
 #include <config.h>
