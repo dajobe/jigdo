@@ -7,6 +7,10 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*/
+
+/** @file
+
   Cache with MD5 sums of file contents - used by JigdoCache in scan.hh
 
   The created libdb3 database contains one table with a mapping from
@@ -15,15 +19,14 @@
   part after any "//", as returned by FilePart::leafName(). The binary
   structure has the following format:
 
+  This is accessed and interpreted by CacheFile:<pre>
   Size Meaning
-
-  This is accessed and interpreted by CacheFile:
    4   lastAccess - timestamp of last read or write access to this data
    4   fileMtime - timestamp to detect modifications, and for entry expiry
-   6   fileSize - for calculation of nr of blocks, and for entry expiry
+   6   fileSize - for calculation of nr of blocks, and for entry expiry</pre>
 
   This is not handled by CacheFile; it is passed as an opaque string of
-  bytes to scan.hh classes:
+  bytes to scan.hh classes:<pre>
    4   blockLength (of rsync sum)
    4   md5BlockLength
    4   blocks (number of valid md5 blocks in this entry)
@@ -31,7 +34,7 @@
   16   fileMD5Sum (only valid if
                    blocks == (fileSize+md5BlockLength-1)/md5BlockLength )
   followed by n entries:
-  16   md5sum of block of size md5BlockLength
+  16   md5sum of block of size md5BlockLength</pre>
 
   Why is mtime and size not part of the key? Because we only want to
   store one entry per file, not an additional entry whenever the file
@@ -55,7 +58,7 @@
 #include <debug.hh>
 //______________________________________________________________________
 
-// libdb3 errors
+/** libdb errors */
 struct DbError : public Error {
   explicit DbError(int c) : Error(db_strerror(c)), code(c) { }
   DbError(int c, const string& m) : Error(m), code(c) { }
@@ -64,9 +67,10 @@ struct DbError : public Error {
 };
 //______________________________________________________________________
 
+/** Cache with MD5 sums of file contents */
 class CacheFile {
 public:
-  /// Create new database or open existing database
+  /** Create new database or open existing database */
   CacheFile(const char* dbName);
   inline ~CacheFile();
 

@@ -7,6 +7,8 @@
   under the terms of the GNU General Public License, version 2. See the file
   COPYING for details.
 
+*//** @file
+
   Spool data from cache file
 
   A CachedUrl is started when MakeImageDl::childFor() was instructed to
@@ -33,6 +35,7 @@ namespace Job {
   class CachedUrl;
 }
 
+/** Spool data from cache file */
 class Job::CachedUrl : public Job::DataSource {
 public:
   /** Create object, but don't start outputting data yet - use run() to do

@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   Logfile / debugging output
 
   The (Debug)Logger class shouldn't be used directly, only via the macros.
@@ -102,6 +104,8 @@
 #endif
 //______________________________________________________________________
 
+/** Usually created by the DEBUG_UNIT macro, with an instance name of "debug"
+    - an object which can be called to output debugging info. */
 class Logger : NoCopy {
 public:
 

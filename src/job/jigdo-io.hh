@@ -7,17 +7,11 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*/
+
+/* @file
+
   IO object for .jigdo downloads; download, gunzip, interpret
-
-  Data (=downloaded bytes, status info) flows as follows:
-
-  INFO DEPRECATED:
-
-  class:       Download ->    SingleUrl      -> JigdoIO -> GtkSingleUrl
-  data member:             childDl->source()      this        frontend
-
-  The JigdoIO owns the SingleUrl (and the Download *object* inside it), but
-  it doesn't own the GtkSingleUrl.
 
 */
 
@@ -42,6 +36,7 @@ namespace Job {
   struct JigdoIOTest;
 }
 
+/** IO object for .jigdo downloads; download, gunzip, interpret */
 class Job::JigdoIO : NoCopy, public Job::DataSource::IO, Gunzip::IO {
 public:
 

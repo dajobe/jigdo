@@ -157,10 +157,10 @@ namespace {
 } // namespace
 //______________________________________________________________________
 
-/* Build up a template DESC section by appending items to a
-   JigdoDescVec. Calls to descUnmatchedData() are allowed to
-   accumulate, so that >1 consecutive unmatched data areas are merged
-   into one in the DESC section. */
+/** Build up a template DESC section by appending items to a
+    JigdoDescVec. Calls to descUnmatchedData() are allowed to accumulate, so
+    that >1 consecutive unmatched data areas are merged into one in the DESC
+    section. */
 class MkTemplate::Desc {
 public:
   Desc() : files(), offset(0) { }

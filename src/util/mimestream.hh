@@ -99,6 +99,7 @@ private:
 };
 //______________________________________________________________________
 
+/** Output base64 data to a std::string. */
 class Base64StringOut {
 public:
   void put(char c) { val += c; }
@@ -241,9 +242,9 @@ Base64Out<Output>& Base64Out<Output>::write(const unsigned char* x,
 /** Convert a series of Base64 ASCII strings into binary data.
 
     Output is a class offering the following:
-       void put(byte b); // Output one byte of binary data
-       typedef implementation_defined ResultType;
-       ResultType result(); // Is called by Base64In::result() */
+      - void put(byte b); // Output one byte of binary data
+      - typedef implementation_defined ResultType;
+      - ResultType result(); // Is called by Base64In::result()</pre> */
 template <class Output>
 class Base64In {
 public:
@@ -272,6 +273,8 @@ private:
 };
 //______________________________________________________________________
 
+/** Helper class for mimestream-test.cc, to convert base64 characters to
+    bytes. */
 class Base64StringIn {
 public:
   void put(byte b) { val.push_back(b); }

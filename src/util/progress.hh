@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   Statistics: How many % of download done, average speed, ETA
 
 */
@@ -23,6 +25,8 @@
 #include <progress.fh>
 //______________________________________________________________________
 
+/** Keep track of statistics: How many % of download done, average speed,
+    ETA */
 class Progress {
 public:
   inline Progress();

@@ -27,7 +27,8 @@
 #include <mktemplate.hh>
 //______________________________________________________________________
 
-/// class for "pointer to any *Reporter class", with disambiguation members
+/** class for "pointer to any *Reporter class", with disambiguation
+    members */
 struct AnyReporter : public MkTemplate::ProgressReporter,
                      public JigdoCache::ProgressReporter,
                      public JigdoDesc::ProgressReporter,
@@ -45,7 +46,7 @@ struct AnyReporter : public MkTemplate::ProgressReporter,
 };
 //______________________________________________________________________
 
-/// Class providing functionality only to jigdo-file.cc
+/** Class providing functionality only to jigdo-file.cc */
 class JigdoFileCmd {
   friend int main(int argc, char* argv[]);
   //________________________________________

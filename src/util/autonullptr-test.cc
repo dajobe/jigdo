@@ -17,9 +17,13 @@
 #include <debug.hh>
 //______________________________________________________________________
 
-struct X : public AutoNullPtrBase<X> {
-  int memb;
-};
+namespace {
+
+  struct X : public AutoNullPtrBase<X> {
+    int memb;
+  };
+
+}
 
 int main() {
   X* x = new X();

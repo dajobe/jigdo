@@ -21,6 +21,7 @@
 #include <smartptr.hh>
 #include <bstream.hh>
 
+/** A bfstream which can be referenced with a SmartPtr. */
 class BfstreamCounted : virtual public SmartPtrBase, public bfstream {
 public:
   BfstreamCounted(const char* name, ios::openmode mode)

@@ -30,6 +30,8 @@
 #endif
 //______________________________________________________________________
 
+/** Display an error box with a message and standard or user-supplied
+    buttons. */
 class MessageBox : NoCopy {
 public:
 

@@ -32,6 +32,7 @@
 #include <recursedir.fh>
 //______________________________________________________________________
 
+/** Errors which occur during RecurseDir's work */
 struct RecurseError : Error {
   explicit RecurseError(const string& m) : Error(m) { }
   explicit RecurseError(const char* m) : Error(m) { }

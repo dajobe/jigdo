@@ -19,16 +19,20 @@
 #include <debug.hh>
 //______________________________________________________________________
 
-struct PR : public JigdoConfig::ProgressReporter {
-  void error(const string& message, const size_t lineNr) {
-    if (lineNr > 0) cerr << lineNr << ": ";
-    cerr << message << endl;
-  }
-  void info(const string& message, const size_t lineNr) {
-    if (lineNr > 0) cerr << lineNr << ": ";
-    cerr << message << endl;
-  }
-} myPR;
+namespace {
+
+  struct PR : public JigdoConfig::ProgressReporter {
+    void error(const string& message, const size_t lineNr) {
+      if (lineNr > 0) cerr << lineNr << ": ";
+      cerr << message << endl;
+    }
+    void info(const string& message, const size_t lineNr) {
+      if (lineNr > 0) cerr << lineNr << ": ";
+      cerr << message << endl;
+    }
+  } myPR;
+
+}
 
 int main(int argc, char* argv[]) {
   if (argc == 1) {

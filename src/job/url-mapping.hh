@@ -111,13 +111,13 @@ private:
 };
 //______________________________________________________________________
 
-/* If the .jigdo file contains [Servers] entries like "Foo=x" and "Foo=y",
-   there will be one object for the "Foo=x" entry, its "next" pointer points
-   to the "Foo=y" object.
+/** If the .jigdo file contains [Servers] entries like "Foo=x" and "Foo=y",
+    there will be one object for the "Foo=x" entry, its "next" pointer points
+    to the "Foo=y" object.
 
-   Special case: The .jigdo data will contain URLs starting with any of
-   "http: ftp: https: ftps: gopher: file:", those protocol labels also get
-   their own ServerUrlMapping objects. */
+    Special case: The .jigdo data will contain URLs starting with any of
+    "http: ftp: https: ftps: gopher: file:", those protocol labels also get
+    their own ServerUrlMapping objects. */
 class ServerUrlMapping : public UrlMapping {
   // server-specific options: Supports resume, ...
   // server-specific availability counts
@@ -159,6 +159,8 @@ private:
 };
 //______________________________________________________________________
 
+/** Object containing list of all Part and Server mappings in a .jigdo
+    file */
 class UrlMap : public NoCopy {
 public:
   inline UrlMap();

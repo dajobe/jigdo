@@ -236,8 +236,8 @@ public:
 };
 //______________________________________________________________________
 
-/* Line content with whitespace and '=' removed and left/right side
-   swapped, i.e. " xyz= foo" becomes "fooxyz". */
+/** Line content with whitespace and '=' removed and left/right side
+    swapped, i.e. " xyz= foo" becomes "fooxyz". */
 struct MkTemplate::PartLine {
   string text;
   size_t split; // Offset of first char after "foo"

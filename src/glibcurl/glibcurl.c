@@ -304,7 +304,7 @@ void finalize(GSource* source) {
 #define GLIBCURL_WRITE (G_IO_OUT | G_IO_ERR | G_IO_HUP)
 #define GLIBCURL_EXC   (G_IO_ERR | G_IO_HUP)
 
-/* A structure which "derives" (in glib speak) from GSource */
+/** A structure which "derives" (in glib speak) from GSource */
 typedef struct CurlGSource_ {
   GSource source; /* First: The type we're deriving from */
 

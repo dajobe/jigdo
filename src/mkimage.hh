@@ -28,6 +28,7 @@
 #include <serialize.hh>
 //______________________________________________________________________
 
+/** Errors thrown by the JigdoDesc code */
 struct JigdoDescError : Error {
   explicit JigdoDescError(const string& m) : Error(m) { }
   explicit JigdoDescError(const char* m) : Error(m) { }

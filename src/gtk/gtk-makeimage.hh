@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   Download and processing of .jigdo files - GTK+ frontend
 
   Beware of the interesting ownership relations here: As the front-end,
@@ -25,6 +27,7 @@
 #include <makeimagedl.hh>
 //______________________________________________________________________
 
+/** Frontend for Job::MakeImageDl */
 class GtkMakeImage : public JobLine, private Job::MakeImageDl::IO {
 public:
   GtkMakeImage(const string& uriStr, const string& destDir);

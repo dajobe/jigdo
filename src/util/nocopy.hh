@@ -7,16 +7,18 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  To be used as a base class only - prevents that the derived class can be
-  copied. It would be equivalent to add a private copy ctor and a private
-  assignment operator to the derived class, but deriving from NoCopy saves
-  typing and looks cleaner.
-
 */
+
+/** @file
+    A class which prevents derived classes from being copied. */
 
 #ifndef NOCOPY_HH
 #define NOCOPY_HH
 
+/** To be used as a base class only - prevents that the derived class can be
+    copied. It would be equivalent to add a private copy ctor and a private
+    assignment operator to the derived class, but deriving from NoCopy saves
+    typing and looks cleaner. */
 class NoCopy {
 protected:
   NoCopy() { }

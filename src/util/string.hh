@@ -38,6 +38,7 @@ string& append(string& s, unsigned long long x, int width);
 #endif
 //______________________________________________________________________
 
+/** Class for passing arguments to Logger */
 class Subst {
 public:
   Subst(int x)           { type = INT;      val.intVal = x; }

@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   Representation for config data in a .jigdo file - based on ConfigFile
 
   Mostly, this class just "forwards" requests by making the
@@ -25,6 +27,7 @@
 #include <configfile.hh>
 //______________________________________________________________________
 
+/** Representation for config data in a .jigdo file - based on ConfigFile */
 class JigdoConfig {
 private:
   /* multimap doesn't make guarantees about order of inserted values
@@ -33,6 +36,8 @@ private:
   //________________________________________
 
 public:
+  /** To be implemented by anyone who is interested in errors/info from the
+      JigdoConfig */
   class ProgressReporter {
   public:
     virtual ~ProgressReporter() { }

@@ -28,8 +28,10 @@
 #include <treeiter.hh>
 //______________________________________________________________________
 
-#if DEBUG
+#ifndef DOXYGEN_SKIP
+#  if DEBUG
 Logger JobList::debug("joblist");
+#  endif
 #endif
 
 JobList GUI::jobList;

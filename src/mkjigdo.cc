@@ -42,6 +42,7 @@ namespace {
   }
 }
 
+/** Index over JigdoParts by md5sum string */
 struct MkTemplate::PartIndex {
   bool operator()(const PartLine* a, const PartLine* b) const {
     return compat_compare(a->text, a->split, string::npos, b->text,

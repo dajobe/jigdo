@@ -117,6 +117,7 @@ private:
   IListBase e;
 };
 
+/** iterator for an IList object */
 template<class T>
 class IList<T>::iterator {
   friend class const_iterator;
@@ -141,6 +142,7 @@ private:
   IListBase* p;
 };
 
+/** const_iterator for an IList object */
 template<class T>
 class IList<T>::const_iterator {
   friend class iterator;

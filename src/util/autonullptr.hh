@@ -7,6 +7,8 @@
   under the terms of the GNU General Public License, version 2. See the file
   COPYING for details.
 
+*//** @file
+
   A pointer which gets set to null if the pointed-to object is deleted
 
   class MyClass : public AutoNullPtrBase<MyClass> {
@@ -28,6 +30,7 @@
 
 template<class T> class AutoNullPtrBase;
 
+/** A pointer which gets set to null if the pointed-to object is deleted */
 template<class T>
 class AutoNullPtr : public IListBase {
 public:
@@ -54,6 +57,8 @@ private:
 };
 //______________________________________________________________________
 
+/** Derive from this class to make your class instances referenceable by
+    AutoNullPtr */
 template<class T>
 class AutoNullPtrBase {
 public:

@@ -102,8 +102,8 @@ struct Error {
   string message;
 };
 
-/* Thrown to indicate: Don't report anything, but unwind stack and
-   return specified value from main() */
+/** Thrown to indicate: Don't report anything, but unwind stack and
+    return specified value from main() */
 struct Cleanup {
   explicit Cleanup(int r) : returnValue(r) { }
   int returnValue;

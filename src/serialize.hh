@@ -7,6 +7,9 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*/
+/** @file
+
   Convert objects into byte streams and vice versa
 
   Classes that support serialization should implement the indicated
@@ -14,13 +17,14 @@
   is assumed that 'byte' has been typdef'd to an unsigned type which
   represents one byte.
 
+  <pre>
   MyClass {
     template<class Iterator>
     inline Iterator serialize(Iterator i) const;
     template<class ConstIterator>
     inline ConstIterator unserialize(ConstIterator i);
     inline size_t serialSizeOf() const;
-  };
+  };</pre>
 
 */
 
@@ -72,7 +76,6 @@ inline size_t serialSizeOf(const Object& o) {
     allows mixing of Serial*streamIterator with calls to read() on the
     respective stream, without any problems. (This does not work with
     GCC's version, which uses get().) */
-
 class SerialIstreamIterator {
 public:
   typedef bistream istream_type;
@@ -96,6 +99,7 @@ private:
 };
 //____________________
 
+/** @see SerialIstreamIterator */
 class SerialOstreamIterator {
 public:
   typedef bostream ostream_type;

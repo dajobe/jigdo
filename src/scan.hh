@@ -69,9 +69,11 @@ class FilePart {
   /// Objects are only created by JigdoCache
   friend class JigdoCache;
 public:
-  // Sort FileParts by RsyncSum of first bytes
+  /** Sort FileParts by RsyncSum of first bytes */
   inline const string& getPath() const;
   LocationPathSet::iterator getLocation() { return path; }
+  /** @return The further dir names and the leafname, after what getPath()
+      returns. */
   inline const string& leafName() const;
   inline uint64 size() const;
   inline time_t mtime() const;

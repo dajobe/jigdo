@@ -33,8 +33,7 @@ LDFLAGS =	@LIBS@ @LDFLAGS@ $(Y)
 LIBS =		@LIBS@
 AWK =		@AWK@
 GLADECODE =	glade-2 -w # Create code from .glade file
-DOC =		doc++ --tables --footer /dev/null --filenames --html \
-		    --no-java-graphs --dir html
+DOC =		doxygen
 WINDRES =	windres
 GTKCFLAGS =	@GTKCFLAGS@
 GTKLIBS =	@GTKLIBS@
@@ -124,6 +123,7 @@ clean mostlyclean:
 		done
 		rm -f gtk/interface.hh.tmp gtk/gui.cc.tmp gtk/gui.hh.tmp
 		rm -f $(programs) $(debug-programs) $(test-programs)
+		rm -rf apidoc
 distclean:	clean
 		for d in . $(SUBDIRS); do \
 		    rm -f $$d/TAGS $$d/*~ $$d/\#*\# $$d/*.bak; \
@@ -132,7 +132,7 @@ distclean:	clean
 		rm -rf html
 		if test ! -h ironmaiden; then rm -rf ironmaiden; fi
 doc:
-		find . -type f | egrep '\.(cc|hh|ih|fh|h)$$' | xargs $(DOC)
+		$(DOC)
 maintainer-clean: distclean
 		rm -f gtk/interface.cc gtk/interface.hh
 		rm -f Makedeps

@@ -24,6 +24,10 @@
 
 */
 
+/** @file
+    Use the libcurl multi interface from GTK+/glib programs without having to
+    resort to multithreading */
+
 #ifndef GLIBCURL_H
 #define GLIBCURL_H
 

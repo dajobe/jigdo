@@ -115,7 +115,7 @@ size_t FilePart::unserializeCacheEntry(const byte* data, size_t dataSize,
 //______________________________________________________________________
 
 #if HAVE_LIBDB
-// Opposite of unserializeCacheEntry; create byte stream from object
+/** Opposite of unserializeCacheEntry; create byte stream from object */
 struct FilePart::SerializeCacheEntry {
   SerializeCacheEntry(const FilePart& f, JigdoCache* c, size_t blockLen,
                       size_t md5Len)
