@@ -1,5 +1,5 @@
 %define version			0.7.1
-%define release			5
+%define release			0
 %define buildfordefault 	Red Hat Linux
 
 # My rather hacky distribution selector: not very sophisticated but it SEEMS to WORK!
