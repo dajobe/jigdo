@@ -74,7 +74,7 @@ namespace {
         }
         if (host != "local") {
           debug("No proxy for %1", host);
-          glibwww_add_noproxy(host.c_str());
+          glibcurl_add_noproxy(host.c_str());
         }
         host.erase();
       }
@@ -100,8 +100,8 @@ namespace {
           string proxy = "http://";
           proxy.append(reinterpret_cast<const char*>(buf));
           debug("General proxy: %1", proxy);
-          glibwww_add_proxy("http", proxy.c_str());
-          glibwww_add_proxy("ftp", proxy.c_str());
+          glibcurl_add_proxy("http", proxy.c_str());
+          glibcurl_add_proxy("ftp", proxy.c_str());
         } else {
           // Per-protocol proxy settings
           string proto(entry, 0, equals);
@@ -109,7 +109,7 @@ namespace {
             string proxy = "http://";
             proxy.append(entry, equals + 1, string::npos);
             debug("%1 proxy: %2", proto, proxy);
-            glibwww_add_proxy(proto.c_str(), proxy.c_str());
+            glibcurl_add_proxy(proto.c_str(), proxy.c_str());
           }
         }
         entry.erase();

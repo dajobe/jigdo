@@ -121,7 +121,7 @@
 
 /* Big file support is broken in the libstdc++ on GCC 3.x, x<4. There's a
    rather gruesome workaround in bstream.hh for that case. */
-#if __GNUC__ == 3 && __GNUC_MINOR__ < 4
+#if __GNUC__ == 3 && __GNUC_MINOR__ < 4 && !defined __MINGW32__
 #  define HAVE_WORKING_FSTREAM 0
 #else
 #  define HAVE_WORKING_FSTREAM 1

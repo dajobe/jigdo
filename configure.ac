@@ -319,10 +319,10 @@ if test "$jigdo_gui" = "yes"; then
         jigdo_pkg_config_prefix="--define-variable=prefix=$jigdo_pkg_config_prefix"
     fi
 
-    AC_MSG_CHECKING(for GTK+ 2.0.6 or later)
+    AC_MSG_CHECKING(for GTK+ 2.4.0 or later)
     gtk_ver="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 --modversion`"
     AC_MSG_RESULT($gtk_ver)
-    if pkg-config gtk+-2.0 --atleast-version=2.0.6; then true; else
+    if pkg-config gtk+-2.0 --atleast-version=2.4.0; then true; else
         AC_MSG_RESULT([   * Installed version of GTK+ is too old])
         jigdo_gui_failed
     fi

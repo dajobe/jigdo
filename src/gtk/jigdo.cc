@@ -29,6 +29,10 @@
 #  include <string.h>
 #  include <unistd.h>
 #endif
+
+#if WINDOWS
+#  include <windows.h>
+#endif
 //______________________________________________________________________
 
 #if WINDOWS
