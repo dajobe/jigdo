@@ -40,7 +40,8 @@
 
 # Furthermore, if the source file contains "#test-deps" followed by a
 # (possibly empty) list of object files, an appropriate Makefile entry
-# is added to build the unit test's executable.
+# is added to build the unit test's executable. A "#test-ldflags" line
+# can specify flags to pass to the linker, e.g. "$(GTKFLAGS)"
 #______________________________________________________________________
 
 # recursively find dependencies for specified file.
@@ -50,13 +51,15 @@ function makeDeps(dir, file) {
 }
 
 function makeDeps2(dir, file, l_deps, l_dir, l_recurseFile, l_line, l_exists,
-                   l_lineNr, l_fileType, l_includedType) {
+                   l_lineNr, l_fileType, l_includedType,
+                   l_depsLine, l_depsLineNr, l_depsLdflags) {
   if (deps[file] == "-") return ""; # avoid infinite recursion
   else if (deps[file] != "") return deps[file]; # already know about that
   deps[file] = "-";
 
   l_deps = " "; l_lineNr = 0;
   l_fileType = substr(file, length(file) - 1); # e.g. "cc" or ".h"
+  l_depsLine = ""; l_depsLdflags = "";
   while ((getline l_line < (dir file)) == 1) { # read each line of file
     exists[file]; # have read at least 1 line, so the file is there
     ++l_lineNr;
@@ -68,11 +71,13 @@ function makeDeps2(dir, file, l_deps, l_dir, l_recurseFile, l_line, l_exists,
     }
     if (l_line ~ /^[ \t]*\#[ \t]*test-deps([ \t]|$)/) {
       sub(/^[ \t]*\#[ \t]*test-deps[ \t]?/, "", l_line);
-      base = file; sub(/^(.\/)*/, "", base); sub(/\.(c|cc|cpp|C)$/, "",base);
-      l_line = base".o $(TEST-DEFAULTOBJS) " l_line;
-      inlinedMakefile = inlinedMakefile "# " file ":" l_lineNr "\n" \
-          base "$(EXE): " l_line "\n" \
-          "\t$(LD) -o "base"$(EXE) " l_line " $(TEST-LDFLAGS)\n";
+      l_depsLine = l_depsLine " " l_line;
+      l_depsLineNr = l_lineNr;
+      continue;
+    }
+    if (l_line ~ /^[ \t]*\#[ \t]*test-ldflags([ \t]|$)/) {
+      sub(/^[ \t]*\#[ \t]*test-ldflags[ \t]?/, "", l_line);
+      l_depsLdflags = l_depsLdflags " " l_line;
       continue;
     }
     if (l_line !~ /^[ \t]*\#[ \t]*include[ \t]+["<][a-zA-Z0-9.-]+[">]/)
@@ -106,6 +111,16 @@ function makeDeps2(dir, file, l_deps, l_dir, l_recurseFile, l_line, l_exists,
              file, l_lineNr, l_recurseFile);
   }
   close((dir file));
+
+  if (l_depsLine != "") {
+    base = file; sub(/^(.\/)*/, "", base); sub(/\.(c|cc|cpp|C)$/, "",base);
+    l_depsLine = base".o $(TEST-DEFAULTOBJS)" l_depsLine;
+    inlinedMakefile = inlinedMakefile "# " file ":" l_depsLineNr "\n" \
+      base "$(EXE): " l_depsLine "\n" \
+      "\t$(LD) -o "base"$(EXE) " l_depsLine " $(TEST-LDFLAGS)" \
+      l_depsLdflags "\n";
+  }
+
   deps[file] = l_deps;
   return l_deps;
 }

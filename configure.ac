@@ -302,6 +302,7 @@ if test "$jigdo_gui" = "yes"; then
 fi
 GTKCFLAGS="# GUI application disabled by configure script"
 GTKLIBS="$GTKCFLAGS"
+GLIBLIBS="$GTKCFLAGS"
 dnl LIBWWWCFLAGS="$GTKCFLAGS"
 dnl LIBWWWLIBS="$GTKCFLAGS"
 CURLCFLAGS="$GTKCFLAGS"
@@ -330,6 +331,7 @@ if test "$jigdo_gui" = "yes"; then
     if test "$is_windows" = yes; then gth="gthread-2.0"; else gth=""; fi
     GTKCFLAGS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 $gth --cflags 2>/dev/null`"
     GTKLIBS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 $gth --libs 2>/dev/null`"
+    GLIBLIBS="`pkg-config $jigdo_pkg_config_prefix glib-2.0 $gth --libs 2>/dev/null`"
 fi
 
 dnl dnl The following adds flags for libwww
@@ -391,6 +393,7 @@ if test "$jigdo_gui" = "yes"; then IF_GUI=""; else IF_GUI="#"; fi
 AC_SUBST(IF_GUI)
 AC_SUBST(GTKCFLAGS)
 AC_SUBST(GTKLIBS)
+AC_SUBST(GLIBLIBS)
 dnl AC_SUBST(LIBWWWCFLAGS)
 dnl AC_SUBST(LIBWWWLIBS)
 AC_SUBST(CURLCFLAGS)

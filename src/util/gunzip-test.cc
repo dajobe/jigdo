@@ -10,6 +10,7 @@
   In-memory, push-oriented decompression of .gz files
 
   #test-deps util/gunzip.o
+  #test-ldflags $(LIBS)
 
 */
 

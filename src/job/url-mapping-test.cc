@@ -9,7 +9,8 @@
 
   Test for addServer(), addPart()
 
-  #test-deps job/url-mapping.o util/configfile.o util/md5sum.o util/glibc-md5.o net/uri.o
+  #test-deps job/url-mapping.o util/configfile.o util/md5sum.o util/glibc-md5.o
+  #test-deps net/uri.o
 
 */
 

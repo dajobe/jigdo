@@ -7,7 +7,10 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  #test-deps job/datasource.o util/gunzip.o util/configfile.o util/md5sum.o util/glibc-md5.o net/uri.o job/url-mapping.o
+  #test-deps job/datasource.o util/gunzip.o util/configfile.o util/md5sum.o
+  #test-deps util/glibc-md5.o net/uri.o job/url-mapping.o
+  #test-ldflags $(LIBS)
+
 */
 
 #define DEBUG 1
