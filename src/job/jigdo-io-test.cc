@@ -84,13 +84,11 @@ namespace {
         ++newCur;
       }
       if (newCur == cur) return;
-      //x if (io) io->dataSource_data(cur, newCur - cur, newCur - data);
       IOSOURCE_SEND(DataSource::IO, io,
                     dataSource_data, (cur, newCur - cur, newCur - data));
       cur = newCur;
       if (cur == dataEnd)
         IOSOURCE_SEND(DataSource::IO, io, job_succeeded, ());
-        //x io->job_succeeded();
     }
 
   private:
@@ -196,7 +194,7 @@ namespace {
 //======================================================================
 
 MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md,
-                                          string* leafnameOut) {
+                                          string* leafnameOut, Child*) {
   Assert(md == 0);
   if (leafnameOut != 0) *leafnameOut = url;
 
@@ -217,12 +215,11 @@ MakeImageDl::MakeImageDl(/*IO* ioPtr,*/ const string& jigdoUri,
     : io(/*ioPtr*/), stateVal(DOWNLOADING_JIGDO),
       jigdoUrl(jigdoUri), childrenVal(), dest(destination),
       tmpDirVal("/tmp"), mi(),
-      imageNameVal(), imageInfoVal(), imageShortInfoVal(), templateUrlVal(),
+      imageNameVal(), imageInfoVal(), imageShortInfoVal(), templateUrls(0),
       templateMd5Val(0) {
   if (!jigdoUri.empty()) {
     Child* a = childFor(jigdoUri);
     JigdoIO* jio = new JigdoIO(a, jigdoUrl);
-    //x a->setChildIo(jio);
     a->source()->io.addListener(*jio);
     a->source()->run();
   }
@@ -233,7 +230,7 @@ Job::MakeImageDl::~MakeImageDl() { }
 // const char* Job::MakeImageDl::destDescTemplateVal =
 //     _("Cache entry %1  --  %2");
 
-void MakeImageDl::childFailed(Child* childDl, DataSource::IO*) {
+void MakeImageDl::childFailed(Child* childDl) {
   msg("childFailed: %1",
       childDl->source() ? childDl->source()->location() :"[deleted source]");
   // No: delete childDl;
@@ -246,7 +243,7 @@ void MakeImageDl::childFailed(Child* childDl, DataSource::IO*) {
 // }
 
 void MakeImageDl::setImageSection(string* imageName, string*, string*,
-                                  string*, MD5**) {
+                                  PartUrlMapping*, MD5**) {
   Paranoid(!haveImageSection());
   imageNameVal.swap(*imageName);
 }
@@ -300,7 +297,6 @@ void testSimple() {
   MakeImageDl m("", "");
   imgSectLogged.clear();
   Child* a = m.childFor("http://simple");
-  //x a->setChildIo(new JigdoIO(a, "http://simple", 0));
   a->source()->io.addListener(*new JigdoIO(a, "http://simple"));
   while (a->source() != 0 && !memData(a)->finished()) { // Feed single bytes
     memData(a)->output(1);
@@ -321,7 +317,6 @@ void testNoMD5() {
   MakeImageDl m("", "");
   imgSectLogged.clear();
   Child* a = m.childFor("http://no-md5");
-  //x a->setChildIo(new JigdoIO(a, "http://no-md5", 0));
   a->source()->io.addListener(*new JigdoIO(a, "http://no-md5"));
   memData(a)->output(); idle();
   msg("logged: \"%1\"", escapedString(imgSectLogged));
@@ -340,7 +335,6 @@ void testMinimal() {
   MakeImageDl m("", "");
   imgSectLogged.clear();
   Child* a = m.childFor("http://minimal");
-  //x a->setChildIo(new JigdoIO(a, "http://minimal", 0));
   a->source()->io.addListener(*new JigdoIO(a, "http://minimal"));
   memData(a)->output();
   idle();
@@ -358,7 +352,6 @@ void testLoop() {
   MakeImageDl m("", "");
   imgSectLogged.clear();
   Child* a = m.childFor("http://loop");
-  //x a->setChildIo(new JigdoIO(a, "http://loop", 0));
   a->source()->io.addListener(*new JigdoIO(a, "http://loop"));
   memData(a)->output(1); // Feed include simple line
   idle();

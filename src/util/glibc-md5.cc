@@ -103,7 +103,7 @@ byte* MD5Sum::md5_read_ctx(const md5_ctx *ctx, byte* resbuf)
 
    IMPORTANT: On some systems it is required that RESBUF is correctly
    aligned for a 32 bits value.  */
-byte* MD5Sum::md5_finish_ctx(md5_ctx* ctx, byte* resbuf)
+byte* MD5Sum::md5_finish_ctx(struct md5_ctx* ctx, byte* resbuf)
 {
   /* Take yet unprocessed bytes into account.  */
   uint32 bytes = ctx->buflen;
@@ -207,7 +207,8 @@ byte* MD5Sum::md5_finish_ctx(md5_ctx* ctx, byte* resbuf)
 //[RA] }
 
 
-void MD5Sum::md5_process_bytes(const void* buffer, size_t len, md5_ctx* ctx)
+void MD5Sum::md5_process_bytes(const void* buffer, size_t len,
+                               struct md5_ctx* ctx)
 {
   /* When we already have some bits in our internal buffer concatenate
      both inputs first.  */

@@ -53,8 +53,6 @@ public:
 
   virtual ~IO() { }
 
-  //x inline virtual Job::IO* job_removeIo(Job::IO* rmIo) _DEPRECATED;
-
   /** Remove yourself from the IOSource you are listening to, if any. */
   void removeListener() { iList_remove(); }
 
@@ -73,11 +71,6 @@ public:
   /** Informational message. */
   virtual void job_message(const string& message) = 0;
 };
-
-//x Job::IO* Job::IO::job_removeIo(Job::IO* rmIo) {
-//   if (rmIo != this) return this;
-//   return 0;
-// }
 //______________________________________________________________________
 
 // For IOSource<SomeIO> io, use
@@ -91,14 +84,6 @@ public:
       _ioClass* _listObj = &*_i; ++_i; _listObj->_functionName _args; \
     } \
   } while (false)
-// #define IOSOURCE_SEND(_ioClass, _ioObj, _functionName, _args)
-//   do {
-//     IList<_ioClass>& _listeners = (_ioObj).listeners();
-//     for (IList<_ioClass>::iterator _i = _listeners.begin(),
-//          _e = _listeners.end(); _i != _e; ++_i) {
-//       _i->_functionName _args;
-//     }
-//   } while (false)
 // Same thing, but const:
 #define IOSOURCE_SENDc(_ioClass, _ioObj, _functionName, _args) \
   do { \
@@ -136,7 +121,6 @@ class IOSource : NoCopy {
 public:
   IOSource() : list() { }
   /** Does not delete the listeners. */
-  //~IOSource() { typename IList<SomeIO>::const_iterator _i; }
   ~IOSource() { IOSOURCE_SENDt(SomeIO, *this, job_deleted, ()); }
   /** Add an IO object which listens to calls going via this IOSource. NB,
       this adds l to the *front* of the list, so it will be called before

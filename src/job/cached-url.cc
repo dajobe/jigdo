@@ -64,7 +64,6 @@ const string& CachedUrl::location() const { return filenameVal; }
 void CachedUrl::run() {
   IOSOURCE_SEND(DataSource::IO, io,
                 dataSource_dataSize, (progressVal.dataSize()));
-  //x if (io) io->dataSource_dataSize(progressVal.dataSize());
   cont();
 }
 
@@ -133,7 +132,6 @@ gboolean CachedUrl::spoolDataCallback(gpointer) {
       if (!*x->file) {
         string err = subst(_("Could not open `%L1' for input: %L2"),
                            x->filenameVal, strerror(errno));
-        //x if (io) io->job_failed(&err);
         IOSOURCE_SEND(DataSource::IO, io, job_failed, (err));
         active.erase(x);
         break;
@@ -152,11 +150,9 @@ gboolean CachedUrl::spoolDataCallback(gpointer) {
     // Pass data to consumer
     uint64 currentSize = x->progressVal.currentSize() + n;
     x->progressVal.setCurrentSize(currentSize);
-    //x if (io) io->dataSource_data(buf, n, currentSize);
     IOSOURCE_SEND(DataSource::IO, io, dataSource_data, (buf, n, currentSize));
 
     if (x->file->eof()) {
-      //x if (io) io->job_succeeded();
       IOSOURCE_SEND(DataSource::IO, io, job_succeeded, ());
       active.erase(x);
       break;
@@ -164,7 +160,6 @@ gboolean CachedUrl::spoolDataCallback(gpointer) {
     if (!*(x->file)) {
       string err = subst(_("Could not read from `%L1': %L2"),
                          x->filenameVal, strerror(errno));
-      //x if (io) io->job_failed(&err);
       IOSOURCE_SEND(DataSource::IO, io, job_failed, (err));
       active.erase(x);
       break;

@@ -109,10 +109,12 @@
 class Logger : NoCopy {
 public:
 
-  /** Logged strings are output via a OutputFunction* pointer. */
+# ifndef DOXYGEN_SKIP
+  /* Logged strings are output via a OutputFunction* pointer. */
   typedef void (Logger::OutputFunction)(const string& unitName,
       unsigned char unitNameLen, const char* format, int args,
       const Subst arg[]);
+# endif
   /** Default output function prints to stderr */
   static void defaultPut(const string& unitName, unsigned char unitNameLen,
                          const char* format, int args, const Subst arg[]);

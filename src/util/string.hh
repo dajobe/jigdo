@@ -58,9 +58,11 @@ public:
 
 private:
 
+# ifndef DOXYGEN_SKIP
 # ifdef STRING_UTF_HH
   static inline void doSubst(string& result, const Subst arg[], int n,
                              int flags);
+# endif
 # endif
   enum {
     INT, UNSIGNED, LONG, ULONG, ULONGLONG, DOUBLE, CHAR, CHAR_P, STRING_P,

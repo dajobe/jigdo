@@ -75,8 +75,8 @@ void MakeImageDl::JigdoDownload::dataSource_dataSize(uint64 n) {
   if (ioVal) ioVal->dataSource_dataSize(n);
 }
 void MakeImageDl::JigdoDownload::dataSource_data(const byte* data,
-                                                size_t size,
-                                                uint64 currentSize) {
+                                                 unsigned size,
+                                                 uint64 currentSize) {
   if (master->state() == ERROR) return;
   Assert(master->state() == DOWNLOADING_JIGDO);
   debug("Got %1 bytes", size);

@@ -33,7 +33,9 @@ struct SmartPtr_lockStatic;
       class Derived : public Base { ... };</pre>
     in order to allow a Derived object's address to be assigned to a
     SmartPtr<Base>. Its only fault is that its member must be public (or we
-    lose GCC 2.95 compatibility; friend templates only work as of 3.4). */
+    lose GCC 2.95 compatibility; friend templates only work as of 3.4).
+
+    The reference count is set to 0 by the ctor. */
 struct SmartPtrBase {
   //friend template class<X> SmartPtr<X>;
   friend struct SmartPtr_lockStatic;

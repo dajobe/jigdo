@@ -213,7 +213,7 @@ namespace {
     explicit File(const char* fileName, size_t s = 0, size_t n = 0);
     File() : data(0) { }
     inline File(const File& f);
-    inline File& File::operator=(const File& f);
+    inline File& operator=(const File& f);
     inline ~File();
     size_t size;
     size_t nr;

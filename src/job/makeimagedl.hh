@@ -68,7 +68,6 @@ public:
   friend class Child;
   class ChildListBase;
   class IO;
-  //x IOPtr<IO> io; // Points to e.g. a GtkMakeImage
   IOSource<IO> io; // Points to e.g. a GtkMakeImage
   //____________________
 
@@ -129,15 +128,17 @@ public:
   void childSucceeded(Child* childDl, DataSource::IO* childIo/*,
                       DataSource::IO* frontend*/);
 #endif
-  /** As above, but notify this object that the download has failed, not all
-      bytes have been received. */
-  void childFailed(Child* childDl, DataSource::IO* childIo/*,
-                   DataSource::IO* frontend*/);
+  /** As above, but notify this object that the download has failed: Not all
+      bytes have been received, or another error (e.g. while gunzipping the
+      .jigdo file) occurred. If there are several alternative download URLs
+      for this child, the next one will be tried, otherwise the entire
+      MakeImageDl fails. */
+  void childFailed(Child* childDl);
 
   /** Is called by a child JigdoIO once the [Image] section has been seen.
       The arguments are modified! */
   void setImageSection(string* imageName, string* imageInfo,
-                       string* imageShortInfo, string* templateUrl,
+                       string* imageShortInfo, PartUrlMapping* templateUrls,
                        MD5** templateMd5);
   /** Has setImageSection() already been called? (=>is imageName
       non-empty?) */
@@ -158,11 +159,20 @@ public:
 
       @param leafnameOut If non-null, string is overwritten with file's
       leafname in cache on exit.
+      @param reuseChild For internal use only, should usually be set to
+      null. If non-null, no new Child is allocated, instead the passed object
+      is reused. However, some data members are not reset - this is used by
+      the second childFor() below to try out all alternatives.
       @return New object, or null if error (and io->job_failed was called).
       If non-null, returned object will be deleted from this MakeImageDl's
       dtor (unless it is deleted earlier). */
   Child* childFor(const string& url, const MD5* md = 0,
-                  string* leafnameOut = 0);
+                  string* leafnameOut = 0, Child* reuseChild = 0);
+
+  /** As above, but instead of providing a single URL, a number of
+      alternative URLs is given. The Child will only fail after all of them
+      have been tried unsuccessfully. */
+  inline Child* childFor(PartUrlMapping* urls, const MD5* md = 0);
 
   typedef IList<ChildListBase> ChildList;
   /** Return the list of Child objects owned by this MakeImageDl. */
@@ -172,7 +182,7 @@ public:
       encountered so far */
   inline const string& imageName() const { return imageNameVal; }
   inline const string& imageShortInfo() const { return imageShortInfoVal; }
-  inline const string& templateUrl() const { return templateUrlVal; }
+  //inline const string& templateUrl() const { return templateUrlVal; }
   inline const MD5* templateMd5() const { return templateMd5Val; }
   /** This one is special: The contents of ImageInfo are an XML-style string,
       with markup containing tags named: b i tt u big small br p. When
@@ -234,14 +244,17 @@ private: // Really private
 
   /* Return filename for content md5sum cache entry:
      "/home/x/jigdo-blasejfwe/c-nGJ2hQpUNCIZ0fafwQxZmQ"
+     @param leafnameOut String to assign cache entry leafname, or null
      @param isFinished true to use "-", false to use "~"
      @param isC true to use "c", false to use "u" */
-  string cachePathnameContent(const MD5& md, bool isFinished = true,
-                              bool isC = true);
+  string cachePathnameContent(const MD5& md, string* leafnameOut = 0,
+                              bool isFinished = true, bool isC = true);
   /* Return filename for URL cache entry:
      "/home/x/jigdo-blasejfwe/u-nGJ2hQpUNCIZ0fafwQxZmQ"
+     @param leafnameOut String to assign cache entry leafname, or null
      @param isFinished true to use "-", false to use "~" */
-  string cachePathnameUrl(const string& url, bool isFinished = true);
+  string cachePathnameUrl(const string& url, string* leafnameOut = 0,
+                          bool isFinished = true);
   // Add leafname for object to arg string, e.g. "u-nGJ2hQpUNCIZ0fafwQxZmQ"
   //static void appendLeafname(string* s, bool contentMd, const MD5& md);
   /* Turn the '-' in string created by above function into a '~' or v.v.
@@ -250,11 +263,11 @@ private: // Really private
 
   // Helper methods for childFor()
   Child* childForCompletedUrl(const struct stat& fileInfo,
-                              const string& filename, const MD5* md);
+    const string& filename, const MD5* md, Child* reuseChild);
   Child* childForCompletedContent(const struct stat& fileInfo,
-                                  const string& filename, const MD5* md);
+    const string& filename, const MD5* md, Child* reuseChild);
   Child* childForSemiCompleted(const struct stat& fileInfo,
-                               const string& filename);
+    const string& filename, Child* reuseChild);
 
   //static const char* destDescTemplateVal;
 
@@ -273,7 +286,7 @@ private: // Really private
   // Info about first image section of this .jigdo, if any
   string imageNameVal;
   string imageInfoVal, imageShortInfoVal;
-  string templateUrlVal;
+  SmartPtr<PartUrlMapping> templateUrls; // Can contain a list of altern. URLs
   MD5* templateMd5Val;
 
   static gboolean jigdoFinished_callback(gpointer);
@@ -335,14 +348,7 @@ public:
                                const string& uri, const string& destDesc) = 0;
 
   /** Usually called when the child has (successfully or not) finished, i.e.
-      just after yourIo->job_succeeded/failed() was called. childDownload
-      will be deleted after calling this.
-
-      Also called if you have a JigdoIO chained in front of a DataSource::IO
-      and then IOPtr::remove() the JigdoIO - however, this second case should
-      not happen with the current code. :)
-
-      @param yourIo The value you returned from makeImageDl_new() */
+      just after yourIo->job_succeeded/failed() was called. */
   virtual void makeImageDl_finished(Job::DataSource* childDownload) = 0;
 
   /** Called as soon as the first [Image] section in the .jigdo data has been
@@ -412,6 +418,10 @@ public:
 
 private:
 
+  // (Re)initialize data members, except for urls and lastUrl. Returns this
+  inline Child* init(MakeImageDl* m, ChildList* list,
+                     DataSource* src, const MD5* expectedContent);
+
   // Virtual methods from DataSource::IO.
   virtual void job_deleted();
   virtual void job_succeeded();
@@ -425,6 +435,8 @@ private:
   bool checkContent; // True iff checksum of downloaded data is to be verified
   MD5 md; // Only if contentMd==true, EXPECTED checksum of the download data
   MD5Sum mdCheck; // Only if contentMd==true, used to calculate actual checksum
+  SmartPtr<PartUrlMapping> urls; // Null if only a single URL (.jigdo d/l)
+  vector<UrlMapping*>* lastUrl; // To record last URL output by templateUrls
 };
 //======================================================================
 
@@ -439,7 +451,6 @@ Job::MakeImageDl::State Job::MakeImageDl::state() const { return stateVal; }
 void Job::MakeImageDl::generateError(const string& message, State newState) {
   if (finalState()) return;
   stateVal = newState;
-  //x if (io) io->job_failed(message);
   IOSOURCE_SEND(IO, io, job_failed, (message));
 }
 
@@ -460,6 +471,18 @@ bool Job::MakeImageDl::haveImageSection() const {
 const Job::MakeImageDl::ChildList& Job::MakeImageDl::children() const {
   return childrenVal;
 }
+
+Job::MakeImageDl::Child* Job::MakeImageDl::childFor(PartUrlMapping* urls,
+    const MD5* md) {
+  auto_ptr<vector<UrlMapping*> > lastUrl(new vector<UrlMapping*>);
+  string url = urls->enumerate(lastUrl.get());
+  Child* c = childFor(url, md);
+  if (c != 0) {
+    c->urls = urls;
+    c->lastUrl = lastUrl.release();
+  }
+  return c;
+}
 //____________________
 
 /** These methods use upcasts. */
@@ -468,20 +491,29 @@ Job::MakeImageDl::Child* Job::MakeImageDl::ChildListBase::get()
 const Job::MakeImageDl::Child* Job::MakeImageDl::ChildListBase::get() const
   { return static_cast<const MakeImageDl::Child*>(this); }
 
+Job::MakeImageDl::Child* Job::MakeImageDl::Child::init(MakeImageDl* m,
+    ChildList* /*list*/, DataSource* src, const MD5* expectedContent) {
+  masterVal = m;
+  sourceVal = src;
+  checkContent = (expectedContent != 0);
+  if (expectedContent != 0) md = *expectedContent; else md.clear();
+# if DEBUG
+  childSuccFail = false;
+# endif
+  // Add ourself as listener to DataSource
+  src->io.addListener(*implicit_cast<DataSource::IO*>(this));
+  return this;
+}
+
 Job::MakeImageDl::Child::Child(MakeImageDl* m, ChildList* list,
                                DataSource* src, const MD5* expectedContent)
   : ChildListBase(), Job::DataSource::IO(),
-    masterVal(m), sourceVal(src), checkContent(expectedContent != 0) {
+    md(), mdCheck(), urls(), lastUrl(0) {
   Paranoid(list != 0);
-  if (expectedContent != 0) md = *expectedContent; else md.clear();
+  init(m, list, src, expectedContent);
   // Add ourself to parent's list of children
   list->push_back(*implicit_cast<ChildListBase*>(this));
-  // Add ourself as listener to DataSource
-  src->io.addListener(*implicit_cast<DataSource::IO*>(this));
-# if DEBUG
   //msg("Child %1", this);
-  childSuccFail = false;
-# endif
 }
 
 Job::MakeImageDl::Child::~Child() {
@@ -490,27 +522,16 @@ Job::MakeImageDl::Child::~Child() {
   Paranoid(childSuccFail);
 # endif
   deleteSource();
-  //x delete childIoVal;
+  delete lastUrl;
 }
 
 Job::DataSource* Job::MakeImageDl::Child::source() const {
   return sourceVal;
 }
 
-// Job::DataSource::IO* Job::MakeImageDl::Child::childIo() const {
-//   return childIoVal;
-// }
-
 void Job::MakeImageDl::Child::deleteSource() {
   delete sourceVal;
   sourceVal = 0;
 }
-
-// void Job::MakeImageDl::Child::setChildIo(DataSource::IO* c) {
-//   Paranoid(sourceVal->io.get() == 0);
-//   sourceVal->io.set(c);
-//   Paranoid(childIoVal == 0);
-//   childIoVal = c;
-// }
 
 #endif

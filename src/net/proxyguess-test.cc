@@ -23,11 +23,7 @@
 #include <debug.hh>
 #include <log.hh>
 
-#define glibcurl_add_noproxy glibcurl_add_noproxy_ORIG
-#define glibcurl_add_proxy glibcurl_add_proxy_ORIG
 #include <glibcurl.h>
-#undef glibcurl_add_noproxy
-#undef glibcurl_add_proxy
 //______________________________________________________________________
 
 #if WINDOWS

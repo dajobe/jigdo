@@ -7,6 +7,8 @@
   under the terms of the GNU General Public License, version 2. See the file
   COPYING for details.
 
+*//** @file
+
   Representation of the directed, acyclic graph implied by the [Parts] and
   [Servers] lines in a .jigdo file. For each .jigdo file, we have one
   map<MD5, SmartPtr<PartUrlMapping> > which allows to create a set of URLs
@@ -29,6 +31,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -41,10 +44,12 @@
 #include <url-mapping.fh>
 //______________________________________________________________________
 
-/** Object which represents a "Label:some/path" mapping. The "some/path"
-    string is stored in the object, and the Label is represented with a
-    pointer to another UrlMapping, whose output URL(s) need to be prepended
-    to "some/path". UrlMappings can be chained into a linked list. */
+/** Object which represents a "Label:some/path" mapping, abstract base
+    class. The "some/path" string is stored in the object, and the Label is
+    represented with a pointer to another UrlMapping, whose output URL(s)
+    need to be prepended to "some/path". UrlMappings can be chained into a
+    linked list - that list is a list of alternative mappings for the same
+    Label. */
 class UrlMapping : public SmartPtrBase, public NoCopy {
   friend class ServerUrlMapping;
   friend class PartUrlMapping;
@@ -55,16 +60,17 @@ public:
   UrlMapping();
   virtual ~UrlMapping() = 0;
 
-  /** Set value of url part, starting with offset url[pos], up to n
+  /** Set value of URL part, starting with offset url[pos], up to n
       characters. */
   inline void setUrl(const string& url, string::size_type pos = 0,
                      string::size_type n = string::npos);
-  /** Get url value */
+  /** Get URL value */
   inline const string& url() const { return urlVal; }
 
   /** Parse options from .jigdo file: --try-first[=..],
-      --try-last[=..]. Unrecognized parameters are ignored.
-      @return null on success, else error message. */
+      --try-last[=..]. Unrecognized parameters are ignored, to make
+      extensions of the .jigdo file format easier.  @return null on success,
+      else error message. */
   const char* parseOptions(const vector<string>& value);
 
   /** If this UrlMapping is based on the string "Label:some/path" in a .jigdo
@@ -76,7 +82,11 @@ public:
   /** Insert a mapping into the singly linked list, it will be returned by
       the next call to next(). */
   inline void insertNext(UrlMapping* um);
+  /** Return right peer of this object, or null. */
   inline UrlMapping* next() const { return nextVal.get(); }
+
+  /** Return true iff url().empty() && prepend() == 0 */
+  bool empty() const { return url().empty() && prepend() == 0; }
 
   /** Various knobs for the scoring algorithm */
 
@@ -155,7 +165,7 @@ private:
   /* Set of URLs that were already returned by bestUnvisitedUrl(). Each URL
      is represented by a unique number, which is assigned to it by a
      depth-first scan of the tree-like structure in the UrlMap. */
-  set<unsigned> seen;
+  auto_ptr<set<unsigned> > seen;
 };
 //______________________________________________________________________
 
@@ -168,10 +178,21 @@ public:
   /** Add info about a mapping line inside one of the [Parts] sections in the
       .jigdo sections. The first entry of "value" is the URL (absolute,
       relative to baseUrl or in "Label:some/path form). The remaining "value"
-      entries are assumed to be options, and ignored ATM.
+      entries are assumed to be options.
       @return null if success, else error message */
   const char* addPart(const string& baseUrl, const MD5& md,
                       const vector<string>& value);
+
+  /** Like addPart(), but intended for maintaining lists of PartUrlMapping
+      objects where the checksum is not known. Used to maintain lists of URLs
+      for .template files. While it does not alter the
+      checksum=>PartUrlMapping mappings of this UrlMap, it /may/ alter the
+      Label=>ServerUrlMapping mappings, and the returned/appended
+      PartUrlMapping will reference the server mappings of this UrlMap.
+      @param oldList Pointer to 0 SmartPtr for first call, will create list
+      head, or pointer to SmartPtr to list head, will then add to list. */
+  const char* addPart(const string& baseUrl, const vector<string>& value,
+                      SmartPtr<PartUrlMapping>* oldList);
 
   /** Add info about a [Servers] line, cf addPart(). For a line
       "Foobar=Label:some/path" in the [Servers] section:

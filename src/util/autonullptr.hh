@@ -9,12 +9,14 @@
 
 *//** @file
 
-  A pointer which gets set to null if the pointed-to object is deleted
+  A pointer which gets set to null if the pointed-to object is
+  deleted. Somewhat equivalent to "weak references" in Java.
 
+  <pre>
   class MyClass : public AutoNullPtrBase<MyClass> {
     ... your class members here ...
   } myClass;
-  AutoNullPtr<MyClass> ptr = &myClass;
+  AutoNullPtr<MyClass> ptr = &amp;myClass;</pre>
 
   Implementation: AutoNullPtrBase contains the head of a linked list of
   AutoNullPtrs, sets them all to 0 from its dtor. ~AutoNullPtr removes itself
@@ -70,6 +72,8 @@ private:
 };
 //______________________________________________________________________
 
+/** The regular pointer tests */
+/*@{*/
 template<class T>
 inline bool operator==(const AutoNullPtr<T>& a, const T* b) {
   return a.get() == b;
@@ -147,6 +151,7 @@ template<class T>
 inline bool operator>=(const AutoNullPtr<T>& a, const AutoNullPtr<T>& b) {
   return a.get() >= b.get();
 }
+/*@}*/
 //______________________________________________________________________
 
 #endif

@@ -108,6 +108,31 @@ const char* UrlMap::addPart(const string& baseUrl, const MD5& md,
 }
 //____________________
 
+const char* UrlMap::addPart(const string& baseUrl, const vector<string>& value,
+                            SmartPtr<PartUrlMapping>* oldList) {
+  Assert(oldList != 0);
+  string url;
+  if (findLabelColon(value.front()) != 0)
+    url = value.front();
+  else
+    uriJoin(&url, baseUrl, value.front());
+
+  PartUrlMapping* p = new PartUrlMapping();
+  unsigned colon = findLabelColon(url);
+  if (colon == 0) {
+    p->setUrl(url);
+  } else {
+    p->setPrepend(findOrCreateServerUrlMapping(url, colon));
+    p->setUrl(url, colon + 1);
+  }
+  if (*oldList == 0)
+    *oldList = p;
+  else
+    (*oldList)->insertNext(p);
+  return p->parseOptions(value);
+}
+//____________________
+
 /* For a line "Foobar=Label:some/path" in the [Servers] section:
    @param label == "Foobar"
    @param value arguments; value.front()=="Label:some/path" */
@@ -133,6 +158,7 @@ const char* UrlMap::addServer(const string& baseUrl, const string& label,
     serversVal.insert(i, make_pair(label, ss));
   } else {
     const string& somepath = i->second->url();
+    // Dummy mapping recognizable by trailing ':'
     if (!somepath.empty() && somepath[somepath.length() - 1] == ':') {
       // List head is dummy; use it directly
       s = mappingList = i->second.get();
@@ -226,6 +252,9 @@ const char* UrlMapping::parseOptions(const vector<string>& value) {
 //______________________________________________________________________
 
 string PartUrlMapping::enumerate(vector<UrlMapping*>* bestPath) {
+  if (seen.get() == 0)
+    seen.reset(new set<unsigned>());
+
   string result;
   double bestScore = -FLT_MAX;
   unsigned serialNr = 0;
@@ -241,7 +270,7 @@ string PartUrlMapping::enumerate(vector<UrlMapping*>* bestPath) {
   } while (mapping != 0);
 
   if (bestSerialNr != 0) {
-    seen.insert(bestSerialNr); // Ensure this URL is only output once
+    seen->insert(bestSerialNr); // Ensure this URL is only output once
     for (vector<UrlMapping*>::iterator i = bestPath->begin(),
            e = bestPath->end(); i != e; ++i)
       result += (*i)->url(); // Construct URL
@@ -284,7 +313,7 @@ void PartUrlMapping::enumerate(StackEntry* stackPtr, UrlMapping* mapping,
     // Score of path = SUM(scores_of_path_elements) / length_of_path
     double pathScore = score / implicit_cast<double>(pathLen);
     if (pathScore > *bestScore
-        && seen.find(*serialNr) == seen.end()) {
+        && seen->find(*serialNr) == seen->end()) {
       debug("enumerate: New best score %1", pathScore);
       // New best score found
       *bestScore = pathScore;

@@ -15,8 +15,6 @@
 
 #include <string>
 
-// #include <cached-url.hh>
-// #include <jigdo-io.hh>
 #include <debug.hh>
 #include <log.hh>
 #include <makeimagedl.hh>
@@ -30,21 +28,20 @@ MakeImageDl::MakeImageDl(/*IO* ioPtr,*/ const string& jigdoUri,
     : io(/*ioPtr*/), stateVal(DOWNLOADING_JIGDO),
       jigdoUrl(jigdoUri), childrenVal(), dest(destination),
       tmpDirVal(), mi(),
-      imageNameVal(), imageInfoVal(), imageShortInfoVal(), templateUrlVal(),
+      imageNameVal(), imageInfoVal(), imageShortInfoVal(), templateUrls(0),
       templateMd5Val(0) { }
 Job::MakeImageDl::~MakeImageDl() { }
 
 void MakeImageDl::setImageSection(string* imageName, string* imageInfo,
-    string* imageShortInfo, string* templateUrl, MD5** templateMd5) {
-  msg("setImageSection templateUrl=%1", templateUrl);
+    string* imageShortInfo, PartUrlMapping* templateUrls, MD5** templateMd5) {
+  msg("setImageSection");
   Paranoid(!haveImageSection());
   imageNameVal.swap(*imageName);
   imageInfoVal.swap(*imageInfo);
   imageShortInfoVal.swap(*imageShortInfo);
-  templateUrlVal.swap(*templateUrl);
+  this->templateUrls = templateUrls;
   templateMd5Val = *templateMd5; *templateMd5 = 0;
 
-  //x if (io) io->makeImageDl_haveImageSection();
   IOSOURCE_SEND(IO, io, makeImageDl_haveImageSection, ());
 }
 //======================================================================
@@ -82,13 +79,13 @@ namespace {
 string testImageInfo(const char* subst[], bool escapedText,
                      const char* text, const char* expected) {
   string imageShortInfo;
-  string templateUrl;
+  PartUrlMapping* templateUrls = 0;
   MD5* templateMd5 = 0;
 
   MakeImageDl m("http://url/", "");
   string imageName = "image.iso";
   string imageInfo = text;
-  m.setImageSection(&imageName, &imageInfo, &imageShortInfo, &templateUrl,
+  m.setImageSection(&imageName, &imageInfo, &imageShortInfo, templateUrls,
                     &templateMd5);
   string info = " ";
   m.imageInfo(&info, escapedText, subst);

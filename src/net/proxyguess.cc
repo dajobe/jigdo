@@ -53,6 +53,12 @@
 
 DEBUG_UNIT("proxyguess")
 
+#ifndef TESTING_PROXYGUESS
+#warning TODO glibcurl_add_proxy
+void glibcurl_add_proxy(const char*, const char*) { }
+void glibcurl_add_noproxy(const char*) { }
+#endif
+
 #if WINDOWS
 
 #include <windows.h>

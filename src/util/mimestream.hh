@@ -244,7 +244,7 @@ Base64Out<Output>& Base64Out<Output>::write(const unsigned char* x,
     Output is a class offering the following:
       - void put(byte b); // Output one byte of binary data
       - typedef implementation_defined ResultType;
-      - ResultType result(); // Is called by Base64In::result()</pre> */
+      - ResultType result(); // Is called by Base64In::result() */
 template <class Output>
 class Base64In {
 public:

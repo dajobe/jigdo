@@ -56,7 +56,6 @@ public:
   JigdoIO(MakeImageDl::Child* c, const string& url/* IOPtr,
           DataSource::IO* frontendIo*/);
   ~JigdoIO();
-  //x virtual Job::IO* job_removeIo(Job::IO* rmIo);
 
   inline MakeImageDl* master() const;
   inline DataSource* source() const;
@@ -121,7 +120,6 @@ private:
 
   MakeImageDl::Child* childDl;
   string urlVal; // Absolute URL of this .jigdo file
-  //x DataSource::IO* frontend; // Object provided by frontend for this download
 
   /* Representation of the tree of [Include] directives. Most of the time,
      the order of data in the .jigdo files is not relevant, with one
@@ -144,14 +142,8 @@ private:
   int imageSectionLine; // 0 if no [Image] found yet
   string imageName;
   string imageInfo, imageShortInfo;
-  string templateUrl;
+  SmartPtr<PartUrlMapping> templateUrls; // Can contain a list of altern. URLs
   MD5* templateMd5;
-
-  /* When an error happens inside gunzip_data(), cannot immediately tell the
-     master about it, because it would delete the DataSource => the Download
-     would be deleted from within download_data(). */
-//x   static gboolean childFailed_callback(gpointer data);
-//   int childFailedId;
 
   /* Transparent gunzipping of .jigdo file. GUNZIP_BUF_SIZE is also the max
      size a single line in the .jigdo is allowed to have */

@@ -91,7 +91,7 @@ public:
       file. No need to call it after insertion/deletion of lines,
       whitespace/comment changes of [section] lines, or any changes to
       entries.
-      @printErrors If true, perform extra syntax checks and call
+      @param printErrors If true, perform extra syntax checks and call
       ProgressReporter object for syntax errors. */
   void rescan(bool printErrors = false);
 

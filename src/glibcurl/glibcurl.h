@@ -60,6 +60,7 @@ CURLMcode glibcurl_remove(CURL* easy_handle);
     glibcurl_start() only sets a flag to make it happen. */
 void glibcurl_start();
 
+/** Callback function for glibcurl_set_callback */
 typedef void (*GlibcurlCallback)(void*);
 /** Set function to call after each invocation of curl_multi_perform(). Pass
     function==0 to unregister a previously set callback. The callback
@@ -71,10 +72,6 @@ void glibcurl_set_callback(GlibcurlCallback function, void* data);
     requests before calling this. This function makes calls to
     curl_multi_cleanup() and curl_global_cleanup(). */
 void glibcurl_cleanup();
-
-/* #warning "TODO: glibcurl proxy functions do nothing ATM" */
-void glibcurl_add_proxy(const char* protocol, const char* proxy);
-void glibcurl_add_noproxy(const char* host);
 
 #ifdef __cplusplus
 }

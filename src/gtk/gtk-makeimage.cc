@@ -191,7 +191,6 @@ void GtkMakeImage::makeImageDl_new(
   /* NB run() cannot result in "delete child;" for child mode, so we always
      return a valid pointer here. */
   Assert(status == SUCCESS);
-  //x return child;
   childDownload->io.addListener(*child);
 }
 
