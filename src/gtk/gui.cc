@@ -86,9 +86,10 @@ void GUI::create() {
 //   ... modify style - how?
 //   gtk_widget_modify_style(window.aboutBgnd, aboutStyle);
 
-//   gtk_widget_set_name(window.aboutBgnd, "aboutBgnd");
-//   gtk_rc_parse_string("style \"whitebg\" { bg[NORMAL] = \"white\" }");
-//   gtk_rc_parse_string("widget \"aboutBgnd\" style \"whitebg\"");
+  gtk_widget_set_name(window.aboutBgnd, "aboutBgnd");
+  gtk_rc_parse_string("style \"whitebg\" { bg[NORMAL] = \"white\" }");
+  // base[NORMAL] = \"white\"
+  gtk_rc_parse_string("widget \"aboutBgnd\" style \"whitebg\"");
 
   // Set string "Jigsaw Download x.y.z" on welcome screen
   GtkLabel* aboutJigdoLabel = GTK_LABEL(GUI::window.aboutJigdoLabel);
