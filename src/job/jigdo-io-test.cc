@@ -227,7 +227,7 @@ const char* Job::MakeImageDl::destDescTemplateVal =
     _("Cache entry %1  --  %2");
 
 void MakeImageDl::childFailed(Child* childDl, DataSource::IO*,
-                              DataSource::IO*, bool) {
+                              DataSource::IO*) {
   msg("childFailed: %1",
       childDl->source() ? childDl->source()->location() :"[deleted source]");
   // No: delete childDl;
