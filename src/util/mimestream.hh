@@ -215,10 +215,8 @@ Base64Out<Output>& Base64Out<Output>::flush() {
 template <class Output>
 Base64Out<Output>& Base64Out<Output>::trailer(streamsize n) {
   int rest = n % 3;
-  if (rest == 1)
-    (*stream) << '=';
-  if (rest >= 1)
-    (*stream) << '=';
+  if (rest == 1) out.put('=');
+  if (rest >= 1) out.put('=');
   return *this;
 }
 

@@ -46,7 +46,7 @@ CFLAGS=`echo "$CFLAGS" | sed 's/\(^\| \)-g\( \|$\)/ /'`
 CXXFLAGS=`echo "$CXXFLAGS" | sed 's/\(^\| \)-g\( \|$\)/ /'`
 if test "$GXX" = "yes"; then
     CFLAGS="-Wall $CFLAGS -W"
-    CXXFLAGS="$CXXFLAGS -Wall -W -Wpointer-arith -Wconversion -Wmissing-prototypes -Woverloaded-virtual"
+    CXXFLAGS="$CXXFLAGS -Wall -W -Wpointer-arith -Wconversion -Woverloaded-virtual"
 fi
 IF_GXX2="#"
 IF_NOGXX2=""
