@@ -17,7 +17,8 @@ debian.lnk
 2
 2g
 3
-unstable
+2u
+3u
 jigdo
 tmp
 autom4te.cache
@@ -26,3 +27,4 @@ stable
 TODO
 go
 tar
+2s

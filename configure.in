@@ -133,8 +133,6 @@ if test "$jigdo_debug" = "yes"; then
     AC_DEFINE(DEBUG, 1)
     if test "$ac_cv_prog_cc_g" = "yes"; then CFLAGS="$CFLAGS -g"; fi
     if test "$ac_cv_prog_cxx_g" = "yes"; then CXXFLAGS="$CXXFLAGS -g"; fi
-    #if test "$GCC" = yes; then CFLAGS="$CFLAGS -Werror"; fi
-    if test "$GXX" = yes; then CXXFLAGS="$CXXFLAGS -Werror"; fi
 elif test "$jigdo_debug" != "no"; then
     AC_MSG_ERROR(Invalid argument to --enable-debug option)
 else
@@ -395,17 +393,14 @@ AC_ARG_WITH(uint64,
     jigdo_uint64="$withval", jigdo_uint64="auto")
 AC_MSG_RESULT(\"$jigdo_uint64\")
 
-# Bug in autoconf 2.13 causes all those size checks to fail, default
-# to unsigned long long in that case
-
-#AC_CACHE_CHECK(for unsigned long long, jigdo_cv_have_ulonglong,
-#    AC_TRY_COMPILE(, unsigned long long x = 0,
-#                   jigdo_cv_have_ulonglong=yes, jigdo_cv_have_ulonglong=no))
-#if test "$jigdo_cv_have_ulonglong" = "yes"; then
-#    AC_DEFINE(HAVE_UNSIGNED_LONG_LONG, 1)
-#else
-#    AC_DEFINE(HAVE_UNSIGNED_LONG_LONG, 0)
-#fi
+AC_CACHE_CHECK(for unsigned long long, jigdo_cv_have_ulonglong,
+    AC_TRY_COMPILE(, unsigned long long x = 0,
+                   jigdo_cv_have_ulonglong=yes, jigdo_cv_have_ulonglong=no))
+if test "$jigdo_cv_have_ulonglong" = "yes"; then
+    AC_DEFINE(HAVE_UNSIGNED_LONG_LONG, 1)
+else
+    AC_DEFINE(HAVE_UNSIGNED_LONG_LONG, 0)
+fi
 
 if test "$jigdo_uint64" = auto; then
     AC_CHECK_SIZEOF(unsigned long, 0)
@@ -627,6 +622,15 @@ else
     IF_LIBWWW_HACKS="#" # disable hacks, by commenting out Makefile line
 fi
 AC_SUBST(IF_LIBWWW_HACKS)
+dnl ______________________________________________________________________
+
+dnl Do this at end in order not to influence other compile tests which
+dnl might return warnings. Turning the warnings into errors would make
+dnl the tests fail.
+if test "$jigdo_debug" = "yes"; then
+    #if test "$GCC" = yes; then CFLAGS="$CFLAGS -Werror"; fi
+    if test "$GXX" = yes; then CXXFLAGS="$CXXFLAGS -Werror"; fi
+fi
 dnl ______________________________________________________________________
 
 dnl Touch TAGS to prevent it from being recreated when a normal user
