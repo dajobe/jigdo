@@ -35,11 +35,11 @@ dnl ______________________________________________________________________
 dnl Checks for programs.
 AC_PROG_AWK
 AC_LANG_C
+AC_PROG_CC
 dnl Add -Wno-unused-parameter to CFLAGS if supported
 ORIG_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -Wno-unused-parameter" # GCC >=3.0
 AC_TRY_COMPILE(, int x = 0, , CFLAGS="$ORIG_CFLAGS")
-AC_PROG_CC
 AC_LANG_CPLUSPLUS
 AC_PROG_CXX
 CFLAGS=`echo "$CFLAGS" | sed 's/\(^\| \)-g\( \|$\)/ /'`
@@ -395,14 +395,17 @@ AC_ARG_WITH(uint64,
     jigdo_uint64="$withval", jigdo_uint64="auto")
 AC_MSG_RESULT(\"$jigdo_uint64\")
 
-AC_CACHE_CHECK(for unsigned long long, jigdo_cv_have_ulonglong,
-    AC_TRY_COMPILE(, unsigned long long x = 0,
-                   jigdo_cv_have_ulonglong=yes, jigdo_cv_have_ulonglong=no))
-if test "$jigdo_cv_have_ulonglong" = "yes"; then
-    AC_DEFINE(HAVE_UNSIGNED_LONG_LONG, 1)
-else
-    AC_DEFINE(HAVE_UNSIGNED_LONG_LONG, 0)
-fi
+# Bug in autoconf 2.13 causes all those size checks to fail, default
+# to unsigned long long in that case
+
+#AC_CACHE_CHECK(for unsigned long long, jigdo_cv_have_ulonglong,
+#    AC_TRY_COMPILE(, unsigned long long x = 0,
+#                   jigdo_cv_have_ulonglong=yes, jigdo_cv_have_ulonglong=no))
+#if test "$jigdo_cv_have_ulonglong" = "yes"; then
+#    AC_DEFINE(HAVE_UNSIGNED_LONG_LONG, 1)
+#else
+#    AC_DEFINE(HAVE_UNSIGNED_LONG_LONG, 0)
+#fi
 
 if test "$jigdo_uint64" = auto; then
     AC_CHECK_SIZEOF(unsigned long, 0)
@@ -412,11 +415,11 @@ if test "$jigdo_uint64" = auto; then
     elif test "$ac_cv_sizeof_unsigned_long_long" -ge 8; then
         jigdo_uint64='unsigned long long'
     else
-        if test "$jigdo_cv_have_ulonglong" = "yes"; then
+        #if test "$jigdo_cv_have_ulonglong" = "yes"; then
             jigdo_uint64='unsigned long long'
-        else
-            jigdo_uint64='unsigned long'
-        fi
+        #else
+        #    jigdo_uint64='unsigned long'
+        #fi
         AC_MSG_RESULT([   * Could not find an unsigned type with at least 64])
         AC_MSG_RESULT([   * bits (or maybe char has >8 bits?) - defaulting to])
         AC_MSG_RESULT([   * \`$jigdo_uint64'. You may want to override])
