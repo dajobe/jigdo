@@ -224,6 +224,7 @@ cvsdist:	Makefile
 		jdir=jigdo-`read a b v <"$(srcdir)/jigdo.spec" && echo $$v`; \
 		    mv jigdo "$$jdir"; \
 		    find "$$jdir" -type f | sort \
-		    | tar --exclude=CVS -T - -cf "$$jdir.tar"; \
+		    | tar --exclude=CVS --exclude=autom4te.cache -T - -cf \
+                          "$$jdir.tar"; \
 		    bzip2 -f -9 "$$jdir.tar"; \
 		    rm -rf "$$jdir"
