@@ -652,11 +652,13 @@ void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
         delete templateMd5; templateMd5 = 0;
         return generateError(_("Invalid Template-MD5Sum argument"));
       }
-#     if DEBUG
+      // For security, double-check the value
       Base64String b64;
-      b64.write(implicit_cast<byte*>(*templateMd5), 16).flush();
-      Paranoid(b64.result() == value.front());
-#     endif
+      b64.write(templateMd5->sum, 16).flush();
+      if (b64.result() != value.front()) {
+        debug("b64='%1' value='%2'", b64.result(), value.front());
+        return generateError(_("Invalid Template-MD5Sum argument"));
+      }
     } else if (*label == "ShortInfo") {
       // ShortInfo is 200 chars max
       if(!imageShortInfo.empty()) return generateError(_("Value redefined"));
