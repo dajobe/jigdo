@@ -14,6 +14,7 @@
 #include <config.h>
 
 #include <cachefile.hh>
+#include <compat.hh>
 #if HAVE_LIBDB
 
 #if DEBUG
@@ -39,7 +40,7 @@ CacheFile::CacheFile(const char* dbName) {
   db->set_cachesize(db, 0, 4*1024*1024, 1);
 
   // Use a btree, create database file if not yet present
-  e = db->open(db, dbName, "jigdo filecache v0", DB_BTREE, DB_CREATE, 0666);
+  e = dbOpen(db, dbName, "jigdo filecache v0", DB_BTREE, DB_CREATE, 0666);
   if (e != 0) {
     // Re-close, in case it is necessary
     db->close(db, 0);
@@ -48,8 +49,8 @@ CacheFile::CacheFile(const char* dbName) {
     /* If the DB file is old or corrupted, just regenerate it from
        scratch, otherwise throw error. */
     debug("Cache file corrupt, recreating it");
-    if (db->open(db, dbName, "jigdo filecache v0", DB_BTREE,
-                 DB_CREATE | DB_TRUNCATE, 0666) != 0)
+    if (dbOpen(db, dbName, "jigdo filecache v0", DB_BTREE,
+               DB_CREATE | DB_TRUNCATE, 0666) != 0)
       throw DbError(e);
   }
 

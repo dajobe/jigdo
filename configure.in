@@ -200,39 +200,38 @@ if test "$have_zlib" = "yes"; then LIBS="-lz $LIBS"; fi
 
 AC_MSG_CHECKING(for value of --with-libdb)
 AC_ARG_WITH(libdb,
-    [  --without-libdb         Don't use libdb3 (it's necessary for jigdo-file's cache)], #'
+    [  --without-libdb         Don't use libdb (it's necessary for jigdo-file's cache)], #'
     jigdo_libdb="$withval", jigdo_libdb="yes")
 AC_MSG_RESULT(\"$jigdo_libdb\")
 if test "$jigdo_libdb" = "yes"; then
-    dnl libdb V3 by "Sleepycat". Apparently the only -l switch
-    dnl compatible across RedHat and Debian is -ldb. In case -ldb isn't
-    dnl there or is V2 or V1, try a few alternative locations. db_create
-    dnl is only available in the lib from V3 onwards.
-    for db in "db" "db3" "db-3" "db-3.1" "db-3.2" "db-3.3"; do
-        AC_CHECK_LIB($db, db_create, have_libdb="$db", have_libdb="no")
+    AC_CHECK_HEADER(db.h, have_db_h="yes", have_db_h="no")
+    AC_MSG_CHECKING(libdb major version)
+    printf "#include <db.h>\nDB_VERSION_MAJOR\n" >conftest.c
+    set `eval $ac_cpp conftest.c | egrep '^ *[[0-9]] *$'`; v="$1"
+    AC_MSG_RESULT($v)
+    if test "$v" -ne 3 -a "$v" -ne 4; then
+        AC_MSG_RESULT([   * Warning: jigdo is only known to work with libdb])
+        AC_MSG_RESULT([   * version 3 or 4 - maybe you should upgrade.])
+        installDevel "libdb4.2" "libdb4"
+    fi
+    for db in "db-$v" "db$v" "db"; do
+        AC_MSG_CHECKING(for db_create in lib$db)
+        AC_TRY_COMPILE([#include <db.h>], db_create(0, 0, 0),
+                       have_libdb="$db", have_libdb="no")
+        AC_MSG_RESULT($have_libdb)
+#        AC_CHECK_LIB($db, db_version, have_libdb="$db", have_libdb="no")
         if test "$have_libdb" != "no"; then break; fi
     done
-    AC_CHECK_HEADER(db.h, have_db_h="yes", have_db_h="no")
     if test "$have_libdb" = "no" -o "$have_db_h" = "no"; then
-        AC_MSG_RESULT([   * libdb3 not found - either install it, or use])
-        AC_MSG_RESULT([   * \`configure --without-libdb' to disable the db3])
+        AC_MSG_RESULT([   * libdb not found - either install it, or use])
+        AC_MSG_RESULT([   * \`configure --without-libdb' to disable the db])
         AC_MSG_RESULT([   * file cache of jigdo-file. If this check should not])
         AC_MSG_RESULT([   * have failed, force e.g. -ldb to be used with])
         AC_MSG_RESULT([   * \`configure --with-libdb=-ldb'])
-        installDevel "libdb3" "libdb3.3"
-        AC_MSG_ERROR(libdb3 not found.)
+        installDevel "libdb4" "libdb4"
+        AC_MSG_ERROR(libdb not found.)
     else
         LIBS="-l$have_libdb $LIBS"
-        AC_MSG_CHECKING(for db.h of libdb 3.x)
-        AC_EGREP_CPP(dbversionmajoris 3, [#include <db.h>
-            dbversionmajoris DB_VERSION_MAJOR],
-            is_db3_h=yes, is_db3_h=no)
-        AC_MSG_RESULT($is_db3_h);
-        if test "$is_db3_h" = "no"; then
-            AC_MSG_RESULT([   * libdb3 library is present, but the db.h file])
-            AC_MSG_RESULT([   * seems to be from a different version, not 3.])
-            installDevel "libdb3" "libdb3.3"
-        fi
     fi
     AC_DEFINE(HAVE_LIBDB, 1) dnl make compilation fail if libdb not there
 elif test "$jigdo_libdb" != "no" -a "$jigdo_libdb" != "NO"; then
