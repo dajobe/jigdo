@@ -100,16 +100,22 @@ void Download::cleanup() {
 }
 //______________________________________________________________________
 
-void Download::uriJoin(string* dest, const string& /*base*/, const string& rel) {
-#warning uriJoin
-  *dest = rel;
-//   if (HTURL_isAbsolute(rel.c_str())) {
-//     *dest = rel;
-//   } else {
-//     char* joined = HTParse(rel.c_str(), base.c_str(), PARSE_ALL);
-//     *dest = HTSimplify(&joined);
-//     HT_FREE(joined);
-//   }
+/** Create a new URI from an absolute base URI and a relative URI. (rel can
+    also be absolute, in this case, the result in dest equals rel.) */
+void Download::uriJoin(string* dest, const string& base, const string& rel) {
+  string::const_iterator i = rel.begin(), e = rel.end();
+  while (i != e && isalpha(*i)) ++i;
+
+  if (i != e && *i == ':') {
+    *dest = rel; // Absolute: rel starts with alphabetic chars followed by :
+  } else {
+    string::size_type n = base.find_last_of('/');
+    if (n == string::npos)
+      *dest = base;
+    else
+      dest->assign(base, 0, n + 1);
+    *dest += rel;
+  }
 }
 //______________________________________________________________________
 
