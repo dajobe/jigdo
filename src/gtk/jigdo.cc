@@ -141,7 +141,7 @@ void noLogHandler(const gchar*, GLogLevelFlags, const gchar*, gpointer) {
 } // local namespace
 //______________________________________________________________________
 
-int main (int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 # if WINDOWS
   getPackageDataDir();
   if (!DEBUG) {
