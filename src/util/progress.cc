@@ -25,12 +25,11 @@
 #include <iostream>
 
 #include <debug.hh>
+#include <log.hh>
 #include <progress.hh>
 #include <string-utf.hh>
 
-#ifndef DEBUG_PROGRESS
-#  define DEBUG_PROGRESS (DEBUG && 1)
-#endif
+namespace { DebugLogger debug("progress"); }
 //______________________________________________________________________
 
 /** Append to s something like "9999B", "9999kB", "9999MB", "99.9MB" */
@@ -173,10 +172,9 @@ int Progress::speed(const GTimeVal& now) const {
   else
     elapsed -= slotStart[calcSlot].tv_usec - now.tv_usec;
   if (elapsed == 0.0) return -1;
-# if DEBUG_PROGRESS
-  cerr<<"speed: "<<currentSizeVal - slotSizeVal[calcSlot]<<" bytes (" << slotSizeVal[calcSlot] << " previously, " << currentSizeVal << " now) in "
-      <<elapsed / 1000000.0<<" sec, current size "<<currentSizeVal<<endl;
-# endif
+  debug("speed: %1 bytes (%2 previously, %3 now) in %4 sec",
+        currentSizeVal - slotSizeVal[calcSlot],
+        slotSizeVal[calcSlot], currentSizeVal, elapsed / 1000000.0);
   int speed = static_cast<int>(
       static_cast<double>(currentSizeVal - slotSizeVal[calcSlot])
       / elapsed * 1000000.0);
@@ -258,9 +256,7 @@ void Progress::setAutoTick(bool enable) {
     } else {
       // First entry - register callback
       autoTickId = g_timeout_add(SPEED_TICK_INTERVAL, autoTickCallback, 0);
-#     if DEBUG_PROGRESS
-      cerr << "Progress::setAutoTick: registered" << endl;
-#     endif
+      debug("setAutoTick: registered");
     }
     autoTickList = this;
 
@@ -277,30 +273,19 @@ void Progress::setAutoTick(bool enable) {
       // This was the last entry - unregister callback
       g_source_remove(autoTickId);
       autoTickId = 0;
-#     if DEBUG_PROGRESS
-      cerr << "Progress::setAutoTick: unregistered" << endl;
-#     endif
+      debug("setAutoTick: unregistered");
     }
   }
 }
 
 gboolean Progress::autoTickCallback(gpointer) {
-# if DEBUG_PROGRESS
-  cerr << "Progress::autoTickCallback";
-# endif
+  debug("autoTickCallback");
   GTimeVal now;
   g_get_current_time(&now);
   Progress* p = autoTickList;
   while (p != 0) {
-#   if DEBUG_PROGRESS
-//     cerr << "  " << p << ": " << *p << endl;
-    cerr << '.';
-#   endif
     p->tick(now, SPEED_TICK_INTERVAL);
     p = p->next;
   }
-# if DEBUG_PROGRESS
-  cerr << endl;
-# endif
   return TRUE; // "Call me again"
 }

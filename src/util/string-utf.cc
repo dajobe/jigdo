@@ -183,39 +183,44 @@ void strSubst(string& result, const char* s, int flags) {
 inline void Subst::doSubst(string& result, const Subst arg[], int n,
                            int flags) {
   switch (arg[n].type) {
-  case Subst::CHAR:
-    result += arg[n].val.charVal;
-    break;
-  case Subst::CHAR_P:
-    if (flags == F)
-      result += arg[n].val.charPtr;
-    else
-      strSubst(result, arg[n].val.charPtr, flags);
-    break;
-  case Subst::STRING_P:
-    if (flags == F)
-      result += *arg[n].val.stringPtr;
-    else
-      strSubst(result, arg[n].val.stringPtr->c_str(), flags);
-    break;
-  default:
-    switch (arg[n].type) {
-      case Subst::INT:
-        snprintf(buf, BUF_LEN, "%d", arg[n].val.intVal); break;
-      case Subst::UNSIGNED:
-        snprintf(buf, BUF_LEN, "%u", arg[n].val.unsignedVal); break;
-      case Subst::LONG:
-        snprintf(buf, BUF_LEN, "%ld", arg[n].val.longVal); break;
-      case Subst::ULONG:
-        snprintf(buf, BUF_LEN, "%lu", arg[n].val.ulongVal); break;
-#     if HAVE_UNSIGNED_LONG_LONG
-      case Subst::ULONGLONG:
-        snprintf(buf, BUF_LEN, "%llu", arg[n].val.ulonglongVal); break;
-#     endif
-      default: buf[0] = '\0'; break;
-    }
-    buf[BUF_LEN - 1] = '\0';
-    result += buf;
+    case INT:
+      snprintf(buf, BUF_LEN, "%d", arg[n].val.intVal);
+      buf[BUF_LEN - 1] = '\0'; result += buf; break;
+    case UNSIGNED:
+      snprintf(buf, BUF_LEN, "%u", arg[n].val.unsignedVal);
+      buf[BUF_LEN - 1] = '\0'; result += buf; break;
+    case LONG:
+      snprintf(buf, BUF_LEN, "%ld", arg[n].val.longVal);
+      buf[BUF_LEN - 1] = '\0'; result += buf; break;
+    case ULONG:
+      snprintf(buf, BUF_LEN, "%lu", arg[n].val.ulongVal);
+      buf[BUF_LEN - 1] = '\0'; result += buf; break;
+#   if HAVE_UNSIGNED_LONG_LONG
+    case ULONGLONG:
+      snprintf(buf, BUF_LEN, "%llu", arg[n].val.ulonglongVal);
+      buf[BUF_LEN - 1] = '\0'; result += buf; break;
+#   endif
+    case DOUBLE:
+      snprintf(buf, BUF_LEN, "%f", arg[n].val.doubleVal);
+      buf[BUF_LEN - 1] = '\0'; result += buf; break;
+    case CHAR:
+      result += arg[n].val.charVal;
+      break;
+    case CHAR_P:
+      if (flags == F)
+        result += arg[n].val.charPtr;
+      else
+        strSubst(result, arg[n].val.charPtr, flags);
+      break;
+    case STRING_P:
+      if (flags == F)
+        result += *arg[n].val.stringPtr;
+      else
+        strSubst(result, arg[n].val.stringPtr->c_str(), flags);
+      break;
+    case POINTER:
+      snprintf(buf, BUF_LEN, "%p", arg[n].val.pointerVal);
+      buf[BUF_LEN - 1] = '\0'; result += buf; break;
   }
 }
 //____________________

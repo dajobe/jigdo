@@ -26,12 +26,11 @@
 #include <unistd.h>
 
 #include <glibwww.hh>
+#include <log.hh>
 #include <proxyguess.hh>
-
-#ifndef DEBUG_PROXYGUESS
-#  define DEBUG_PROXYGUESS (DEBUG && 0)
-#endif
 //______________________________________________________________________
+
+namespace { DebugLogger debug("proxyguess"); }
 
 #if WINDOWS
 
@@ -40,6 +39,7 @@
 /* Windows: Read Internet Explorer's proxy settings. Doesn't work with .pac
    files, just with user-supplied servers. */
 namespace {
+
   void proxyGuess_MSIE(HKEY internetSettings) {
     const unsigned BUFLEN = 256;
     DWORD len = BUFLEN;
@@ -50,8 +50,7 @@ namespace {
                         buf, &len) == ERROR_SUCCESS
         && type == REG_BINARY && buf[0] == 0) {
       // User deselected the option "Use a proxy server", so don't continue
-      if (DEBUG_PROXYGUESS)
-        cerr << "proxyguess: no proxies set up" << endl;
+      debug("No proxies set up");
       return;
     }
 
@@ -73,8 +72,7 @@ namespace {
           ++list;
         }
         if (host != "local") {
-          if (DEBUG_PROXYGUESS)
-            cerr << "proxyguess: no proxy for " << host << endl;
+          debug("No proxy for %1", host);
           glibwww_add_noproxy(host.c_str());
         }
         host.erase();
@@ -100,8 +98,7 @@ namespace {
           // Simple proxy setting, assume it's both for HTTP and FTP
           string proxy = "http://";
           proxy.append(reinterpret_cast<const char*>(buf));
-          if (DEBUG_PROXYGUESS)
-            cerr << "proxyguess: general proxy: " << proxy << endl;
+          debug("General proxy: %1", proxy);
           glibwww_add_proxy("http", proxy.c_str());
           glibwww_add_proxy("ftp", proxy.c_str());
         } else {
@@ -110,8 +107,7 @@ namespace {
           if (proto == "http" || proto == "ftp") {
             string proxy = "http://";
             proxy.append(entry, equals + 1, string::npos);
-            if (DEBUG_PROXYGUESS)
-              cerr << "proxyguess: " << proto << " proxy: " << proxy << endl;
+            debug("%1 proxy: %2", proto, proxy);
             glibwww_add_proxy(proto.c_str(), proxy.c_str());
           }
         }
@@ -226,8 +222,7 @@ namespace {
     while (*proxy == ' ' || *proxy == '\t' || *proxy == '=') ++proxy;
     if (*proxy == '#') return false; // Assuming comment, not setting proxy
     if (*proxy == '\0') return false;
-    if (DEBUG_PROXYGUESS)
-      cerr << "proxyguess: " << protocol << " proxy " << proxy << endl;
+    debug("%1 proxy: %2", protocol, proxy);
     glibwww_add_proxy(protocol, proxy);
     return true;
   }
@@ -244,8 +239,7 @@ namespace {
         host += *list;
         ++list;
       }
-      if (DEBUG_PROXYGUESS)
-        cerr << "proxyguess: no proxy for " << host << endl;
+      debug("No proxy for %1", host);
       glibwww_add_noproxy(host.c_str());
       host.erase();
     }
@@ -446,9 +440,7 @@ void proxyGuess() {
     ConfFiles::iterator second = first;
     ++second;
     BrowserConfig* bc = *first;
-#   if DEBUG_PROXYGUESS
-    cerr << "Scan: " << bc->age << " \t" << bc->filename << endl;
-#   endif
+    debug("Scan: %1  %2", bc->age, bc->filename);
     finished = bc->read();
     delete bc;
     c.erase(first, second);
@@ -459,9 +451,7 @@ void proxyGuess() {
     ConfFiles::iterator second = first;
     ++second;
     BrowserConfig* bc = *first;
-#   if DEBUG_PROXYGUESS
-    cerr << "Ignr: " << bc->age << " \t" << bc->filename << endl;
-#   endif
+    debug("Ignr: %1  %2", bc->age, bc->filename);
     delete bc;
     c.erase(first, second);
   }

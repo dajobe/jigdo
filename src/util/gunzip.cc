@@ -19,10 +19,9 @@
 
 #include <debug.hh>
 #include <gunzip.hh>
+#include <log.hh>
 
-#ifndef DEBUG_GUNZIP
-#  define DEBUG_GUNZIP (DEBUG && 0)
-#endif
+namespace { DebugLogger debug("gunzip"); }
 //______________________________________________________________________
 
 void Gunzip::error(const char* msg) {
@@ -79,13 +78,11 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
       if (skip <= z.avail_in) {
         z.next_in += skip;
         z.avail_in -= skip;
-        if (DEBUG_GUNZIP)
-          cerr << "Gunzip: Skipped " << skip << endl;
+        debug("Skipped %1", skip);
         skip = 0;
         if (z.avail_in == 0) break;
       } else {
-        if (DEBUG_GUNZIP)
-          cerr << "Gunzip: Skipped~ " << z.avail_in << endl;
+        debug("Skipped~ %1", z.avail_in);
         z.next_in += z.avail_in;
         skip -= z.avail_in;
         z.avail_in = 0;
@@ -99,10 +96,7 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
     case INIT0:
       // Start
       crc = crc32(0L, Z_NULL, 0); // Init checksum
-      if (DEBUG_GUNZIP)
-        cerr << "Gunzip:INIT0: Need byte 31, got " << unsigned(*z.next_in)
-             << endl;
-      //cerr << unsigned(z.next_in[1]) << ' ' << unsigned(z.next_in[2]) << ' ' << unsigned(z.next_in[3]) << endl;
+      debug("INIT0: Need byte 31, got %1", unsigned(*z.next_in));
       if (*z.next_in != '\x1f') {
         state = TRANSPARENT;
         break;
@@ -113,9 +107,7 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
 
     case INIT1:
       // Found first .gz ID byte \x1f, look for second \x8b
-      if (DEBUG_GUNZIP)
-        cerr << "Gunzip:INIT1: Need byte 139, got " << unsigned(*z.next_in)
-             << endl;
+      debug("INIT1: Need byte 139, got %1", unsigned(*z.next_in));
       if (static_cast<byte>(*z.next_in) != 0x8bU) {
         outputByte('\x1f');
         state = TRANSPARENT;
@@ -127,9 +119,7 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
 
     case HEADER_CM:
       // Found .gz ID bytes \x1f\x8b, compression method byte follows
-      if (DEBUG_GUNZIP)
-        cerr << "Gunzip:HEADER_CM: Need byte 8, got " << unsigned(*z.next_in)
-             << endl;
+      debug("HEADER_CM: Need byte 8, got %1", unsigned(*z.next_in));
       if (*z.next_in != 8) {
         outputByte('\x1f');
         outputByte('\x8b');
@@ -143,9 +133,7 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
     case HEADER_FLG:
       // Found .gz ID bytes \x1f\x8b\x08, now read flag byte
       headerFlags = nextInByte();
-      if (DEBUG_GUNZIP)
-        cerr << "Gunzip:HEADER_FLG: " << hex << unsigned(headerFlags) << dec
-             << endl;
+      debug("HEADER_FLG: %1", unsigned(headerFlags));
       if ((headerFlags & 0xe0) != 0) {
         error(0); // Reserved flags non-zero => error
         return;
@@ -162,7 +150,7 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
         state = HEADER_FNAME; // FEXTRA not set
         break;
       }
-      if (DEBUG_GUNZIP) cerr << "Gunzip:FEXTRA0" << endl;
+      debug("FEXTRA0");
       data = nextInByte(); // Lower 8 bits of XLEN (eXtra LENgth)
       state = HEADER_FEXTRA1;
       if (z.avail_in == 0) break;
@@ -170,7 +158,7 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
     case HEADER_FEXTRA1:
       // If FEXTRA flag set, read XLEN
       data |= (nextInByte() << 8); // Upper 8 bits of XLEN (eXtra LENgth)
-      if (DEBUG_GUNZIP) cerr << "Gunzip:FEXTRA1: XLEN=" << data << endl;
+      debug("FEXTRA1: XLEN=%1", data);
       state = HEADER_FNAME;
       skip = data; // Skip contents of "extra field"
       break;
@@ -184,8 +172,7 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
       // Skip null-terminated original filename
       while (z.avail_in > 0) {
         byte b = nextInByte();
-        if (DEBUG_GUNZIP)
-          cerr << "Gunzip:FNAME: Skipping name: " << unsigned(b) << endl;
+        debug("FNAME: Skipping name: %1", unsigned(b));
         if (b == 0) {
           state = HEADER_FCOMMENT;
           break;
@@ -204,9 +191,7 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
       // Skip null-terminated comment
       while (z.avail_in > 0) {
         b = nextInByte();
-        if (DEBUG_GUNZIP)
-          cerr << "Gunzip:FCOMMENT: Skipping comment: " << unsigned(b)
-               << endl;
+        debug("FCOMMENT: Skipping comment: %1", unsigned(b));
         if (b == 0) {
           state = ZLIB;
           if ((headerFlags & (1<<1)) != 0)
@@ -227,19 +212,19 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
           io->gunzip_data(this, oldNextOut, z.next_out - oldNextOut);
         }
         if (ok == Z_OK) {
-          if (DEBUG_GUNZIP) cerr << "Gunzip:ZLIB: Z_OK" << endl;
+          debug("ZLIB: Z_OK");
         } else if (ok == Z_STREAM_END) {
           // Re-initialize decompressor
           if (inflateReset(&z) != Z_OK) {
             error(z.msg);
             return;
           }
-          if (DEBUG_GUNZIP) cerr << "Gunzip:ZLIB: Z_STREAM_END" << endl;
+          debug("ZLIB: Z_STREAM_END");
           // End of zlib stream reached, now verify checksum
           state = TRAILER_CRC0;
           break;
         } else { // Z_NEED_DICT, Z_DATA_ERROR, Z_STREAM_ERROR, Z_BUF_ERROR
-          if (DEBUG_GUNZIP) cerr << "Gunzip:ZLIB: error " << ok << endl;
+          debug("ZLIB: error %1", ok);
           error(z.msg);
           return;
         }
@@ -248,49 +233,47 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
 
     case TRAILER_CRC0:
       // Compare checksum byte
-      if (DEBUG_GUNZIP)
-        cerr << "TRAILER_CRC0: crc=" << hex << crc << dec << endl;
+      debug("TRAILER_CRC0: crc=%1", crc);
       if ((b = nextInByte()) != (crc & 0xffU)) {
-        if (DEBUG_GUNZIP)
-          cerr << "TRAILER_CRC0 failed: need " << hex << (crc & 0xffU)
-               << ", got " << unsigned(b) << dec << endl;
+        debug("TRAILER_CRC0 failed: need %1, got %2",
+              crc & 0xffU, unsigned(b));
         error(_("Checksum is wrong"));
         return;
       }
-      if (DEBUG_GUNZIP) cerr << "TRAILER_CRC0 ok" << endl;
+      debug("TRAILER_CRC0 ok");
       state = TRAILER_CRC1;
       if (z.avail_in == 0) break;
 
     case TRAILER_CRC1:
       // Compare checksum byte
       if (nextInByte() != ((crc >> 8) & 0xffU)) {
-        if (DEBUG_GUNZIP) cerr << "TRAILER_CRC1 failed" << endl;
+        debug("TRAILER_CRC1 failed");
         error(_("Checksum is wrong"));
         return;
       }
-      if (DEBUG_GUNZIP) cerr << "TRAILER_CRC1 ok" << endl;
+        debug("TRAILER_CRC1 ok");
       state = TRAILER_CRC2;
       if (z.avail_in == 0) break;
 
     case TRAILER_CRC2:
       // Compare checksum byte
       if (nextInByte() != ((crc >> 16) & 0xffU)) {
-        if (DEBUG_GUNZIP) cerr << "TRAILER_CRC2 failed" << endl;
+        debug("TRAILER_CRC2 failed");
         error(_("Checksum is wrong"));
         return;
       }
-      if (DEBUG_GUNZIP) cerr << "TRAILER_CRC2 ok" << endl;
+      debug("TRAILER_CRC2 ok");
       state = TRAILER_CRC3;
       if (z.avail_in == 0) break;
 
     case TRAILER_CRC3:
       // Compare checksum byte
       if (nextInByte() != ((crc >> 24) & 0xffU)) {
-        if (DEBUG_GUNZIP) cerr << "TRAILER_CRC3 failed" << endl;
+        debug("TRAILER_CRC3 failed");
         error(_("Checksum is wrong"));
         return;
       }
-      if (DEBUG_GUNZIP) cerr << "TRAILER_CRC3 ok" << endl;
+      debug("TRAILER_CRC3 ok");
       // Skip 4 bytes of length of uncompressed, then expect another .gz file
       skip = 4;
       state = INIT0;
@@ -298,7 +281,7 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
 
     case TRANSPARENT:
       // Pass data through unmodified
-      if (DEBUG_GUNZIP) cerr << "Gunzip:TRANSPARENT" << endl;
+      debug("TRANSPARENT");
       while (z.avail_in > 0) {
         needOutByte();
         unsigned s = min(z.avail_in, z.avail_out);
@@ -315,7 +298,7 @@ void Gunzip::inject(const byte* compressed, unsigned size) {
     default:
       Paranoid(false);
       error("Bug");
-      if (DEBUG_GUNZIP) cerr << "Unknown state " << state << endl;
+      debug("Unknown state %1", state);
       return;
 
     } // endswitch (state)

@@ -27,6 +27,7 @@
 #include <download.hh>
 #include <gui.hh>
 #include <jobline.fh>
+#include <log.hh>
 #include <nocopy.hh>
 //______________________________________________________________________
 
@@ -49,6 +50,8 @@ public:
   /* Time values are in milliseconds. All values should be multiples
      of TICK_INTERVAL */
   static const int TICK_INTERVAL = 250; // = progress report update interval
+
+  static DebugLogger debug;
 
   typedef unsigned size_type;
   inline JobList();
@@ -213,26 +216,18 @@ void JobList::insert(size_type n, JobLine* j) {
 }
 #endif
 
-#ifndef DEBUG_JOBLIST
-#  define DEBUG_JOBLIST 0
-#endif
-
 void JobList::registerTicks() {
   if (++needTicks == 1) {
     timeoutId = gtk_timeout_add(TICK_INTERVAL, timeoutCallback, this);
   }
-# if DEBUG_JOBLIST
-  cerr << "registerTicks: " << needTicks << endl;
-# endif
+  debug("registerTicks: %1", needTicks);
 }
 /* No further action is required. The timeout function will unregister itself
    next time it is called, by returning FALSE. */
 void JobList::unregisterTicks() {
   if (--needTicks == 0)
     gtk_timeout_remove(timeoutId);
-# if DEBUG_JOBLIST
-  cerr << "unregisterTicks: " << needTicks << endl;
-# endif
+  debug("unregisterTicks: %1", needTicks);
 }
 
 void JobList::setWindowOwner(JobLine* j) { windowOwnerValue = j; }

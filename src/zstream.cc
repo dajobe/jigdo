@@ -19,17 +19,16 @@
 #include <fstream>
 #include <new>
 
+#include <log.hh>
 #include <md5sum.hh>
 #include <serialize.hh>
 #include <string.hh>
 #include <zstream.hh>
-
-#ifndef DEBUG_ZSTREAM
-#  define DEBUG_ZSTREAM (DEBUG && 0)
-#endif
 //______________________________________________________________________
 
 namespace {
+
+  DebugLogger debug("zstream");
 
   // Turn zlib error codes/messages into C++ exceptions
   void throwZerror(int status, const char* zmsg) {
@@ -113,10 +112,8 @@ void Zobstream::close() {
 
 // Write compressed, flushed data to output stream
 void Zobstream::writeZipped() {
-# if DEBUG_ZSTREAM
-  cerr << "Zobstream: Writing " << z.total_out << " bytes compressed, was "
-       << z.total_in << " uncompressed" << endl;
-# endif
+  debug("Writing %1 bytes compressed, was %2 uncompressed",
+        z.total_out, z.total_in);
 
   // #Bytes     Value   Description
   // ----------------------------------------------------------------------
@@ -271,12 +268,9 @@ Zibstream& Zibstream::read(byte* dest, size_t n) {
       int status = inflate(&z, Z_NO_FLUSH);
       gcountVal = z.next_out - dest;
       dataUnc -= z.next_out - oldNextOut;
-#     if DEBUG_ZSTREAM
-      cerr << "Zibstream::read: avail_out=" << z.avail_out
-           << " dataLen=" << dataLen
-           << " dataUnc=" << dataUnc << " status=" << status
-           << " - inflated " << z.next_out - oldNextOut << endl;
-#     endif
+      debug("read: avail_out=%1 dataLen=%2 dataUnc=%3 status=%4 - "
+            "inflated %5", z.avail_out, dataLen, dataUnc, status,
+            z.next_out - oldNextOut);
       Assert(dataUnc > 0 || (status == Z_STREAM_END || status == Z_OK));
       if (z.avail_out == 0) break;
       if (status != Z_OK && status != Z_STREAM_END)

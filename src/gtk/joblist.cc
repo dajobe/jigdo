@@ -30,6 +30,8 @@
 
 JobList GUI::jobList;
 
+DebugLogger JobList::debug("joblist");
+
 const char* const JobList::PROGRESS_IMAGE_FILE = "progress-green.png";
 
 GdkPixbuf* JobList::progressImage = 0;

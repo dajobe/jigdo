@@ -18,7 +18,7 @@
 #include <debug.hh>
 //______________________________________________________________________
 
-bool OptDebug::d = false;
+//bool OptDebug::d = false;
 //______________________________________________________________________
 
 int Debug::assertFail(const char* assertion, const char* file,

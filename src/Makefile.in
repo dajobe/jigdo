@@ -56,19 +56,19 @@ objects-jigdo =	configfile.o glibc-md5.o gtk/gtk-makeimage.o \
 		job/makeimage.o job/makeimagedl.o job/single-url.o md5sum.o \
 		net/download.o net/glibwww-callbacks.o net/glibwww-init.o \
 		net/proxyguess.o util/glibc-getopt.o util/glibc-getopt1.o \
-		util/gunzip.o util/progress.o util/string-utf.o \
+		util/gunzip.o util/log.o util/progress.o util/string-utf.o \
 		$(libwww-hacks) $(windows-res) \
 		util/debug.o # this must come last!
 objects-jigdo-file = cachefile.o compat.o configfile.o glibc-md5.o \
 		jigdo-file-cmd.o jigdo-file.o jigdoconfig.o md5sum.o \
 		mkimage.o mkjigdo.o mktemplate.o partialmatch.o \
 		recursedir.o rsyncsum.o scan.o util/glibc-getopt.o \
-		util/glibc-getopt1.o util/string.o zstream.o \
+		util/glibc-getopt1.o util/log.o util/string.o zstream.o \
 		util/debug.o # this must come last!
 objects-torture = cachefile.o compat.o configfile.o glibc-md5.o \
 		jigdoconfig.o md5sum.o mkimage.o mkjigdo.o mktemplate.o \
 		partialmatch.o rsyncsum.o recursedir.o scan.o torture.o \
-		util/string.o zstream.o \
+		util/log.o util/string.o zstream.o \
 		util/debug.o # this must come last!
 #______________________________
 
@@ -176,6 +176,9 @@ proxyguesstest@exe@: net/glibwww-callbacks.o net/glibwww-init.o \
 gunziptest@exe@: util/gunzip.o util/gunziptest.o util/debug.o
 		$(LD) -o $@ util/gunzip.o util/gunziptest.o util/debug.o \
 		    $(LDFLAGS)
+logtest@exe@:	util/debug.o util/log.o util/logtest.o util/string-utf.o
+		$(LD) -o $@ util/log.o util/logtest.o util/string-utf.o \
+		    util/debug.o $(LDFLAGS) $(GTKLIBS)
 
 #MinGW## Grr, to prevent built-in rules from being used:
 #MinGW#.PHONY:	jigdo jigdo-file torture

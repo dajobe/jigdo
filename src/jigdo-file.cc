@@ -31,6 +31,7 @@
 #include <debug.hh>
 #include <jigdo-file-cmd.hh>
 #include <jigdoconfig.hh>
+#include <log.hh>
 #include <mkimage.hh>
 #include <mktemplate.hh>
 #include <recursedir.hh>
@@ -56,6 +57,7 @@ bool JigdoFileCmd::optMkImageCheck = true;
 bool JigdoFileCmd::optAddImage = true;
 bool JigdoFileCmd::optAddServers = true;
 bool JigdoFileCmd::optHex = false;
+string JigdoFileCmd::optDebug;
 AnyReporter* JigdoFileCmd::optReporter = 0;
 string JigdoFileCmd::optMatchExec;
 #if !WINDOWS
@@ -367,7 +369,10 @@ inline void printUsage(bool detailed, size_t blockLength,
     "  --no-servers-section\n"
     "                   [make-template] When creating the jigdo file, do\n"
     "                   or do not add the sections `[Image]' or `[Servers]'\n"
-    "  --debug          [make-template] Print debugging information\n"
+    "  --debug[=all|=UNIT1,UNIT2...|=help]\n"
+    "                   [make-template] Print debugging information for\n"
+    "                   all units, or for specified units, or print list\n"
+    "                   of units. Can use `!', e.g. `all,!UNIT1'\n"
     "  --no-debug       [make-template] No debugging info [default]\n"
     "  --match-exec=CMD [make-template] Execute command when files match\n"
     "                   CMD is passed to a shell, with environment set up:\n"
@@ -432,6 +437,51 @@ size_t scanTimespan(const char* str) {
 }
 //______________________________________________________________________
 
+/* The value of the --debug cmd line option is either missing (empty) or a
+   comma-separated list of words (we also allow spaces for the fun of it).
+   Each word can be preceded by a '!' for negation (i.e. disable debug
+   messages rather than enable them). The word is the name of a compilation
+   unit, or one of the special values "all" or "help". */
+void scanOptDebug(const string& s) {
+  unsigned i = 0;
+  string word;
+  bool enable;
+  unsigned len = s.length();
+  while (i < len) {
+    word.erase();
+    enable = true;
+    while ((s[i] == '!' || s[i] == ' ') && i < len) {
+      if (s[i] == '!') enable = !enable;
+      ++i;
+    }
+    while (s[i] != ' ' && s[i] != ',' && i < len) {
+      word += s[i]; ++i;
+    }
+    while ((s[i] == ',' || s[i] == ' ') && i < len) ++i;
+    if (word == "all") { // Argument "all" - all units
+      Logger::setEnabled(0, enable);
+    } else if (word != "help") { // Other word - the name of a unit
+      // Do not fail if unit not found - some units are only there with DEBUG
+      if (!Logger::setEnabled(word.c_str(), enable))
+        cerr << subst(_("%1: Unit `%2' not found while scanning --debug "
+                        "argument"), binName(), word) << endl;
+    } else { // Argument "help" - print list of units
+      Logger* l = Logger::enumerate();
+      cerr << _(
+      "Argument to --debug is a comma-separated list of unit names, or\n"
+      "`all' for all units. By default, debug output for the listed units\n"
+      "is enabled, precede the name with `!' to disable it.\n"
+      "Registered units:");
+      while (l != 0) {
+        cerr << ' ' << l->name();
+        l = Logger::enumerate(l);
+      }
+      cerr << endl;
+    }
+  }
+}
+//______________________________________________________________________
+
 /* Try creating a filename in dest by stripping any file extension
    from source and appending ext.
    Only deduceName() should call deduceName2(). */
@@ -462,7 +512,7 @@ enum {
   LONGOPT_MATCHEXEC
 };
 
-/// Deal with command line switches
+// Deal with command line switches
 JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
 # if !WINDOWS
   binaryName = argv[0];
@@ -475,7 +525,7 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
       { "cache",              required_argument, 0, 'c' },
       { "cache-expiry",       required_argument, 0, LONGOPT_CACHEEXPIRY },
       { "check-files",        no_argument,       0, LONGOPT_MKIMAGECHECK },
-      { "debug",              no_argument,       0, LONGOPT_DEBUG },
+      { "debug",              optional_argument, 0, LONGOPT_DEBUG },
       { "files-from",         required_argument, 0, 'T' }, // "-T" like tar's
       { "force",              no_argument,       0, 'f' },
       { "help",               no_argument,       0, 'h' },
@@ -555,15 +605,15 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
     case LONGOPT_URI: optUris.push_back(string(optarg)); break;
     case LONGOPT_HEX: optHex = true; break;
     case LONGOPT_NOHEX: optHex = false; break;
-    case LONGOPT_DEBUG: OptDebug::setOptDebug(true); break;
-    case LONGOPT_NODEBUG: OptDebug::setOptDebug(false); break;
+    case LONGOPT_DEBUG:
+      if (optarg) optDebug = optarg; else optDebug = "all";
+      break;
+    case LONGOPT_NODEBUG: optDebug.erase(); break;
     case LONGOPT_MATCHEXEC: optMatchExec = optarg; break;
     case '?': error = true;
     case ':': break;
     default:
-#     if DEBUG
-      cerr << "getopt returned " << static_cast<int>(c) << endl;
-#     endif
+      msg("getopt returned %1", static_cast<int>(c));
       break;
     }
   }
@@ -576,6 +626,8 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
                                     md5BlockLength, readAmount);
     throw Cleanup(0);
   }
+
+  scanOptDebug(optDebug);
   //______________________________
 
   // Silently correct invalid blockLength/md5BlockLength args
@@ -669,10 +721,10 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
   }
   //____________________
 
-  if (optDebug()) {
-    cerr << "Image file:  " << imageFile << endl;
-    cerr << "Jigdo:       " << jigdoFile << endl;
-    cerr << "Template:    " << templFile << endl;
+  if (msg) {
+    msg("Image file: %1", imageFile);
+    msg("Jigdo:      %1", jigdoFile);
+    msg("Template:   %1", templFile);
   }
 
   return result;
@@ -701,6 +753,9 @@ int main(int argc, char* argv[]) {
   bindtextdomain(PACKAGE, PACKAGE_LOCALE_DIR);
   textdomain(PACKAGE);
 # endif
+# if DEBUG
+  Logger::setEnabled("general");
+# endif
 
   try {
     set_new_handler(outOfMemory);
@@ -725,9 +780,7 @@ int main(int argc, char* argv[]) {
   }
   catch (bad_alloc) { outOfMemory(); }
   catch (Cleanup c) {
-#   if DEBUG
-    cerr << "[Cleanup " << c.returnValue << ']' << endl;
-#   endif
+    msg("[Cleanup %1]", c.returnValue);
     return c.returnValue;
   }
   catch (Error e) {
@@ -740,8 +793,6 @@ int main(int argc, char* argv[]) {
     JigdoFileCmd::optReporter->error(err);
     return 3;
   }
-# if DEBUG
-  cerr << "[exit(" << returnValue << ")]" << endl;
-# endif
+  msg("[exit(%1)]", returnValue);
   return returnValue;
 }

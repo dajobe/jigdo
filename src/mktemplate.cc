@@ -37,6 +37,7 @@
 #include <autoptr.hh>
 #include <compat.hh>
 #include <debug.hh>
+#include <log.hh>
 #include <mimestream.hh>
 #include <mkimage.hh>
 #include <mktemplate.hh>
@@ -67,6 +68,11 @@ MkTemplate::MkTemplate(JigdoCache* jcache, bistream* imageStream,
     jigdo(jigdoInfo), addImageSection(addImage),
     addServersSection(addServers),
     matchExec() { }
+//______________________________________________________________________
+
+/* Because make-template should be debuggable even in non-debug builds, use a
+   Logger (not DebugLogger) here. */
+Logger MkTemplate::debug("make-template");
 //______________________________________________________________________
 
 namespace {
@@ -228,19 +234,14 @@ void MkTemplate::checkRsyncSumMatch2(const size_t blockLen,
          appropriate for discarding, just discard this possible file match!
          It's the only option if there are many, many overlapping matches,
          otherwise the program would get extremely slow. */
-      if (optDebug()) {
-        cerr << ' ' << off << ": DROPPED possible " << file->leafName()
-             << " match at offset " << off - blockLen
-             << " (queue full)" << endl;
-      }
+      debug(" %1: DROPPED possible %2 match at offset %3 (queue full)",
+            off, file->leafName(), off - blockLen);
       return;
     }
     // Overwrite existing entry in the queue
-    if (optDebug()) {
-      cerr << ' ' << off << ": DROPPED possible " << x->file()->leafName()
-           << " match at offset " << x->startOffset()
-           << " (queue full, match below replaces it)" << endl;
-    }
+    debug(" %1: DROPPED possible %2 match at offset %3 (queue full, match "
+          "below replaces it)",
+          off, x->file()->leafName(), x->startOffset());
   } else { // !matches->full()
     // Add new entry to the queue
     x = matches->addFront();
@@ -252,11 +253,8 @@ void MkTemplate::checkRsyncSumMatch2(const size_t blockLen,
   size_t eventLen = (file->size() < md5BlockLength ?
                      file->size() : md5BlockLength);
   x->setNextEvent(matches, x->startOffset() + eventLen);
-  if (optDebug()) {
-    cerr << ' ' << off << ": Head of " << file->leafName()
-         << " match at offset " << x->startOffset() << ", my next event "
-         << x->nextEvent() << endl;
-  }
+  debug(" %1: Head of %2 match at offset %3, my next event %4",
+        off, file->leafName(), x->startOffset(), x->nextEvent());
   if (x->nextEvent() < nextEvent) nextEvent = x->nextEvent();
   x->setBlockOffset(back);
   x->setBlockNumber(0);
@@ -317,9 +315,9 @@ bool MkTemplate::rereadUnmatched(FilePart* file, uint64 count) {
 // Print info about a part of the input image
 void MkTemplate::printRangeInfo(uint64 start, uint64 end, const char* msg,
                                 const PartialMatch* x) {
-  cerr << '[' << start << ',' << end << ") " << msg;
-  if (x != 0) cerr << ' ' << x->file()->leafName();
-  cerr << endl;
+  static const string empty;
+  debug("[%1,%2) %3 %4", start, end, msg,
+        (x != 0 ? x->file()->leafName() : empty) );
 }
 
 // oldAreaEnd != start, something's seriously wrong
@@ -331,7 +329,7 @@ void MkTemplate::debugRangeFailed() {
       "You have found a bug in jigdo-file. The generated .template file is\n"
       "very likely broken! To help me find the bug, please rerun the\n"
       "command as follows:\n"
-      "  [previous-command] --report=noprogress --debug >log 2>&1\n"
+      "  [previous-command] --report=noprogress --debug=make-template >log 2>&1\n"
       "and send the _compressed_ `log' file to <jigdo" << "@atterer.net>."
          << endl;
     printed = true;
@@ -452,13 +450,10 @@ bool MkTemplate::checkMD5Match(byte* const buf,
   //____________________
 
   const MD5* xfileSum = x->file()->getSums(cache, x->blockNumber());
-  if (optDebug()) {
-    cerr << "checkMD5Match?: image " << md << ", file "
-         << x->file()->leafName() << " block #"
-         << x->blockNumber() << ' ';
-    if (xfileSum) cerr << *xfileSum; else cerr << "[error]";
-    cerr << endl;
-  }
+  if (debug)
+    debug("checkMD5Match?: image %1, file %2 block #%3 %4",
+          md.toString(), x->file()->leafName(), x->blockNumber(),
+          (xfileSum ? xfileSum->toString() : "[error]") );
 
   if (xfileSum == 0 || md != *xfileSum) {
     /* The block didn't match, so the whole file doesn't match - re-read from
@@ -476,10 +471,8 @@ bool MkTemplate::checkMD5Match(byte* const buf,
     x->setNextEvent(matches, min(x->nextEvent() + md5BlockLength,
                                  x->startOffset() + x->file()->size()));
     nextEvent = min(nextEvent, x->nextEvent());
-    if (optDebug()) {
-      cerr << "checkMD5Match: match and more to go, next at off "
-           << x->nextEvent() << endl;
-    }
+    debug("checkMD5Match: match and more to go, next at off %1",
+          x->nextEvent());
     return SUCCESS;
   }
   //____________________
@@ -593,8 +586,7 @@ void MkTemplate::scanImage_mainLoop_fastForward(uint64 nextEvent,
 
 # if 0
   // Simple version
-  if (optDebug())
-    cerr << "DROPPING, fast forward (queue full)" << endl;
+  debug("DROPPING, fast forward (queue full)");
   Assert(off >= blockLength);
   unsigned sectorMask = sectorLength - 1;
   while (off < nextEvent) {
@@ -613,8 +605,7 @@ void MkTemplate::scanImage_mainLoop_fastForward(uint64 nextEvent,
 
 # else
 
-  if (optDebug())
-    cerr << "DROPPING, fast forward (queue full)" << endl;
+  debug("DROPPING, fast forward (queue full)");
   Assert(off >= blockLength);
 
   unsigned sectorMask = sectorLength - 1;
@@ -659,8 +650,7 @@ void MkTemplate::scanImage_mainLoop_fastForward(uint64 nextEvent,
     Assert(rsum2 == *rsum);
 #   endif
 
-//     if (optDebug())
-//       cerr << "DROPPING, fast forward (queue full) to " << off << endl;
+    //debug("DROPPING, fast forward (queue full) to %1", off);
 
     if (off == nextAlignedOff) {
       Paranoid(((off - blockLength) & sectorMask) == 0);
@@ -739,10 +729,8 @@ inline bool MkTemplate::scanImage(byte* buf, size_t bufferLength,
        checkMD5Match(), zip->close() */
     while (image->good()) {
 
-      if (optDebug()) {
-        cerr << "---------- main loop. off=" << off << " data=" << data
-             << " unmatchedStart=" << unmatchedStart << endl;
-      }
+      debug("---------- main loop. off=%1 data=%2 unmatchedStart=%3",
+            off, data, unmatchedStart);
 
       if (off >= nextReport) { // Keep user entertained
         reporter.scanningImage(off);
@@ -762,7 +750,8 @@ inline bool MkTemplate::scanImage(byte* buf, size_t bufferLength,
       if (unmatchedStart < newUnmatchedStart) {
         size_t toWrite = newUnmatchedStart - unmatchedStart;
         Paranoid(off - unmatchedStart <= bufferLength);
-        //cerr<<"off="<<off<<" unmatchedStart="<<unmatchedStart<<" buflen="<<bufferLength<<endl;
+        //debug("off=%1 unmatchedStart=%2 buflen=%3",
+        //      off, unmatchedStart, bufferLength);
         size_t writeStart = modSub(data, off - unmatchedStart,
                                    bufferLength);
         debugRangeInfo(unmatchedStart, unmatchedStart + toWrite,
@@ -782,8 +771,7 @@ inline bool MkTemplate::scanImage(byte* buf, size_t bufferLength,
       if (chaosOff == 0) chaosOff = bufferLength - 1; else --chaosOff;
       if ((acc & 0x7) == 0) {
         thisReadAmount = acc % thisReadAmount + 1;
-        if (optDebug())
-          cerr << "debug: thisReadAmount=" << thisReadAmount << endl;
+        debug("thisReadAmount=%1", thisReadAmount);
       }
 #     endif
       readBytes(*image, buf + data, thisReadAmount);
@@ -856,14 +844,10 @@ inline bool MkTemplate::scanImage(byte* buf, size_t bufferLength,
               &rsumBack, bufferLength, blockLength, blockMask,
               md5BlockLength);
         } // endif (matches->full())
-        if (optDebug()) {
-          cerr << ' ' << off << ": Event, matchesOff=";
-          if (matches->empty())
-            cerr << "(none)";
-          else
-            cerr << matches->nextEvent();
-          cerr << endl;
-        }
+        if (matches->empty())
+          debug(" %1: Event, matches empty", off);
+        else
+          debug(" %1: Event, matchesOff=%2", off, matches->nextEvent());
 
         /* Calculate MD5 for the previous md5ChunkLength (or less if
            at end of match) bytes, if necessary. If the calculated
@@ -955,13 +939,13 @@ bool MkTemplate::run(const string& imageLeafName,
   // Asserting this makes things easier in pass 2. Yes it is ">" not ">="
   Assert(cache->getMD5BlockLen() > cache->getBlockLen());
 
-  if (optDebug()) {
-    cerr << "nr of files: " << fileCount << " (" << blockBits << " bits)\n"
-         << "total bytes: " << fileSizeTotal << '\n'
-         << "blockLength: " << cache->getBlockLen() << '\n'
-         << "md5BlockLen: " << cache->getMD5BlockLen() << '\n'
-         << "bufLen (kB): " << bufferLength/1024 << '\n'
-         << "zipQual:     " << zipQual << endl;
+  if (debug) {
+    debug("Nr of files: %1 (%2 bits)", fileCount, blockBits);
+    debug("Total bytes: %1", fileSizeTotal);
+    debug("blockLength: %1", cache->getBlockLen());
+    debug("md5BlockLen: %1", cache->getMD5BlockLen());
+    debug("bufLen (kB): %1", bufferLength/1024);
+    debug("zipQual:     %1", zipQual);
   }
 
   MD5Sum templMd5Sum;
@@ -991,7 +975,6 @@ bool MkTemplate::run(const string& imageLeafName,
   // Add [Image], (re-)add [Parts]
   finalizeJigdo(imageLeafName, templLeafName, templMd5Sum);
 
-  if (optDebug())
-    cerr << "MkTemplate::run() finished" << endl;
+  debug("MkTemplate::run() finished");
   return result;
 }

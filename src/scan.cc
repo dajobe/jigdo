@@ -26,13 +26,12 @@
 #include <bstream.hh>
 #include <compat.hh>
 #include <configfile.hh>
+#include <log.hh>
 #include <scan.hh>
 #include <string.hh>
 #include <serialize.hh>
 
-#ifndef DEBUG_SCAN
-#  define DEBUG_SCAN (DEBUG && 0)
-#endif
+namespace { DebugLogger debug("scan"); }
 //______________________________________________________________________
 
 void JigdoCache::ProgressReporter::error(const string& message) {
@@ -87,13 +86,11 @@ size_t FilePart::unserializeCacheEntry(const byte* data, size_t dataSize,
   // Ignore strange-looking entries
   if (blocks * serialSizeOf(md5Sum) != dataSize - PART_MD5SUM
       || blocks == 0) {
-#   if DEBUG_SCAN
-    if (blocks == 0)
-      cerr << "Cache: ERR #blocks == 0" << endl;
-    else
-      cerr << "Cache: ERR wrong entry size (" << (blocks * 16) << " vs "
-           << (dataSize - PART_MD5SUM) << endl;
-#   endif
+    if (debug) {
+      if (blocks == 0) debug("ERR #blocks == 0");
+      else debug("ERR wrong entry size (%1 vs %2)",
+                 blocks * 16, dataSize - PART_MD5SUM);
+    }
     return 0;
   }
   Paranoid(serialSizeOf(rsyncSum) == 8);
@@ -187,9 +184,7 @@ JigdoCache::~JigdoCache() {
     for (list<FilePart>::const_iterator i = files.begin(), e = files.end();
          i != e; ++i) {
       if (i->deleted() || !i->getFlag(FilePart::TO_BE_WRITTEN)) continue;
-#     if DEBUG_SCAN
-      cerr << "Cache: writing " << i->leafName() << endl;
-#     endif
+      debug("Writing %1", i->leafName());
       FilePart::SerializeCacheEntry serializer(*i, this, blockLength,
                                                md5BlockLength);
       try {
@@ -247,21 +242,15 @@ const MD5* FilePart::getSumsRead(JigdoCache* c, size_t blockNr) {
          md5BlockLength matches, but returned blockLength doesn't, we
          need to re-read the first block. */
       if (c->cacheFile->find(data, dataSize, leafName(), size(), mtime())) {
-#       if DEBUG_SCAN
-        cerr << "Cache: " << leafName() << " found, want block#" << blockNr
-             << endl;
-#       endif
+        debug("%1 found, want block#%2", leafName(), blockNr);
         size_t cachedBlockLength = unserializeCacheEntry(data, dataSize,
                                                          c->md5BlockLength);
         // Was all necessary data in cache? Yes => return it now.
         if (cachedBlockLength == thisBlockLength
             && (blockNr == 0 || mdValid())) {
-#         if DEBUG_SCAN
-          cerr << "Cache: " << leafName() << " loaded, blockLen ("
-               << thisBlockLength << ") matched, "
-               << (mdValid() ? sums.size() : 1) << '/' << sums.size()
-               << " in cache" << endl;
-#         endif
+          debug("%1 loaded, blockLen (%2) matched, %3/%4 in cache",
+                leafName(), thisBlockLength, (mdValid() ? sums.size() : 1),
+                sums.size());
           return &sums[blockNr];
         }
         /* blockLengths didn't match and/or the cache only contained
@@ -269,12 +258,9 @@ const MD5* FilePart::getSumsRead(JigdoCache* c, size_t blockNr) {
            if we never queried the cache, except for the case when we
            need to re-read the first block because the blockLength
            changed, but *all* blocks' md5sums were in the cache. */
-#       if DEBUG_SCAN
-        cerr << "Cache: " << leafName() << " loaded, NO match (blockLen "
-             << cachedBlockLength << " vs " << thisBlockLength << "), "
-             << (mdValid() ? sums.size() : 1) << '/' << sums.size()
-             << " in cache" << endl;
-#       endif
+        debug("%1 loaded, NO match (blockLen %2 vs %3), %4/%5 in cache",
+              leafName(), cachedBlockLength, thisBlockLength,
+              (mdValid() ? sums.size() : 1), sums.size());
       }
     } catch (DbError e) {
       string err = subst(_("Error accessing cache: %1"), e.message);
@@ -341,9 +327,7 @@ const MD5* FilePart::getSumsRead(JigdoCache* c, size_t blockNr) {
     readBytes(input, bufpos, bufend - bufpos);
     size_t nn = input.gcount();
     bufpos += nn;
-#   if DEBUG_SCAN
-    cerr << name << ": Read " << nn << endl;
-#   endif
+    debug("Read %1", nn);
   }
   size_t n = bufpos - buf;
   // Create RsyncSum of 1st bytes of file, or leave at 0 if file too small
@@ -372,12 +356,10 @@ const MD5* FilePart::getSumsRead(JigdoCache* c, size_t blockNr) {
       size_t nn = n - mdLeft;
       do {
         md.finishForReuse();
-#       if DEBUG_SCAN
-        cerr << name << ": mdLeft (0), switching to next md "
-             << "at off " << off - n + cur - buf << ", left " << nn
-             << ", writing sum#" << (sum - sums.begin()) << ": "
-             << md << endl;
-#       endif
+        if (debug)
+          debug("%1: mdLeft (0), switching to next md at off %2, left %3, "
+                "writing sum#%4: %5", name, off - n + cur - buf, nn,
+                sum - sums.begin(), md.toString());
         Paranoid(sum != sums.end());
         *sum = md;
         ++sum;
@@ -396,9 +378,7 @@ const MD5* FilePart::getSumsRead(JigdoCache* c, size_t blockNr) {
     // Read more data
     readBytes(input, buf, c->readAmount);
     n = input.gcount();
-#   if DEBUG_SCAN
-    cerr << name << ": read " << n << endl;
-#   endif
+    debug("%1: read %2", name, n);
 
   } // Endwhile (true), will break out if error or whole file read
 
@@ -409,19 +389,15 @@ const MD5* FilePart::getSumsRead(JigdoCache* c, size_t blockNr) {
     c->reporter.scanningFile(this, size()); // 100% scanned
     if (mdLeft < c->md5BlockLength) {
       (*sum) = md.finish(); // Digest of trailing bytes
-#     if DEBUG_SCAN
-      cerr << name << ": writing trailing sum#"
-           << (sum - sums.begin()) << ": " << md << endl;
-#     endif
+      if (debug) debug("%1: writing trailing sum#%2: %3",
+                       name, sum - sums.begin(), md.toString());
     }
     md5Sum.finish(); // Digest of whole file
     setFlag(MD_VALID);
     return &sums[blockNr];
   } else if (blockNr == 0 && sum != sums.begin()) {
     // Only first md5 block of file was read
-#   if DEBUG_SCAN
-    cerr << name << ": file header read, sum#0 written" << endl;
-#   endif
+    debug("%1: file header read, sum#0 written", name);
 #   if DEBUG
     md5Sum.finish(); // else failed assert in FilePart::SerializeCacheEntry
 #   else

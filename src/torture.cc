@@ -65,9 +65,7 @@
 #  define SSIZE_MAX (UINT_MAX)
 #endif
 
-#ifndef DEBUG_TORTURE
-#  define DEBUG_TORTURE (DEBUG && 0)
-#endif
+DebugLogger debug("torture");
 //______________________________________________________________________
 
 /* I sometimes run torture on machines on which 'niced', the nice
@@ -401,18 +399,13 @@ namespace {
         info << mem << ' ' << i << '\n';
         writeBytes(img, files[i].data, files[i].size);
         imageMatches.push_back(Match(mem, i));
-#       if DEBUG_TORTURE
-        cerr << mem << ": Complete: #" << i << endl;
-#       endif
+        debug("%1: Complete: #%2", mem, i);
         mem += files[i].size;
       } else {
         // an incomplete file (some bytes missing at the end)
         int i = static_cast<int>(rand.rnd(files.size()));
         size_t size = static_cast<size_t>(rand.rnd(files[i].size-1));
-#       if DEBUG_TORTURE
-        cerr << mem << ": Incomplete: " << size << " bytes from #" << i
-             << endl;
-#       endif
+        debug("%1: Incomplete: %2 bytes from #%3", mem, size, i);
         writeBytes(img, &files[i].data[0], size);
         mem += size;
       }

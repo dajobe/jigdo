@@ -91,27 +91,35 @@ string Subst::subst(const char* format, int args, const Subst arg[]) {
     if (*i >= '1' && *i < max) {
       int n = *i - '1';
       switch (arg[n].type) {
-        case CHAR:     result += arg[n].val.charVal; break;
-        case CHAR_P:   result += arg[n].val.charPtr; break;
-        case STRING_P: result += *arg[n].val.stringPtr; break;
-        default:
-          switch (arg[n].type) {
-            case INT:
-              snprintf(buf, BUF_LEN, "%d", arg[n].val.intVal); break;
-            case UNSIGNED:
-              snprintf(buf, BUF_LEN, "%u", arg[n].val.unsignedVal); break;
-            case LONG:
-              snprintf(buf, BUF_LEN, "%ld", arg[n].val.longVal); break;
-            case ULONG:
-              snprintf(buf, BUF_LEN, "%lu", arg[n].val.ulongVal); break;
-#           if HAVE_UNSIGNED_LONG_LONG
-            case ULONGLONG:
-              snprintf(buf, BUF_LEN, "%llu", arg[n].val.ulonglongVal); break;
-#           endif
-            default: buf[0] = '\0'; break;
-          }
-          buf[BUF_LEN - 1] = '\0';
-          result += buf;
+        case INT:
+          snprintf(buf, BUF_LEN, "%d", arg[n].val.intVal);
+          buf[BUF_LEN - 1] = '\0'; result += buf; break;
+        case UNSIGNED:
+          snprintf(buf, BUF_LEN, "%u", arg[n].val.unsignedVal);
+          buf[BUF_LEN - 1] = '\0'; result += buf; break;
+        case LONG:
+          snprintf(buf, BUF_LEN, "%ld", arg[n].val.longVal);
+          buf[BUF_LEN - 1] = '\0'; result += buf; break;
+        case ULONG:
+          snprintf(buf, BUF_LEN, "%lu", arg[n].val.ulongVal);
+          buf[BUF_LEN - 1] = '\0'; result += buf; break;
+#       if HAVE_UNSIGNED_LONG_LONG
+        case ULONGLONG:
+          snprintf(buf, BUF_LEN, "%llu", arg[n].val.ulonglongVal);
+          buf[BUF_LEN - 1] = '\0'; result += buf; break;
+#       endif
+        case DOUBLE:
+          snprintf(buf, BUF_LEN, "%f", arg[n].val.doubleVal);
+          buf[BUF_LEN - 1] = '\0'; result += buf; break;
+        case CHAR:
+          result += arg[n].val.charVal; break;
+        case CHAR_P:
+          result += arg[n].val.charPtr; break;
+        case STRING_P:
+          result += *arg[n].val.stringPtr; break;
+        case POINTER:
+          snprintf(buf, BUF_LEN, "%p", arg[n].val.pointerVal);
+          buf[BUF_LEN - 1] = '\0'; result += buf; break;
       }
       continue;
     }

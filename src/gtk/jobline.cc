@@ -152,7 +152,5 @@ JobLine::~JobLine() {
 
 void JobLine::waitTick() {
   if (--waitCountdown == 0) callRegularly(waitDestination);
-# if DEBUG_JOBLIST
-    cerr << "waitCountdown=" << waitCountdown << endl;
-# endif
+  JobList::debug("waitCountdown=%1", waitCountdown);
 }

@@ -28,6 +28,7 @@
 
 #include <cstdlib>
 #include <iosfwd>
+#include <string>
 
 #include <bstream.hh>
 #include <debug.hh>
@@ -45,16 +46,19 @@ class MD5 {
 public:
   MD5() { }
   inline MD5(const MD5Sum& md);
-  /// 16 bytes of MD5 checksum
+  /** 16 bytes of MD5 checksum */
   byte sum[16];
-  /// Allows you to treat the object exactly like a pointer to a byte array
+  /** Allows you to treat the object exactly like a pointer to a byte
+      array */
   operator byte*() { return sum; }
   operator const byte*() const { return sum; }
-  /// Assign an MD5Sum
+  /** Assign an MD5Sum */
   inline MD5& operator=(const MD5Sum& md);
   inline bool operator<(const MD5& x) const;
-  /// Clear contents to zero
+  /** Clear contents to zero */
   inline MD5& clear();
+  /** Convert to string */
+  INLINE string toString() const;
 
   template<class Iterator>
   inline Iterator serialize(Iterator i) const;
@@ -123,6 +127,9 @@ public:
   /** Return 16 byte buffer with checksum. Warning: Returns junk if
       checksum not yet finish()ed or flush()ed. */
   inline const byte* digest() const;
+
+  /** Convert to string */
+  INLINE string toString() const;
 
   /** Read data from file and update() this checksum with it.
       @param s The stream to read from

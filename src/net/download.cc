@@ -28,24 +28,24 @@
 #include <download.hh>
 #include <glibwww.hh>
 #include <libwww.hh>
+#include <log.hh>
 #include <string-utf.hh>
 
-#ifndef DEBUG_DOWNLOAD
-#  define DEBUG_DOWNLOAD (DEBUG && 0)
-#endif
+namespace {
+  Logger debug("download");
+  Logger libwwwDebug("libwww");
+}
 //______________________________________________________________________
 
 string Download::userAgent;
 
 namespace {
-# if DEBUG_DOWNLOAD
+
   extern "C"
   int tracer(const char* fmt, va_list args) {
     vfprintf(stderr, fmt, args);
-    //return vfprintf(stdout, fmt, args);
     return HT_OK;
   }
-# endif
 
   BOOL nonono(HTRequest*, HTAlertOpcode, int, const char*, void*,
               HTAlertPar*) {
@@ -56,10 +56,10 @@ namespace {
 // Initialize (g)libwww
 void Download::init() {
   HTAlertInit();
-# if DEBUG_DOWNLOAD
-  HTSetTraceMessageMask("flbtspuhox");
-  HTTrace_setCallback(tracer);
-# endif
+  if (libwwwDebug) {
+    HTSetTraceMessageMask("flbtspuhox");
+    HTTrace_setCallback(tracer);
+  }
 
   HTEventInit(); // Necessary on Windows to initialize WinSock
   HTNet_setMaxSocket(32);
@@ -180,9 +180,7 @@ Download::~Download() {
    that any non-default settings (e.g. "Range" header) are reset before
    reusing it. */
 void Download::run(uint64 resumeOffset, bool pragmaNoCache) {
-# if DEBUG
-  cerr << "Download::run resumeOffset=" << resumeOffset << endl;
-# endif
+  debug("run resumeOffset=%1", resumeOffset);
   Assert(outputVal != 0); // Must have set up output
   Paranoid(request != 0); // Don't call this after stop()
   //Assert(destroyRequestId == 0); // No pending callback allowed from now on
@@ -226,24 +224,15 @@ void Download::run(uint64 resumeOffset, bool pragmaNoCache) {
    Return codes: HT_WOULD_BLOCK, HT_ERROR, HT_OK, >0 to pass back. */
 
 int Download::flush(HTStream* me) {
-  if (DEBUG) {
-    Download* self = getDownload(me);
-    cerr << "Download::free "<<self<<endl;
-  }
+  if (debug) debug("flush %1", getDownload(me));
   return HT_OK;
 }
 int Download::free(HTStream* me) {
-  if (DEBUG) {
-    Download* self = getDownload(me);
-    cerr << "Download::free "<<self<<endl;
-  }
+  if (debug) debug("free %1", getDownload(me));
   return HT_OK;
 }
 int Download::abort(HTStream* me, HTList*) {
-  if (DEBUG) {
-    Download* self = getDownload(me);
-    cerr << "Download::abort "<<self<<endl;
-  }
+  if (debug) debug("abort %1", getDownload(me));
   return HT_OK;
 }
 //________________________________________
@@ -317,18 +306,14 @@ bool Download::resumeCheck() {
     if (s == 0) break;
     uint64 startOff = 0;
     while (*s >= '0' && *s <= '9') startOff = startOff * 10 + (*s++ - '0');
-#   if DEBUG_DOWNLOAD
-    cerr << "Download::resumeCheck: resumeOffsetVal=" << resumeOffsetVal
-         << ", server offset=" << startOff << endl;
-#   endif
+    debug("resumeCheck: resumeOffsetVal=%1, server offset=%2",
+          resumeOffsetVal, startOff);
     if (startOff == resumeOffsetVal)
       return false;
   } while (false);
 
   // Error, resume not possible (e.g. because it's a HTTP 1.0 server)
-# if DEBUG_DOWNLOAD
-  cerr << "Download::resumeCheck: Resume not supported" << endl;
-# endif
+  debug("resumeCheck: Resume not supported");
   state = ERROR;
   string error = _("Resume not supported by server");
   outputVal->download_failed(&error);
@@ -351,12 +336,9 @@ BOOL Download::alertCallback(HTRequest* request, HTAlertOpcode op,
   char* host = "host";
   if (input != 0) host = static_cast<char*>(input);
 
-#if DEBUG
-  if (op != HT_PROG_READ) {
-    cerr << "Alert " << op << " for " << self->uri()
-         << " obj " << self << endl;
-  }
-#endif
+  if (debug && op != HT_PROG_READ)
+    debug("Alert %1 for %2 obj %3", op, self->uri(), self);
+
   string info;
   switch (op) {
   case HT_PROG_DNS:
@@ -424,8 +406,7 @@ int Download::afterFilter(HTRequest* request, HTResponse* /*response*/,
   case HT_PERM_REDIRECT: msg = "HT_PERM_REDIRECT"; break;
   case HT_TEMP_REDIRECT: msg = "HT_TEMP_REDIRECT"; break;
   }
-  cerr << "Status " << status << " (" << msg << ") for " << self->uri()
-       << " obj " << self << endl;
+  debug("Status %1 (%2) for %3 obj %4", status, msg, self->uri(), self);
 #endif
 
   // Download finished, or server dropped connection on us
@@ -520,9 +501,8 @@ void Download::pauseNow() {
   HTEvent_setTimeout(HTNet_event(net), -1); // No timeout for the socket
   SOCKET socket = HTNet_socket(net);
   HTEvent_unregister(socket, HTEvent_READ);
-# if DEBUG_DOWNLOAD
-  cerr << "Download::pauseNow(): unregistered socket " << int(socket)<<", event "<<(void*)HTNet_event(net)<<", cbf "<<(void*)HTNet_event(net)->cbf<< endl;
-# endif
+  debug("pauseNow: unregistered socket %1, event %2, cbf %3",
+        int(socket), (void*)HTNet_event(net), (void*)HTNet_event(net)->cbf);
 #endif
 }
 
@@ -553,9 +533,8 @@ void Download::cont() {
   HTEvent_setTimeout(event, HTHost_eventTimeout());
   SOCKET socket = HTNet_socket(net);
   HTEvent_register(socket, HTEvent_READ, event);
-# if DEBUG_DOWNLOAD
-  cerr << "Download::cont(): registered socket " << int(socket)<<", event "<<(void*)event<<", cbf "<<(void*)event->cbf<< endl;
-# endif
+  debug("cont: registered socket %1, event %2, cbf %3",
+        int(socket), (void*)event, (void*)event->cbf);
 #endif
 }
 //______________________________________________________________________
@@ -570,7 +549,7 @@ void Download::stop() {
   if (request != 0) {
 #   if DEBUG
     int status = HTNet_killPipe(HTRequest_net(request));
-    cerr << "Download::stop: HTNet_killPipe() returned " << status << endl;
+    debug("stop: HTNet_killPipe() returned %1", status);
 #   else
     HTNet_killPipe(HTRequest_net(request));
 #   endif
@@ -594,10 +573,8 @@ void Download::generateError(State newState) {
   int errIndex = 0;
   while ((err = static_cast<HTError*>(HTList_removeFirstObject(errList)))) {
     errIndex = HTError_index(err);
-#   if DEBUG
-    cerr << "  " << libwwwErrors[errIndex].code << ' '
-         << libwwwErrors[errIndex].msg << endl;
-#   endif
+    debug("  %1 %2",
+          libwwwErrors[errIndex].code, libwwwErrors[errIndex].msg);
   }
 
   string s;

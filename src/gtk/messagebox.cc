@@ -12,18 +12,15 @@
 */
 
 #include <config.h>
+
 #include <debug.hh>
 #include <gui.hh>
+#include <log.hh>
 #include <messagebox.hh>
 #include <string-utf.hh>
 #include <support.hh>
 
-#ifndef DEBUG_MESSAGEBOX
-#  define DEBUG_MESSAGEBOX (DEBUG && 0)
-#endif
-#if DEBUG_MESSAGEBOX
-#  include <iostream>
-#endif
+namespace { DebugLogger debug("messagebox"); }
 //______________________________________________________________________
 
 const char* const MessageBox::MESSAGE = "gtk-dialog-info";
@@ -122,9 +119,7 @@ MessageBox* MessageBox::show_noAutoClose() {
     GtkContainer* c = GTK_CONTAINER(GTK_DIALOG(dialog)->action_area);
     GList* l = gtk_container_get_children(c);
     if (l != 0 && g_list_nth(l, 1) == NULL) {
-#     if DEBUG_MESSAGEBOX
-      cerr << "MessageBox::show: single button, not cancel" << endl;
-#     endif
+      debug("Show: single button, not cancel");
       escapeButton = GTK_WIDGET(g_list_first(l)->data);
     }
   }
@@ -134,9 +129,7 @@ MessageBox* MessageBox::show_noAutoClose() {
 //______________________________________________________________________
 
 MessageBox::~MessageBox() {
-# if DEBUG_MESSAGEBOX
-  cerr << "MessageBox::~MessageBox this=" << this << " ref=" << ref << endl;
-# endif
+  debug("~MessageBox this=%1 ref=%2", this, ref);
   if (ref != 0) {
     Assert(ref->get() == this);
     ref->messageBox = 0;
@@ -174,27 +167,19 @@ GtkWidget* MessageBox::addStockButton(const char* buttonType,
 //______________________________________________________________________
 
 void MessageBox::destroyHandler(GtkDialog*, MessageBox* m) {
-# if DEBUG_MESSAGEBOX
-  cerr << "MessageBox::destroyHandler this=" << m << " dialog=" << m->dialog
-       << endl;
-# endif
+  debug("destroyHandler this=%1 dialog=%2", m, m->dialog);
   if (m->dialog != 0) delete m;
 }
 
 void MessageBox::autocloseHandler(GtkDialog*, int r, MessageBox* m) {
-# if DEBUG_MESSAGEBOX
-  cerr << "MessageBox::autoCloseHandler this=" << m << " dialog=" <<
-    m->dialog << " response=" << r << endl;
-# endif
+  debug("autoCloseHandler this=%1 dialog=%2 response=%3", m, m->dialog, r);
   if (r != GTK_RESPONSE_HELP) delete m;
 }
 
 void MessageBox::closeHandler(GtkDialog* dialog, MessageBox* m) {
   g_signal_stop_emission_by_name(dialog, "close");
   if (m->escapeButton != 0) {
-#   if DEBUG_MESSAGEBOX
-    cerr << "MessageBox::closeHandler click!" << endl;
-#   endif
+    debug("closeHandler click");
     g_signal_emit_by_name(G_OBJECT(m->escapeButton), "clicked",
                           m->escapeButton);
   }

@@ -35,6 +35,7 @@
 #include <configfile.hh>
 #include <debug.hh>
 #include <jigdoconfig.fh>
+#include <log.hh>
 #include <md5sum.hh>
 #include <rsyncsum.hh>
 #include <scan.fh>
@@ -112,6 +113,8 @@ private:
      Initial value for sectorLength. */
   static const unsigned INITIAL_SECTOR_LENGTH = 512;
   static const unsigned MAX_SECTOR_LENGTH = 65536;
+
+  static Logger debug;
 
   // Disallow assignment; op is never defined
   inline MkTemplate& operator=(const MkTemplate&);
@@ -248,7 +251,7 @@ void MkTemplate::setMatchExec(const string& me) { matchExec = me; }
 
 void MkTemplate::debugRangeInfo(uint64 start, uint64 end, const char* msg,
                                 const PartialMatch* x) {
-  if (optDebug()) printRangeInfo(start, end, msg, x);
+  printRangeInfo(start, end, msg, x);
   if (oldAreaEnd != start) debugRangeFailed();
   oldAreaEnd = end;
 }

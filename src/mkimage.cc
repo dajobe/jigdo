@@ -26,18 +26,18 @@
 #include <memory>
 
 #include <compat.hh>
+#include <log.hh>
 #include <mkimage.hh>
 #include <scan.hh>
 #include <serialize.hh>
 #include <string.hh>
 #include <zstream.hh>
 
-#ifndef DEBUG_MKIMAGE
-#  define DEBUG_MKIMAGE (DEBUG && 0)
-#endif
 //______________________________________________________________________
 
 namespace {
+
+DebugLogger debug("make-image");
 
 typedef JigdoDesc::ProgressReporter ProgressReporter;
 
@@ -79,9 +79,7 @@ void JigdoDesc::seekFromEnd(bistream& file) throw(JigdoDescError) {
   SerialIstreamIterator f(file);
   unserialize6(descLen, f);
   if (static_cast<uint64>(file.tellg()) < descLen) { // Is this cast correct?
-#   if DEBUG_MKIMAGE
-    cerr << "JigdoDesc::seekFromEnd1 descLen=" << descLen << endl;
-#   endif
+    debug("JigdoDesc::seekFromEnd1 descLen=%1", descLen);
     throw JigdoDescError(_("Invalid template data - corrupted file?"));
   }
 
@@ -99,10 +97,8 @@ void JigdoDesc::seekFromEnd(bistream& file) throw(JigdoDescError) {
     toRead -= n;
   } while (file.good() && toRead > 0);
   if (buf[0] != 'D' || buf[1] != 'E' || buf[2] != 'S' || buf[3] != 'C') {
-#   if DEBUG_MKIMAGE
-    cerr << "JigdoDesc::seekFromEnd2 " << int(buf[0]) << ' ' << int(buf[1])
-         << ' ' << int(buf[2]) << ' ' << int(buf[3]) << endl;
-#   endif
+    debug("JigdoDesc::seekFromEnd2 %1 %2 %3 %4",
+          int(buf[0]), int(buf[1]), int(buf[2]), int(buf[3]));
     throw JigdoDescError(_("Invalid template data - corrupted file?"));
   }
 }
@@ -120,9 +116,7 @@ bistream& JigdoDescVec::get(bistream& file)
   uint64 len;
   unserialize6(len, f); // descLen - 16, i.e. length of entries
   if (len < 45 || len > 256*1024*1024) {
-#   if DEBUG_MKIMAGE
-    cerr << "JigdoDescVec::get: DESC section too small/large" << endl;
-#   endif
+    debug("JigdoDescVec::get: DESC section too small/large");
     throw JigdoDescError(_("Invalid template data - corrupted file?"));
   }
   len -= 16;
@@ -144,10 +138,8 @@ bistream& JigdoDescVec::get(bistream& file)
       unserialize(entryMd5, f);
       unserialize4(blockLength, f);
       if (!file) break;
-#     if DEBUG_MKIMAGE
-      cerr << "JigdoDesc::read: ImageInfo " << entryLen << ' '
-           << entryMd5 << endl;
-#     endif
+      debug("JigdoDesc::read: ImageInfo %1 %2",
+            entryLen, entryMd5.toString());
       desc.reset(new JigdoDesc::ImageInfo(entryLen, entryMd5, blockLength));
       push_back(desc.release());
       read += 1 + 6 + entryMd5.serialSizeOf() + 4;
@@ -156,10 +148,7 @@ bistream& JigdoDescVec::get(bistream& file)
     case JigdoDesc::UNMATCHED_DATA:
       unserialize6(entryLen, f);
       if (!file) break;
-#     if DEBUG_MKIMAGE
-      cerr << "JigdoDesc::read: " << off << " UnmatchedData " << entryLen
-           << endl;
-#     endif
+      debug("JigdoDesc::read: %1 UnmatchedData %2", off, entryLen);
       desc.reset(new JigdoDesc::UnmatchedData(off, entryLen));
       push_back(desc.release());
       read += 1 + 6;
@@ -172,11 +161,10 @@ bistream& JigdoDescVec::get(bistream& file)
       unserialize(rsum, f);
       unserialize(entryMd5, f);
       if (!file) break;
-#     if DEBUG_MKIMAGE
-      cerr << "JigdoDesc::read: " << off << ' ' <<
-           (type == JigdoDesc::MATCHED_FILE ? "Matched" : "Written")
-           << "File " << entryLen << ' ' << entryMd5 << endl;
-#     endif
+      if (debug)
+        debug("JigdoDesc::read: %1 %2File %3 %4",
+              off, (type == JigdoDesc::MATCHED_FILE ? "Matched" : "Written"),
+              entryLen, entryMd5.toString());
       if (type == JigdoDesc::MATCHED_FILE)
         desc.reset(new JigdoDesc::MatchedFile(off, entryLen, rsum,entryMd5));
       else
@@ -192,10 +180,8 @@ bistream& JigdoDescVec::get(bistream& file)
       unserialize6(entryLen, f);
       unserialize(entryMd5, f);
       if (!file) break;
-#     if DEBUG_MKIMAGE
-      cerr << "JigdoDesc::read: old ImageInfo " << entryLen << ' '
-           << entryMd5 << endl;
-#     endif
+      if (debug) debug("JigdoDesc::read: old ImageInfo %1 %2",
+                       entryLen, entryMd5.toString());
       // Special case: passing blockLength==0, which is otherwise impossible
       desc.reset(new JigdoDesc::ImageInfo(entryLen, entryMd5, 0));
       push_back(desc.release());
@@ -207,11 +193,10 @@ bistream& JigdoDescVec::get(bistream& file)
       unserialize6(entryLen, f);
       unserialize(entryMd5, f);
       if (!file) break;
-#     if DEBUG_MKIMAGE
-      cerr << "JigdoDesc::read: " << off << " old " <<
-           (type == JigdoDesc::OBSOLETE_MATCHED_FILE ? "Matched" : "Written")
-           << "File " << entryLen << ' ' << entryMd5 << endl;
-#     endif
+      if (debug)
+        debug("JigdoDesc::read: %1 old %2File %3 %4", off,
+              (type == JigdoDesc::OBSOLETE_MATCHED_FILE ? "Matched" :
+               "Written"), entryLen, entryMd5.toString());
       /* Value of rsum is "don't care" because the ImageInfo's
          blockLength will be zero. */
       rsum.reset();
@@ -225,9 +210,7 @@ bistream& JigdoDescVec::get(bistream& file)
       break;
 
     default:
-#     if DEBUG_MKIMAGE
-      cerr << "JigdoDesc::read: unknown type " << type << endl;
-#     endif
+      debug("JigdoDesc::read: unknown type %1", type);
       throw JigdoDescError(_("Invalid template data - corrupted file?"));
     }
   }
@@ -243,10 +226,7 @@ bistream& JigdoDescVec::get(bistream& file)
     throw JigdoDescError(_("Invalid template data - corrupted file?"));
   JigdoDesc::ImageInfo* ii = dynamic_cast<JigdoDesc::ImageInfo*>(back());
   if (ii == 0 || ii->size() != off) {
-#   if DEBUG_MKIMAGE
-    if (ii != 0)
-      cerr << "JigdoDesc::read4: " << ii->size() << " != " << off << endl;
-#   endif
+    if (ii != 0) debug("JigdoDesc::read4: %1 != %2", ii->size(), off);
     throw JigdoDescError(_("Invalid template data - corrupted file?"));
   }
   return file;
@@ -490,10 +470,7 @@ namespace {
             JigdoDesc::UnmatchedData& self =
                 dynamic_cast<JigdoDesc::UnmatchedData&>(**i);
             uint64 toWrite = self.size();
-#           if DEBUG_MKIMAGE
-            cerr << "mkimage writeAll(): " << toWrite
-                 << " of unmatched data" << endl;
-#           endif
+            debug("mkimage writeAll(): %1 of unmatched data", toWrite);
             memClear(buf, readAmount);
             while (*img && toWrite > 0) {
               if (!data) {
@@ -517,12 +494,9 @@ namespace {
             uint64 toWrite = self->size();
             FilePart* mfile = 0;
             if (!toCopy.empty()) mfile = toCopy.front();
-#           if DEBUG_MKIMAGE
-            cerr << "mkimage writeAll(): FilePart@" << mfile << ", "
-                 << toWrite << " of matched file `"
-                 << (mfile != 0 ? mfile->leafName() : "")
-                 << "', toCopy size " << toCopy.size() << endl;
-#           endif
+            debug("mkimage writeAll(): FilePart@%1, %2 of matched file `%3',"
+                  " toCopy size %4", mfile, toWrite,
+                  (mfile != 0 ? mfile->leafName() : ""), toCopy.size());
             if (mfile == 0 || self->md5() != *(mfile->getMD5Sum(cache))) {
               // Write right amount of zeroes
               memClear(buf, readAmount);
@@ -562,9 +536,7 @@ namespace {
           case JigdoDesc::OBSOLETE_IMAGE_INFO:
           case JigdoDesc::OBSOLETE_MATCHED_FILE:
           case JigdoDesc::OBSOLETE_WRITTEN_FILE:
-#           if DEBUG_MKIMAGE
-            cerr << "mkimage writeAll(): invalid type " <<(*i)->type()<<endl;
-#           endif
+            debug("mkimage writeAll(): invalid type %1", (*i)->type());
             reporter.error(
                 _("Error - template data's DESC section invalid"));
             Assert(false); // A WrittenFile cannot occur here
@@ -628,12 +600,9 @@ namespace {
       if (self == 0) continue;
       FilePart* mfile = 0;
       if (!toCopy.empty()) mfile = toCopy.front();
-#     if DEBUG_MKIMAGE
-      cerr << "mkimage writeMerge(): FilePart@" << mfile << ", "
-           << self->size() << " of matched file `"
-           << (mfile != 0 ? mfile->leafName() : "")
-           << "', toCopy size " << toCopy.size() << endl;
-#     endif
+      debug("mkimage writeMerge(): FilePart@%1, %2 of matched file `%3', "
+            "toCopy size %4", mfile, self->size(),
+            (mfile != 0 ? mfile->leafName() : ""), toCopy.size());
       if (mfile == 0 || self->md5() != *(mfile->getMD5Sum(cache)))
         continue;
 
@@ -843,9 +812,7 @@ int JigdoDesc::makeImage(JigdoCache* cache, const string& imageFile,
       if (md != 0 && *md == m->md5()) {
         toCopy.push(&*ci); // Found matching file
         totalBytes += m->size();
-#       if DEBUG_MKIMAGE
-        cerr << m->md5() << " found, pushed " << &*ci << endl;
-#       endif
+        if (debug) debug("%1 found, pushed %2", m->md5().toString(), &*ci);
         found = true;
         break;
       }
@@ -856,11 +823,8 @@ int JigdoDesc::makeImage(JigdoCache* cache, const string& imageFile,
   }
   //____________________
 
-# if DEBUG_MKIMAGE
-  cerr << "JigdoDesc::mkImage: " << missing << " missing, " << toCopy.size()
-       << " found for copying to image, " << files.size()
-       << " entries in template" << endl;
-# endif
+  debug("JigdoDesc::mkImage: %1 missing, %2 found for copying to image, "
+        "%3 entries in template", missing, toCopy.size(), files.size());
 
   // Files appearing >1 times are counted >1 times for the message
   string missingInfo = subst(

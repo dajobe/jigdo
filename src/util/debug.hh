@@ -31,16 +31,16 @@
 #include <string>
 //______________________________________________________________________
 
-class OptDebug {
-public:
-  static bool optDebug() { return d; }
-  static void setOptDebug(bool dd) { d = dd; }
-private:
-  OptDebug(); // Do not instantiate
-  static bool d;
-};
+// class OptDebug {
+// public:
+//   static bool optDebug() { return d; }
+//   static void setOptDebug(bool dd) { d = dd; }
+// private:
+//   OptDebug(); // Do not instantiate
+//   static bool d;
+// };
 
-inline bool optDebug() { return OptDebug::optDebug(); }
+// inline bool optDebug() { return OptDebug::optDebug(); }
 //______________________________________________________________________
 
 // This prints an "Assertion failed" message

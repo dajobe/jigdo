@@ -47,10 +47,12 @@ public:
 # if HAVE_UNSIGNED_LONG_LONG
     Subst(unsigned long long x) { type = ULONGLONG; val.ulonglongVal = x; }
 # endif
+  Subst(double x)        { type = DOUBLE;   val.doubleVal = x; }
   Subst(char x)          { type = CHAR;     val.charVal = x; }
   Subst(const char* x)   { type = CHAR_P;   val.charPtr = x; }
   Subst(const string& x) { type = STRING_P; val.stringPtr = &x; }
   Subst(const string* x) { type = STRING_P; val.stringPtr = x; }
+  Subst(const void* x)   { type = POINTER;  val.pointerVal = x; }
   static string subst(const char* format, int args, const Subst arg[]);
 
 private:
@@ -60,7 +62,8 @@ private:
                              int flags);
 # endif
   enum {
-    INT, UNSIGNED, LONG, ULONG, ULONGLONG, CHAR, CHAR_P, STRING_P
+    INT, UNSIGNED, LONG, ULONG, ULONGLONG, DOUBLE, CHAR, CHAR_P, STRING_P,
+    POINTER
   } type;
   union {
     int intVal;
@@ -70,9 +73,11 @@ private:
 #   if HAVE_UNSIGNED_LONG_LONG
       unsigned long long ulonglongVal;
 #   endif
+    double doubleVal;
     char charVal;
     const char* charPtr;
     const string* stringPtr;
+    const void* pointerVal;
   } val;
 };
 //______________________________________________________________________
