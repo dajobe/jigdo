@@ -61,8 +61,8 @@ public:
   //Incorrect: bool bad() const { return fail(); }
   bool eof() const { return f == 0 || feof(f) != 0; }
   bool good() const { return !fail(); } // Incorrect?
-  void close() { fclose(f); f = 0; }
-  ~bios() { fclose(f); }
+  void close() { if (f != 0) fclose(f); f = 0; }
+  ~bios() { if (f != 0) fclose(f); }
 protected:
   bios() : f(0) { }
   bios(FILE* stream) : f(stream) { }
@@ -170,10 +170,11 @@ uint64 bistream::tellg() const {
 
 void bistream::getline(string& l) {
   gcountVal = 0;
+  l.clear();
   while (true) {
     int c = fgetc(f);
     if (c >= 0) ++gcountVal;
-    if (c == EOF || c == '\n') return;
+    if (c == EOF || c == '\n') break;
     l += static_cast<char>(c);
   }
 }
