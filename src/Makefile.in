@@ -76,10 +76,10 @@ objects-torture = cachefile.o compat.o configfile.o glibc-md5.o \
 .SUFFIXES:
 .SUFFIXES: .c .cc .h .o
 .cc.o:
-		-@echo $(CXX) '$$cpp $$cxx' -c $< -o $@
+		-@echo $(CXX) '$$cxx' -c $< -o $@
 		@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c "$<" -o "$@"
 .c.o:
-		-@echo $(CC) '$$cpp $$c  ' -c $< -o $@
+		-@echo $(CC) '$$c  ' -c $< -o $@
 		@$(CC) $(CPPFLAGS) $(CFLAGS) -c "$<" -o "$@"
 #______________________________________________________________________
 
@@ -90,8 +90,8 @@ all:		all-msg Makefile $(programs) @DEBUG_PROGRAMS@ #TAGS
 all-msg:
 		-@if test "$$EMACS" != t; then \
 		    echo "export cpp='$(CPPFLAGS)'"; \
-		    echo "export cxx='$(CXXFLAGS)'"; \
-		    echo "export c='$(CFLAGS)'"; \
+		    echo 'export cxx="$$cpp $(CXXFLAGS)"'; \
+		    echo 'export c="$$cpp $(CFLAGS)"'; \
 		fi
 #MinGW#all:	Makefile all-msg $(programs)
 #MinGW#all-msg:

@@ -25,15 +25,23 @@ GtkMakeImage::GtkMakeImage(const string& uriStr, const string& destination)
     mid(this, uriStr, destination) { }
 
 GtkMakeImage::~GtkMakeImage() {
-  // Delete all children
+  /* Delete all children. A simpler frontend would always delete them
+     immediately when makeImageDl_finished() is called, but with GTK+, we
+     leave them instantiated a few seconds (if child was successful) or until
+     now (if error). */
   GtkTreeIter x;
   GtkTreeModel* model = GTK_TREE_MODEL(jobList()->store());
-  if (gtk_tree_model_iter_children(model, &x, row()) == TRUE) {
-    do {
-      JobLine* child = jobList()->get(&x);
-      debug("~GtkMakeImage: Deleting child %1", child);
-      delete child;
-    } while (gtk_tree_model_iter_next(model, &x) == TRUE);
+//   if (gtk_tree_model_iter_children(model, &x, row()) == TRUE) {
+//     do {
+//       JobLine* child = jobList()->get(&x);
+//       debug("~GtkMakeImage: Deleting child %1", child);
+//       delete child;
+//     } while (gtk_tree_model_iter_next(model, &x) == TRUE);
+//   }
+  while (gtk_tree_model_iter_children(model, &x, row()) == TRUE) {
+    JobLine* child = jobList()->get(&x);
+    debug("~GtkMakeImage: Deleting child %1", child);
+    delete child;
   }
 }
 //______________________________________________________________________
@@ -48,7 +56,6 @@ bool GtkMakeImage::run() {
                      JobList::COLUMN_STATUS, treeViewStatus.c_str(),
                      JobList::COLUMN_OBJECT, "",
                      -1);
-
   mid.run();
 
   // By default, children of this object are visible
@@ -153,12 +160,12 @@ void GtkMakeImage::job_message(string* message) {
 }
 
 Job::DataSource::IO* GtkMakeImage::makeImageDl_new(
-    Job::DataSource* childDownload, const string& destDesc) {
-# if DEBUG
-  msg("GtkMakeImage::makeImageDl_new", 0);
-# endif
-  GtkSingleUrl* child = new GtkSingleUrl(mid.jigdoUri(), destDesc,
-                                         childDownload);
+    Job::DataSource* childDownload, const string& uri,
+    const string& destDesc) {
+// # if DEBUG
+//   msg("GtkMakeImage::makeImageDl_new", 0);
+// # endif
+  GtkSingleUrl* child = new GtkSingleUrl(uri, destDesc, childDownload);
   GUI::jobList.prepend(child, this); // New child of "this" is "child"
   bool status = child->run();
   /* NB run() cannot result in "delete child;" for child mode, so we always

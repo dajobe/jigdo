@@ -167,24 +167,18 @@ private:
   virtual void download_message(string* message);
 
   /** Stop download from idle callback. */
-  void stopLater();
+  //void stopLater();
 
   /* Write bytes at specified offset. Return FAILURE and call
      io->job_failed() if error during writing or if written data would
      exceed destEndOff. */
   inline bool writeToDestStream(uint64 off, const byte* data, unsigned size);
 
-  Download download; // download.run() called by ctor
+  Download download;
   Progress progressVal;
 
   // Call io->job_failed(), then stopLater()
   inline void resumeFailed();
-  /* A callback function which is registered if the download/resume needs to
-     be aborted. It'll get executed the next time the main glib loop is
-     executed. This delayed execution is necessary because libwww doesn't
-     like Download::stop() being called from download_newData(). */
-  static gboolean stopLater_callback(gpointer data);
-  unsigned int stopLaterId; // GTK idle function id, or 0 if none
 
   SmartPtr<BfstreamCounted> destStreamVal;
   uint64 destOff, destEndOff;
@@ -209,12 +203,11 @@ bool Job::SingleUrl::failed() const { return download.failed(); }
 bool Job::SingleUrl::succeeded() const { return download.succeeded(); }
 BfstreamCounted* Job::SingleUrl::destStream() const {
   return destStreamVal.get(); }
-// void Job::SingleUrl::setDestStream(bfstream* destStream) {
-//   destStreamVal = destStream;
-// }
+
 bool Job::SingleUrl::resumePossible() const {
   if (tries >= MAX_TRIES || !download.interrupted()) return false;
-  if (progressVal.currentSize() == 0) return true;
+  if (progressVal.currentSize() == 0
+      || progressVal.dataSize() == 0) return true;
   return (progressVal.dataSize() > 0
           && progressVal.currentSize() < progressVal.dataSize());
 }

@@ -102,7 +102,7 @@ void JobList::postGtkInit() {
   gtk_tree_view_append_column(view(), objectColumn);
 
   gtk_tree_view_set_expander_column(view(), objectColumn);
-  gtk_tree_view_set_reorderable(view(), TRUE);
+  gtk_tree_view_set_reorderable(view(), FALSE);
 
   /* In order to make the GUI easier to understand for first-time users,
      don't display list headers until their info is really appropriate. */

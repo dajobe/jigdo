@@ -122,6 +122,17 @@ void Download::init() {
 }
 //______________________________________________________________________
 
+void Download::uriJoin(string* dest, const string& base, const string& rel) {
+  if (HTURL_isAbsolute(rel.c_str())) {
+    *dest = rel;
+  } else {
+    char* joined = HTParse(rel.c_str(), base.c_str(), PARSE_ALL);
+    *dest = HTSimplify(&joined);
+    HT_FREE(joined);
+  }
+}
+//______________________________________________________________________
+
 namespace {
 
   inline Download* getDownload(HTRequest* request) {
@@ -136,10 +147,8 @@ namespace {
 
 Download::Download(const string& uri, Output* o)
     : uriVal(uri), resumeOffsetVal(0), resumeChecked(true), currentSize(0),
-      outputVal(o), request(0), state(CREATED) {
-# if DEBUG
-  insideNewData = false;
-# endif
+      outputVal(o), request(0), state(CREATED), stopLaterId(0),
+      insideNewData(false) {
   static const HTStreamClass downloadWriter = {
     "jigdoDownloadWriter", flush, free, abort, putChar, putString, write
   };
@@ -169,9 +178,10 @@ Download::Download(const string& uri, Output* o)
 //________________________________________
 
 Download::~Download() {
-  //outputVal->download_deleted();
-  //if (destroyRequestId != 0) g_source_remove(destroyRequestId);
+  Assert(insideNewData == false);
+
   if (request != 0) HTRequest_delete(request);
+  if (stopLaterId != 0) g_source_remove(stopLaterId);
 }
 //______________________________________________________________________
 
@@ -245,53 +255,52 @@ int Download::abort(HTStream*, HTList*) { return HT_OK; }
 #endif
 //________________________________________
 
-#if DEBUG
-#  define NEWDATA_BEGIN self->insideNewData = true;
-#  define NEWDATA_END   self->insideNewData = false;
-#else
-#  define NEWDATA_BEGIN
-#  define NEWDATA_END
-#endif
-
 int Download::putChar(HTStream* me, char c) {
   Download* self = getDownload(me);
-  NEWDATA_BEGIN;
-  //if (self->destroyRequestId != 0) return HT_OK;
-  if (!self->resumeChecked && self->resumeCheck()) return HT_ERROR;
-  //if (self->activated == 2) { self->state = ERROR; return HT_ERROR; }
+  if (self->stopLaterId != 0) return HT_OK;
+
+  self->insideNewData = true;
+  if (!self->resumeChecked && self->resumeCheck()) {
+    self->insideNewData = false;
+    return HT_ERROR;
+  }
   if (self->state == PAUSE_SCHEDULED) self->pauseNow();
   self->currentSize += 1;
   self->outputVal->download_data(reinterpret_cast<const byte*>(&c),
                                  1, self->currentSize);
-  NEWDATA_END;
+  self->insideNewData = false;
   return HT_OK;
 }
 int Download::putString(HTStream* me, const char* s) {
   Download* self = getDownload(me);
-  NEWDATA_BEGIN;
-  //if (self->destroyRequestId != 0) return HT_OK;
-  if (!self->resumeChecked && self->resumeCheck()) return HT_ERROR;
-  //if (self->activated == 2) { self->state = ERROR; return HT_ERROR; }
+  if (self->stopLaterId != 0) return HT_OK;
+  self->insideNewData = true;
+  if (!self->resumeChecked && self->resumeCheck()) {
+    self->insideNewData = false;
+    return HT_ERROR;
+  }
   if (self->state == PAUSE_SCHEDULED) self->pauseNow();
   size_t len = strlen(s);
   self->currentSize += len;
   self->outputVal->download_data(reinterpret_cast<const byte*>(s),
                                  len, self->currentSize);
-  NEWDATA_END;
+  self->insideNewData = false;
   return HT_OK;
 }
 int Download::write(HTStream* me, const char* s, int l) {
   Download* self = getDownload(me);
-  NEWDATA_BEGIN;
-  //if (self->destroyRequestId != 0) return HT_OK;
-  if (!self->resumeChecked && self->resumeCheck()) return HT_ERROR;
-  //if (self->activated == 2) { self->state = ERROR; return HT_ERROR; }
+  self->insideNewData = true;
+  if (self->stopLaterId != 0) return HT_OK;
+  if (!self->resumeChecked && self->resumeCheck()) {
+    self->insideNewData = false;
+    return HT_ERROR;
+  }
   if (self->state == PAUSE_SCHEDULED) self->pauseNow();
   size_t len = static_cast<size_t>(l);
   self->currentSize += len;
   self->outputVal->download_data(reinterpret_cast<const byte*>(s),
                                  len, self->currentSize);
-  NEWDATA_END;
+  self->insideNewData = false;
   return HT_OK;
 }
 //______________________________________________________________________
@@ -322,6 +331,7 @@ bool Download::resumeCheck() {
 
   // Error, resume not possible (e.g. because it's a HTTP 1.0 server)
   debug("resumeCheck: Resume not supported");
+  stop();
   state = ERROR;
   string error = _("Resume not supported by server");
   outputVal->download_failed(&error);
@@ -372,18 +382,6 @@ BOOL Download::alertCallback(HTRequest* request, HTAlertOpcode op,
       self->outputVal->download_dataSize(self->resumeOffset() + len);
     break;
   }
-//   case HT_PROG_WRITE:
-//     self->outputVal->info(_("Sending request"));
-//     break;
-//   case HT_PROG_DONE:
-//     self->output->finish(); is done by afterFilter instead
-//     break;
-//   case HT_PROG_INTERRUPT:
-//     self->outputVal->info(_("Interrupted"));
-//     break;
-//   case HT_PROG_TIMEOUT:
-//     self->outputVal->info(_("Timeout"));
-//     break;
   default:
     break;
   }
@@ -401,8 +399,8 @@ int Download::afterFilter(HTRequest* request, HTResponse* /*response*/,
                           void* /*param*/, int status) {
   Download* self = getDownload(request);
 
-  const char* msg = "";
 #if DEBUG
+  const char* msg = "";
   switch (status) {
   case HT_ERROR: msg = " (HT_ERROR)"; break;
   case HT_LOADED: msg = " (HT_LOADED)"; break;
@@ -414,8 +412,8 @@ int Download::afterFilter(HTRequest* request, HTResponse* /*response*/,
   case HT_PERM_REDIRECT: msg = " (HT_PERM_REDIRECT)"; break;
   case HT_TEMP_REDIRECT: msg = " (HT_TEMP_REDIRECT)"; break;
   }
-#endif
   debug("Status %1%2 for %L3 obj %4", status, msg, self->uri(), self);
+#endif
 
   // Download finished, or server dropped connection on us
   if (status >= 0) {
@@ -431,6 +429,10 @@ int Download::afterFilter(HTRequest* request, HTResponse* /*response*/,
   }
 
   // The connection dropped or there was a timeout
+  /* libwww returns just -1 (HT_ERROR) if I tear down the HTTP connection
+     very early, at a guess before the headers are transmitted completely.
+     Might want to add -1 in the if() below, but that's a very generic error
+     code... :-/ */
   if (status >= 0 || status == HT_INTERRUPTED || status == HT_TIMEOUT) {
     self->generateError(INTERRUPTED);
     return HT_OK;
@@ -548,13 +550,15 @@ void Download::cont() {
 //______________________________________________________________________
 
 void Download::stop() {
-# if DEBUG
-  /* stop() must not be called when libwww is delivering data, i.e. you must
-     not call it from anything which is called by your download_data()
-     method. */
-  Assert(insideNewData == false);
-# endif
-  if (request != 0) {
+  if (request == 0) return;
+  state = INTERRUPTED;//ERROR;//SUCCEEDED;
+  if (insideNewData) {
+    // Cannot call HTNet_killPipe() (sometimes segfaults), so do it later
+    if (stopLaterId != 0) return;
+    stopLaterId = g_idle_add_full(G_PRIORITY_HIGH_IDLE, &stopLater_callback,
+                                  (gpointer)this, NULL);
+    Assert(stopLaterId != 0); // because we use 0 as a special value
+  } else {
 #   if DEBUG
     int status = HTNet_killPipe(HTRequest_net(request));
     debug("stop: HTNet_killPipe() returned %1", status);
@@ -562,10 +566,23 @@ void Download::stop() {
     HTNet_killPipe(HTRequest_net(request));
 #   endif
   }
-  state = SUCCEEDED;
-  string err = _("Download stopped");
-  outputVal->download_failed(&err);
+  // None of this is really the right thing. Believe me, I tried both. ;-/
+  //string err = _("Download stopped");
+  //outputVal->download_failed(&err);
   //outputVal->download_succeeded();
+}
+
+gboolean Download::stopLater_callback(gpointer data) {
+  Download* self = static_cast<Download*>(data);
+  Assert(self->insideNewData == false);
+# if DEBUG
+  int status = HTNet_killPipe(HTRequest_net(self->request));
+  debug("stopLater_callback: HTNet_killPipe() returned %1", status);
+# else
+  HTNet_killPipe(HTRequest_net(request));
+# endif
+  self->stopLaterId = 0;
+  return FALSE; // "Don't call me again"
 }
 //______________________________________________________________________
 
@@ -573,10 +590,7 @@ void Download::stop() {
 /* If this is called, the Download is assumed to have failed in a
    non-recoverable way. */
 void Download::generateError(State newState) {
-  /* If state is ERROR or INTERRUPTED, we've already called download_failed()
-     - don't do it again. Ditto for SUCCEEDED and download_succeeded() */
-  if (state == newState && (state == ERROR || state == INTERRUPTED
-                            || state == SUCCEEDED)) return;
+  if (state == ERROR || state == INTERRUPTED || state == SUCCEEDED) return;
 
   Assert(request != 0);
   HTList* errList = HTRequest_error(request);
@@ -584,7 +598,7 @@ void Download::generateError(State newState) {
   int errIndex = 0;
   while ((err = static_cast<HTError*>(HTList_removeFirstObject(errList)))) {
     errIndex = HTError_index(err);
-    debug("  %1 %2",
+    debug("  %L1 %L2",
           libwwwErrors[errIndex].code, libwwwErrors[errIndex].msg);
   }
 

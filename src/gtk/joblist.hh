@@ -166,8 +166,8 @@ private:
   int needTicks;
   int timeoutId; // as returned by gtk_timeout_add()
 
-  int selectRowIdleId; // Callback avoids mult. calls to entries' selectRow()
-  //JobLine* selectRowTarget; // Which object to call selectRow() for
+  // Callback avoids mult. calls to entries' selectRow()
+  unsigned selectRowIdleId;
 };
 //______________________________________________________________________
 

@@ -14,7 +14,7 @@ build-deb: debian/changelog
 	dpkg-buildpackage -rfakeroot -us -uc -b
 	rm -f debian deb/changelog
 debian/changelog:
-	printf "jigdo (%s) unstable; urgency=low\n\n  * This version was built directly from upstream sources. It is not\n    an official Debian package.\n\n -- Richard Atterer <jigdo%satterer.net>  %s\n" "`cat VERSION`" "@" "`date -R`" >deb/changelog
+	printf "jigdo (%s) unstable; urgency=low\n\n  * This version was built directly from upstream sources. It is not\n    an official Debian package.\n\n -- Richard Atterer <jigdo%satterer.net>  %s\n" "`read a b v <jigdo.spec && echo $$v`" "@" "`date -R`" >deb/changelog
 src/Makedeps:
 	$(MAKE) depend
 

@@ -464,7 +464,7 @@ int JigdoFileCmd::printMissing(Command command) {
         // f.label()   points to "label=..." line, or end() if f.finished()
         // off is offset of part after "label=", or 0
         words.clear();
-        ConfigFile::split(words, f.label(), off);
+        ConfigFile::split(words, *f.label(), off);
         // Ignore everything but the first word
         if (printMissing_lookup(jc, words[0], false)) { found = true; break;}
       }
@@ -493,7 +493,7 @@ int JigdoFileCmd::printMissing(Command command) {
         // f.label()   points to "label=..." line, or end() if f.finished()
         // off is offset of part after "label=", or 0
         words.clear();
-        ConfigFile::split(words, f.label(), off);
+        ConfigFile::split(words, *f.label(), off);
         // Ignore everything but the first word
         printMissing_lookup(jc, words[0], true);
       }

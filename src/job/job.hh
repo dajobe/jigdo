@@ -129,7 +129,7 @@ public:
 
     </pre>*/
 template<class SomeIO>
-class IOPtr { // NB: No specialization for void* possible
+class IOPtr {
 public:
   IOPtr(SomeIO* io) : ptr(io) { }
   ~IOPtr() { if (ptr != 0) ptr->job_deleted(); }

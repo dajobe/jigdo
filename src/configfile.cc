@@ -345,9 +345,9 @@ size_t ConfigFile::Find::next() {
 //______________________________________________________________________
 
 // Returns true if s has been set to a valid word (which have length zero)
-bool ConfigFile::split1Word(string& s, const iterator& i,
+bool ConfigFile::split1Word(string* word, const string& s,
                             string::const_iterator& e) {
-  string::const_iterator end = i->end();
+  string::const_iterator end = s.end();
   enum {
     none,    // Outside any quotes
     dbl,     // Inside double quotes
@@ -364,27 +364,27 @@ bool ConfigFile::split1Word(string& s, const iterator& i,
       switch (state) {
       case none: state = dbl; break;
       case dbl: state = none; break;
-      case single: s += '"'; break;
+      case single: *word += '"'; break;
       }
     } else if (*e == '\'') {
       // Single quotes, enter/leave '' mode
       switch (state) {
       case none: state = single; break;
-      case dbl: s += '\''; break;
+      case dbl: *word += '\''; break;
       case single: state = none; break;
       }
     } else if (*e == ' ' || *e == '\t' || *e == '#') {
       // Whitespace - end word?
       if (state == none) return true;
-      s += *e;
+      *word += *e;
     } else if (*e == '\\') {
       if (state != single) {
         ++e;
         if (e == end) return true;
       }
-      s += *e;
+      *word += *e;
     } else {
-      s += *e;
+      *word += *e;
     }
     ++e;
   } while (e != end);

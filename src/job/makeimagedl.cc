@@ -17,6 +17,9 @@
 
 #include <stdio.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <fstream>
 #include <memory>
 
@@ -33,6 +36,10 @@ using namespace Job;
 //______________________________________________________________________
 
 DEBUG_UNIT("makeimagedl")
+
+const char* Job::MakeImageDl::destDescTemplateVal =
+    _("Cache entry %1  --  %2");
+//______________________________________________________________________
 
 namespace {
 
@@ -52,8 +59,8 @@ namespace {
 MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
                          const string& destination)
     : io(ioPtr), stateVal(DOWNLOADING_JIGDO),
-      jigdoUrl(jigdoUri), jigdo(0), dest(destination), tmpDirVal(),
-      mi(jigdoUri, this) {
+      jigdoUrl(jigdoUri), children(), dest(destination),
+      tmpDirVal(), mi(jigdoUri) {
   // Remove all trailing '/' from dest dir, even if result empty
   unsigned destLen = dest.length();
   while (destLen > 0 && dest[destLen - 1] == DIRSEP) --destLen;
@@ -80,7 +87,18 @@ MakeImageDl::MakeImageDl(IO* ioPtr, const string& jigdoUri,
 //______________________________________________________________________
 
 Job::MakeImageDl::~MakeImageDl() {
-  delete jigdo;
+  debug("~MakeImageDl");
+  // Delete all our children. NB ~Child will remove child from the list
+  while (!children.empty()) {
+    Child* x = &children.front();
+    debug("~MakeImageDl: delete %1", x);
+#   if DEBUG
+    if (!x->childSuccFail)
+      debug("childFailed()/Succeeded() not called for %1",
+            x->source() ? x->source()->location() : "[deleted source]");
+#   endif
+    delete x;
+  }
 }
 //______________________________________________________________________
 
@@ -107,18 +125,20 @@ void MakeImageDl::run() {
   auto_ptr<Child> childDl(childFor(jigdoUrl, 0, &leafname));
   if (childDl.get() != 0) {
     string info = _("Retrieving .jigdo data");
-    string destDesc = subst("%1  --  %2", leafname, info);
+    string destDesc = subst(destDescTemplate(), leafname, info);
+    Assert(io);
     auto_ptr<DataSource::IO> frontend(
-        io->makeImageDl_new(childDl->source(), destDesc) );
-    childDl->setChildIo(new JigdoIO(childDl.get(), frontend.get()));
+        io->makeImageDl_new(childDl->source(), jigdoUrl, destDesc) );
+    JigdoIO* jio = new JigdoIO(childDl.get(), jigdoUrl, frontend.get());
+    childDl->setChildIo(jio);
     frontend.release();
-    if (io) io->job_message(&info);
-    jigdo = childDl.release();
-    jigdo->source()->run();
+    io->job_message(&info);
+    (childDl.release())->source()->run();
   }
 }
 //______________________________________________________________________
 
+# if 0
 void MakeImageDl::error(const string& message) {
   throw Error(message);
 //   string e(message);
@@ -127,6 +147,7 @@ void MakeImageDl::error(const string& message) {
 void MakeImageDl::info(const string&) {
   Assert(false); // ATM, is never called!
 }
+#endif
 //______________________________________________________________________
 
 void MakeImageDl::writeReadMe() {
@@ -233,7 +254,7 @@ MakeImageDl::Child* MakeImageDl::childFor(const string& url, const MD5* md,
   }
   auto_ptr<SingleUrl> dl(new SingleUrl(0, url));
   dl->setDestination(f, 0, 0);
-  Child* c = new Child(this, dl.get(), contentMdKnown, cacheMd);
+  Child* c = new Child(this, &children, dl.get(), contentMdKnown, cacheMd);
   dl.release();
   return c;
 }
@@ -260,7 +281,7 @@ MakeImageDl::Child* MakeImageDl::childForCompleted(
     // Data with that MD5 known - no need to go on the net, imm. return it
     debug("childFor: already have %L1", filename);
     auto_ptr<CachedUrl> dl(new CachedUrl(0, filename, 0));
-    Child* c = new Child(this, dl.get(), contentMdKnown, cacheMd);
+    Child* c = new Child(this, &children, dl.get(), contentMdKnown, cacheMd);
     dl.release();
     return c;
   } else {
@@ -295,8 +316,12 @@ MakeImageDl::Child* MakeImageDl::childForSemiCompleted(
 }
 //______________________________________________________________________
 
+// frontend can be null
 void MakeImageDl::childSucceeded(
     Child* childDl, DataSource::IO* /*childIo*/, DataSource::IO* frontend) {
+# if DEBUG
+  childDl->childSuccFail = true;
+# endif
   if (frontend != 0)
     io->makeImageDl_finished(childDl->source(), frontend);
 
@@ -321,10 +346,31 @@ void MakeImageDl::childSucceeded(
     generateError(&err);
     return;
   }
+  delete childDl;
 }
 
 void MakeImageDl::childFailed(
     Child* childDl, DataSource::IO* /*childIo*/, DataSource::IO* frontend) {
+# if DEBUG
+  childDl->childSuccFail = true;
+# endif
   if (frontend != 0)
     io->makeImageDl_finished(childDl->source(), frontend);
+
+  // Delete partial output file if it is empty
+  string name = tmpDir();
+  name += DIRSEP;
+  appendLeafname(&name, childDl->contentMd, childDl->md);
+  toggleLeafname(&name);
+  childDl->deleteSource();
+
+  // FIXME: Uncomment if() once if-mod-since resume implemented
+//   struct stat fileInfo;
+//   if (stat(name.c_str(), &fileInfo) == 0 && fileInfo.st_size == 0) {
+    debug("rm -f %1", name);
+    remove(name.c_str());
+//   } else {
+//     debug("NO rm -f %1", name);
+//   }
+  delete childDl;
 }

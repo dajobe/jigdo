@@ -52,7 +52,8 @@ private:
   virtual void job_failed(string* message);
   virtual void job_message(string* message);
   virtual Job::DataSource::IO* makeImageDl_new(
-      Job::DataSource* childDownload, const string& destDesc);
+      Job::DataSource* childDownload, const string& uri,
+      const string& destDesc);
   virtual void makeImageDl_finished(Job::DataSource* childDownload,
                                     Job::DataSource::IO* yourIo);
 

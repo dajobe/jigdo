@@ -109,6 +109,8 @@ gboolean CachedUrl::spoolDataCallback(gpointer) {
     return FALSE; // "Don't call me again"
   }
 
+  // FIXME: Code below only lightly tested, probably buggy
+
   debug("Callback working");
   GTimeVal start;
   g_get_current_time(&start);

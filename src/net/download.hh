@@ -44,6 +44,10 @@ public:
   // Initialize libwww - call this before starting any downloads
   static void init();
 
+  /** Create a new URI from an absolute base URI and a relative URI. (rel can
+      also be absolute, in this case, the result in dest equals rel.) */
+  static void uriJoin(string* dest, const string& base, const string& rel);
+
   Download(const string& uri, Output* o /*= 0*/);
   ~Download();
 
@@ -92,8 +96,12 @@ public:
   /** Forcibly stop this download. Careful, in case we are pipelining it is
       unavoidable that other (pending and not pending) downloads in the same
       pipeline also fail; they'll have to be resumed.
-      stop() must not be called when libwww is delivering data, i.e. you must
-      not call it from your download_data() method. */
+      [outofdate:stop() must not be called when libwww is delivering data,
+      i.e. you must not call it from your download_data() method.]
+      stop() is special in that it neither calls job_failed() nor
+      job_succeeded(). Usually, you will have to call one or the other
+      (depending on context) to notify everyone that the request was
+      stopped. */
   void stop();
 
   /** Return the Output object */
@@ -136,6 +144,11 @@ private:
   void generateError(State newState = ERROR);
   // Set resumeChecked=true or create an error. Returns true if error.
   bool resumeCheck();
+  /* A callback function which is registered if the download needs to be
+     stopped. It'll get executed the next time the main glib loop is
+     executed. This delayed execution is necessary because libwww doesn't
+     like Download::stop() being called from download_newData(). */
+  static gboolean stopLater_callback(gpointer data);
 
   /* In order for this object to be a libwww stream, we need to supply a
      "vtbl pointer" for HTStream AS THE FIRST DATA MEMBER. */
@@ -148,14 +161,10 @@ private:
   HTRequest* request;
   State state;
 
-//   unsigned char activated; // Count of calls to activateRequestCallback
-//   static gboolean destroyRequestCallback(gpointer data);
-//   int destroyRequestId; // glib event ID for destroyRequestCallback
+  unsigned stopLaterId; // glib idle function id, or 0 if none
 
   static string userAgent;
-# if DEBUG
   bool insideNewData;
-# endif
 };
 //______________________________________________________________________
 

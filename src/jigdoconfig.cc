@@ -142,7 +142,7 @@ void JigdoConfig::rescan_makeSubst(list<ServerLine>& entries,
     Map::iterator mapl, const ServerLine& l, bool& printError) {
   // Split the value, "Foo:some/path", into whitespace-separated words
   vector<string> words;
-  ConfigFile::split(words, l.line, l.valueStart);
+  ConfigFile::split(words, *l.line, l.valueStart);
 # if 0
   if (words.size() > 1 && printError) {
     /* In the future, there might be support for --switches, so don't

@@ -152,11 +152,10 @@ public:
   /// Is character a space or tab?
   static inline bool isWhitespace(char x) { return x == ' ' || x == '\t'; }
 
-  /** Helper function, useful to post-process entry values: Given an
-      iterator and an offset in the string pointed to, extract the
-      entry value (everything starting with the specified offset) and
-      break it into whitespace-separated words, which are appended to
-      out. This does many things that a shell does:
+  /** Helper function, useful to post-process entry values: Given a string
+      and an offset in it, extract the entry value (everything starting with
+      the specified offset) and break it into whitespace-separated words,
+      which are appended to out. This does many things that a shell does:
       - Allow quoting with "" or ''. Whitespace between quotes does
         not cause the word to be split there.
       - Except inside '', escaping double quote, space, # or backslash
@@ -166,7 +165,7 @@ public:
       is undefined. (Possible future extension, TODO: Allow \ at end
       of line for multi-line entries?) */
   template<class Container> // E.g. vector<string>; anything with push_back()
-  static void split(Container& out, const iterator i, size_t offset = 0);
+  static void split(Container& out, const string& s, size_t offset = 0);
   /** Related to above; if necessary, modifies s in such a way that it
       stays one word: If it contains whitespace, " or \ then enclose
       it in '' and if it contains ' then enclose it in "" and
@@ -199,7 +198,7 @@ private:
   Line*& firstSect() { return endElem.nextSect; }
 
   /// Non-template helper function for split() that does the actual work
-  static bool split1Word(string& s, const iterator& i,
+  static bool split1Word(string* word, const string& s,
                          string::const_iterator& e);
 
   /// Default reporter: Only prints error messages to stderr
@@ -470,12 +469,12 @@ inline istream& operator>>(istream& s, ConfigFile& c) {
 //______________________________________________________________________
 
 template<class Container>
-void ConfigFile::split(Container& out, const iterator i, size_t offset) {
-  string s;
-  string::const_iterator e = i->begin() + offset;
-  while (split1Word(s, i, e)) {
+void ConfigFile::split(Container& out, const string& s, size_t offset) {
+  string word;
+  string::const_iterator e = s.begin() + offset;
+  while (split1Word(&word, s, e)) {
     out.push_back(string());
-    swap(s, out.back());
+    swap(word, out.back());
   }
 }
 

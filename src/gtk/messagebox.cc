@@ -82,6 +82,7 @@ void MessageBox::init(const char* type, int buttons,
   }
   msg = gtk_label_new(label.c_str());
   gtk_label_set_use_markup(GTK_LABEL(msg), TRUE);
+  gtk_label_set_selectable(GTK_LABEL(msg), TRUE);
   gtk_widget_show(msg);
   gtk_box_pack_end(GTK_BOX(hbox), msg, FALSE, FALSE, 0);
   gtk_label_set_line_wrap(GTK_LABEL(msg), TRUE);

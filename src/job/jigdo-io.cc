@@ -25,18 +25,55 @@ DEBUG_UNIT("jigdo-io")
 
 using namespace Job;
 
-JigdoIO::JigdoIO(MakeImageDl::Child* c, DataSource::IO* frontendIo)
-    : childDl(c), frontend(frontendIo), parent(0),
-      includeLine(0), firstChild(0), next(0),
-      rootAndImageSectionCandidate(0), gunzip(this), line(0),
-      imageSectionLine(0), imageName(), imageInfo(), imageShortInfo(),
-      templateMd5(0) { }
+namespace {
+
+  inline bool isWhitespace(char x) { return ConfigFile::isWhitespace(x); }
+
+  inline bool advanceWhitespace(string::const_iterator& x,
+                                const string::const_iterator& end) {
+    return ConfigFile::advanceWhitespace(x, end);
+  }
+
+  inline bool advanceWhitespace(string::iterator& x,
+                                const string::const_iterator& end) {
+    return ConfigFile::advanceWhitespace(x, end);
+  }
+}
+
+JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url,
+                 DataSource::IO* frontendIo)
+  : childDl(c), urlVal(url), frontend(frontendIo), parent(0), includeLine(0),
+    firstChild(0), next(0), rootAndImageSectionCandidate(0), line(0),
+    section(), imageSectionLine(0), imageName(), imageInfo(),
+    imageShortInfo(), templateMd5(0), childFailedId(0), gunzip(this) { }
+
+JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url,
+                 DataSource::IO* frontendIo, JigdoIO* parentJigdo,
+                 unsigned inclLine)
+  : childDl(c), urlVal(url), frontend(frontendIo), parent(parentJigdo),
+    includeLine(inclLine), firstChild(0), next(0),
+    rootAndImageSectionCandidate(0), line(0), section(), imageSectionLine(0),
+    imageName(), imageInfo(), imageShortInfo(), templateMd5(0),
+    childFailedId(0), gunzip(this) { }
 //______________________________________________________________________
 
 JigdoIO::~JigdoIO() {
   debug("~JigdoIO");
-  if (source() != 0) master()->childFailed(childDl, this, frontend);
-  // deleteSource(); will be called by the Child which owns us
+
+  if (childFailedId != 0) {
+    Assert(false); // Situation untested
+    g_source_remove(childFailedId);
+    childFailedId = 0;
+    master()->childFailed(childDl, this, frontend);
+  }
+
+  // Delete all our children
+  JigdoIO* x = firstChild;
+  while (x != 0) {
+    JigdoIO* y = x->next;
+    delete x;
+    x = y;
+  }
 }
 //______________________________________________________________________
 
@@ -60,31 +97,22 @@ Job::IO* JigdoIO::job_removeIo(Job::IO* rmIo) {
 
 void JigdoIO::job_deleted() {
   if (frontend != 0) frontend->job_deleted();
-  /* Do not "delete this" - childDl owns us and the SingleUrl, and will
-     delete us from its dtor. */
+  // Do not "delete this" - childDl owns us
 }
 
 void JigdoIO::job_succeeded() {
   if (failed()) return;
-  if (frontend != 0) {
-    frontend->job_succeeded();
-    master()->childSucceeded(childDl, this, frontend);
-    childDl->deleteSource();
-  }
+  if (frontend != 0) frontend->job_succeeded();
+  master()->childSucceeded(childDl, this, frontend);
 }
 
 void JigdoIO::job_failed(string* message) {
-  if (frontend != 0) {
-    frontend->job_failed(message);
-    string jigdoFailed = _("Download of .jigdo file failed");
-    master()->generateError(&jigdoFailed);
-    /* It might make sense to call this here, but we don't because if we did,
-       GtkSingleUrl would auto-remove the info about the child (including
-       error message) after a few seconds. It will be called from the dtor
-       instead.
-       master()->childFailed(childDl, this, frontend);
-       childDl->deleteSource(); */
-  }
+  Paranoid(!failed());
+  if (failed()) return;
+  if (frontend != 0) frontend->job_failed(message);
+  string err = _("Download of .jigdo file failed");
+  master()->generateError(&err);
+  master()->childFailed(childDl, this, frontend);
 }
 
 void JigdoIO::job_message(string* message) {
@@ -103,10 +131,8 @@ void JigdoIO::dataSource_data(const byte* data, size_t size,
   try {
     gunzip.inject(data, size);
   } catch (Error e) {
-    string err = subst("%L1:%2: %3", source()->location(), line, e.message);
-    job_failed(&err);
-    string jigdoFailed = _("Unzipping of .jigdo file failed");
-    master()->generateError(&jigdoFailed);
+    ++line;
+    generateError(e.message.c_str());
     return;
   }
   if (frontend != 0) frontend->dataSource_data(data, size, currentSize);
@@ -191,17 +217,36 @@ void JigdoIO::generateError(const char* msg) {
   string err;
   err = subst(_("%1 (line %2 in %3)"), msg, line,
               (source() != 0 ? source()->location().c_str() : "?") );
-  if (frontend) frontend->job_failed(&err);
-  err = _("Error scanning .jigdo file contents");
+  debug("generateError: %1", err);
+  Paranoid(!failed());
+  if (failed()) return;
+  if (frontend != 0) frontend->job_failed(&err);
+  err = _("Error processing .jigdo file contents");
   master()->generateError(&err);
-  //master()->childFailed(childDl, this, frontend);
-  section.assign("", 1); Paranoid(failed());
+
+  /* We cannot call this right now:
+     master()->childFailed(childDl, this, frontend);
+     so schedule a callback to call it later. */
+  childFailedId = g_idle_add_full(G_PRIORITY_HIGH_IDLE,&childFailed_callback,
+                                  (gpointer)this, NULL);
+  Paranoid(childFailedId != 0);
+  Paranoid(failed());
+}
+
+gboolean JigdoIO::childFailed_callback(gpointer data) {
+  JigdoIO* self = static_cast<JigdoIO*>(data);
+  debug("childFailed_callback for %1",
+        (self->source() != 0 ? self->source()->location().c_str() : "?") );
+  self->childFailedId = 0;
+  self->master()->childFailed(self->childDl, self, self->frontend);
+  // Careful - self was probably deleted by above call
+  return FALSE; // "Don't call me again"
 }
 //______________________________________________________________________
 
 // New line of jigdo data arrived. This is similar to ConfigFile::rescan()
 void JigdoIO::jigdoLine(string* l) {
-  debug("\"%1\"", l);
+  //debug("\"%1\"", l);
   string s;
   s.swap(*l);
   if (failed()) return;
@@ -210,41 +255,102 @@ void JigdoIO::jigdoLine(string* l) {
 
   string::const_iterator x = s.begin(), end = s.end();
   // Empty line, or only contains '#' comment
-  if (ConfigFile::advanceWhitespace(x, end)) return;
+  if (advanceWhitespace(x, end)) return;
 
   bool inComment = (section == "Comment" || section == "comment");
   if (*x != '[') {
-    if (inComment) ;
-    // TODO
+    // This is a "Label=Value" line
+    if (inComment) return;
+    string labelName;
+    while (!isWhitespace(*x) && *x != '=') { labelName += *x; ++x; }
+    if (advanceWhitespace(x, end) || *x != '=')
+      return generateError(_("No `=' after first word"));
+    ++x; // Skip '='
+    advanceWhitespace(x, end);
+    vector<string> value;
+    ConfigFile::split(value, s, x - s.begin());
+    entry(&labelName, &value);
     return;
   }
+  //____________________
 
+  // This is a "[Section]" line
   ++x; // Advance beyond the '['
-  if (ConfigFile::advanceWhitespace(x, end)) { // Skip space after '['
-    generateError(_("No closing `]' for section name"));
-    return;
-  }
+  if (advanceWhitespace(x, end)) // Skip space after '['
+    return generateError(_("No closing `]' for section name"));
   string::const_iterator s1 = x; // s1 points to start of section name
-  while (x != end && *x != ']' && !ConfigFile::isWhitespace(*x) && *x != '['
+  while (x != end && *x != ']' && !isWhitespace(*x) && *x != '['
          && *x != '=' && *x != '#') ++x;
   string::const_iterator s2 = x; // s2 points to end of section name
-  if (ConfigFile::advanceWhitespace(x, end)) {
-    generateError(_("No closing `]' for section name"));
-    return;
-  }
+  if (advanceWhitespace(x, end))
+    return generateError(_("No closing `]' for section name"));
   section.assign(s1, s2);
-  debug("Section `%1'", section);
+  //debug("Section `%1'", section);
   // In special case of "Include", format differs: URL after section name
   if (section == "Include") {
-    while (x != end && *x != ']') ++x; // Skip URL
+    string url;
+    while (x != end && *x != ']') { url += *x; ++x; }
+    int i = url.size();
+    while (i > 0 && isWhitespace(url[--i])) { }
+    url.erase(i + 1);
+    include(&url);
   }
-  if (*x != ']') {
-    generateError(_("Section name invalid"));
-    return;
-  }
+  if (*x != ']')
+    return generateError(_("Section name invalid"));
   ++x; // Advance beyond the ']'
-  if (!ConfigFile::advanceWhitespace(x, end)) {
-    generateError(_("Invalid characters after closing `]'"));
-    return;
-  }  
+  if (!advanceWhitespace(x, end))
+    return generateError(_("Invalid characters after closing `]'"));
+}
+//______________________________________________________________________
+
+// "[Include url]" found - add
+void JigdoIO::include(string* url) {
+  string includeUrl;
+  Download::uriJoin(&includeUrl, urlVal, *url);
+  debug("Include `%1'", includeUrl);
+
+  string leafname;
+  auto_ptr<MakeImageDl::Child> childDl(
+      master()->childFor(includeUrl, 0, &leafname));
+  if (childDl.get() != 0) {
+    string info = _("Retrieving .jigdo data");
+    string destDesc = subst(Job::MakeImageDl::destDescTemplate(),
+                            leafname, info);
+    auto_ptr<DataSource::IO> frontend(
+        master()->io->makeImageDl_new(childDl->source(), includeUrl,
+                                      destDesc) );
+    JigdoIO* jio = new JigdoIO(childDl.get(), includeUrl, frontend.get(),
+                               this, line);
+    childDl->setChildIo(jio);
+    frontend.release();
+    master()->io->job_message(&info);
+    (childDl.release())->source()->run();
+  }
+}
+//______________________________________________________________________
+
+void JigdoIO::entry(string* label, vector<string>* value) {
+# if DEBUG
+  string s;
+  for (vector<string>::iterator i = value->begin(), e = value->end();
+       i != e; ++i) { s += ConfigFile::quote(*i); s += ' '; }
+  debug("[%1] %2=%3", section, label, s);
+# endif
+
+  if (section == "Jigdo") {
+    if (*label == "Version") {
+      if (value->size() < 1) return generateError(_("Missing argument"));
+      int ver = 0;
+      string::const_iterator i = value->front().begin();
+      string::const_iterator e = value->front().end();
+      while (i != e && *i >= '0' && *i <= '9') {
+        ver = 10 * ver + *i - '0';
+        ++i;
+      }
+      if (ver > SUPPORTED_FORMAT)
+        return generateError(_("Upgrade of jigdo required - this .jigdo file"
+                               " requires a newer version of the program"));
+    }
+  }
+
 }

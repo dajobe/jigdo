@@ -21,6 +21,10 @@
 #ifndef JIGDO_IO_HH
 #define JIGDO_IO_HH
 
+#include <config.h>
+#include <vector>
+#include <string>
+
 #include <datasource.hh>
 #include <gunzip.hh>
 #include <jigdo-io.fh>
@@ -35,13 +39,22 @@ namespace Job {
 
 class Job::JigdoIO : NoCopy, public Job::DataSource::IO, Gunzip::IO {
 public:
+
+  /** The supported major version format number inside .jigdo files. E.g. "1"
+      means that this code will accept all .jigdo files whose [Jigdo]
+      sections contain "Version=" lines followed by 0.x or 1.x version
+      numbers. A hard (non-recoverable) error happens for 2.x or bigger
+      numbers. */
+  static const int SUPPORTED_FORMAT = 1;
+
   /** Create a new JigdoIO which is owned by m, gets data from download (will
       register itself with download's IOPtr) and passes it on to childIo.
       @param c Object which owns us (it is the MakeImageDl's child, but our
       master)
       @param download Gives the data of the .jigdo file to us
       @param childIo Provided by the frontend, e.g. a GtkSingleUrl object */
-  JigdoIO(MakeImageDl::Child* c, DataSource::IO* frontendIo);
+  JigdoIO(MakeImageDl::Child* c, const string& url,
+          DataSource::IO* frontendIo);
   ~JigdoIO();
   virtual Job::IO* job_removeIo(Job::IO* rmIo);
 
@@ -50,8 +63,9 @@ public:
 
 private:
   /* Create object for an [Include]d file */
-//   JigdoIO(MakeImageDl::Child* c, DataSource::IO* frontendIo,
-//           JigdoIO* parent, unsigned inclLine);
+  JigdoIO(MakeImageDl::Child* c, const string& url,
+          DataSource::IO* frontendIo, JigdoIO* parentJigdo,
+          unsigned inclLine);
 
   /** @return Root object of the include tree */
   inline JigdoIO* root();
@@ -73,6 +87,13 @@ private:
   inline bool failed() const;
   // Called by gunzip_data(): New .jigdo line ready. Arg is empty on exit.
   void jigdoLine(string* l);
+  void include(string* url); // "[Include http://xxx]" found
+  void entry(string* label, vector<string>* value);
+
+//   /* generateError() is called from within download_data(); must not delete
+//      source() by calling master->()generateError() immediately. */
+//   static gboolean generateError_callback(gpointer data);
+//   unsigned generateErrorId;
 
   // Virtual methods from DataSource::IO
   virtual void job_deleted();
@@ -90,6 +111,7 @@ private:
   virtual void gunzip_failed(string* message);
 
   MakeImageDl::Child* childDl;
+  string urlVal;
   DataSource::IO* frontend; // Object provided by frontend for this download
 
   /* Representation of the tree of [Include] directives. Most of the time,
@@ -104,20 +126,26 @@ private:
      Don't access directly, use accessor methods. */
   JigdoIO* rootAndImageSectionCandidate;
 
-  /* Transparent gunzipping of .jigdo file. GUNZIP_BUF_SIZE is also the max
-     size a single line in the .jigdo is allowed to have */
-  static const unsigned GUNZIP_BUF_SIZE = 16384;
-  byte gunzipBuf[GUNZIP_BUF_SIZE];
-  Gunzip gunzip;
-
   unsigned line; // Line number, for error messages
-  string section; // Section name, empty if none yet, single null byte if err
+  string section; // Section name, empty if none yet
 
   // Info about first image section of this .jigdo, if any
   unsigned imageSectionLine; // 0 if no [Image] found yet
   string imageName;
   string imageInfo, imageShortInfo;
   MD5* templateMd5;
+
+  /* When an error happens inside gunzip_data(), cannot immediately tell the
+     master about it, because it would delete the DataSource => the Download
+     would be deleted from within download_data(). */
+  static gboolean childFailed_callback(gpointer data);
+  int childFailedId;
+
+  /* Transparent gunzipping of .jigdo file. GUNZIP_BUF_SIZE is also the max
+     size a single line in the .jigdo is allowed to have */
+  static const unsigned GUNZIP_BUF_SIZE = 16384;
+  Gunzip gunzip;
+  byte gunzipBuf[GUNZIP_BUF_SIZE];
 };
 //______________________________________________________________________
 
@@ -148,7 +176,7 @@ Job::MakeImageDl* Job::JigdoIO::master() const { return childDl->master(); }
 Job::DataSource*  Job::JigdoIO::source() const { return childDl->source(); }
 
 bool Job::JigdoIO::failed() const {
-  return (section.size() == 1 && section[0] == '\0');
+  return (childFailedId != 0);
 }
 
 #endif
