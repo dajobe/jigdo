@@ -61,13 +61,12 @@ int main(int argc, char** argv) {
     curl_easy_setopt(h[i], CURLOPT_BUFFERSIZE, 1024*10);
     curl_easy_setopt(h[i], CURLOPT_WRITEFUNCTION, curlWriter);
     curl_easy_setopt(h[i], CURLOPT_WRITEDATA, "ABCDEFGHIJKLMN" + i);
-    curl_multi_add_handle(glibcurl_handle(), h[i]);
+    glibcurl_add(h[i]);
   }
-  glibcurl_start();
 
   /* Run main loop. Alternatively, you can use gtk_main() */
+  printf("Start\n");
   g_main_loop_run(gloop);
-
   printf("\nFinished, fetched %u bytes\n", nBytes);
 
   /* Clean up */

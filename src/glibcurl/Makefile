@@ -6,9 +6,9 @@
 
 CFLAGS =	-Wall -O2
 CPPFLAGS =	-I. \
-		$(shell pkg-config glib-2.0 --cflags) \
+		$(shell pkg-config gthread-2.0 --cflags) \
 		$(shell curl-config --cflags)
-LIBS =		$(shell pkg-config glib-2.0 --libs) \
+LIBS =		$(shell pkg-config gthread-2.0 --libs) \
 		$(shell curl-config --libs)
 
 all:		glibcurl-example

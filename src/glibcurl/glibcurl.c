@@ -24,8 +24,6 @@
 
 */
 
-/* #include <config.h> */
-
 #include <glib.h>
 #include <glibcurl.h>
 
@@ -33,6 +31,238 @@
 #include <string.h>
 #include <assert.h>
 /*______________________________________________________________________*/
+
+/* Timeout for the fds passed to glib's poll() call, in millisecs.
+   curl_multi_fdset(3) says we should call curl_multi_perform() at regular
+   intervals. */
+#define GLIBCURL_TIMEOUT 100000
+
+#define D(_args) fprintf _args;
+/* #define D(_args) */
+
+/* A structure which "derives" (in glib speak) from GSource */
+typedef struct CurlGSource_ {
+  GSource source; /* First: The type we're deriving from */
+
+  CURLM* multiHandle;
+  GThread* selectThread;
+  GCond* cond; /* To signal selectThread => main thread: call perform() */
+  GMutex* mutex; /* Not held by selectThread whenever it is waiting */
+
+  gboolean callPerform; /* TRUE => Call curl_multi_perform() Real Soon */
+  gboolean selectRunning; /* FALSE => selectThread terminates */
+
+  /* For data returned by curl_multi_fdset */
+  fd_set fdRead;
+  fd_set fdWrite;
+  fd_set fdExc;
+  int fdMax;
+
+} CurlGSource;
+
+/* Global state: Our CurlGSource object */
+static CurlGSource* curlSrc = 0;
+
+/* The "methods" of CurlGSource */
+static gboolean prepare(GSource* source, gint* timeout);
+static gboolean check(GSource* source);
+static gboolean dispatch(GSource* source, GSourceFunc callback,
+                         gpointer user_data);
+static void finalize(GSource* source);
+
+static GSourceFuncs curlFuncs = {
+  &prepare, &check, &dispatch, &finalize, 0, 0
+};
+/*______________________________________________________________________*/
+
+void glibcurl_init() {
+  /* Create source object for curl file descriptors, and hook it into the
+     default main context. */
+  curlSrc = (CurlGSource*)g_source_new(&curlFuncs, sizeof(CurlGSource));
+  g_source_attach(&curlSrc->source, NULL);
+
+  if (!g_thread_supported()) g_thread_init(NULL);
+
+  /* Init rest of our data */
+  curlSrc->callPerform = 0;
+  curlSrc->selectThread = 0;
+  curlSrc->cond = g_cond_new();
+  curlSrc->mutex = g_mutex_new();
+  
+  /* Init libcurl */
+  curl_global_init(CURL_GLOBAL_ALL);
+  curlSrc->multiHandle = curl_multi_init();
+}
+/*______________________________________________________________________*/
+
+void glibcurl_cleanup() {
+  /* You must call curl_multi_remove_handle() and curl_easy_cleanup() for all
+     requests before calling this. */
+/*   assert(curlSrc->callPerform == 0); */
+
+  g_cond_free(curlSrc->cond);
+  g_mutex_free(curlSrc->mutex);
+  /* All easy handles must be finished */
+  assert(curlSrc->selectThread == NULL);
+
+  curl_multi_cleanup(curlSrc->multiHandle);
+  curlSrc->multiHandle = 0;
+  curl_global_cleanup();
+
+  g_source_unref(&curlSrc->source);
+  curlSrc = 0;
+}
+/*______________________________________________________________________*/
+
+CURLM* glibcurl_handle() {
+  return curlSrc->multiHandle;
+}
+/*______________________________________________________________________*/
+
+CURLMcode glibcurl_add(CURL *easy_handle) {
+  assert(curlSrc != 0);
+  assert(curlSrc->multiHandle != 0);
+  glibcurl_start();
+  return curl_multi_add_handle(curlSrc->multiHandle, easy_handle);
+}
+/*______________________________________________________________________*/
+
+CURLMcode glibcurl_remove(CURL *easy_handle) {
+  D((stderr, "glibcurl_remove %p\n", easy_handle));
+  assert(curlSrc != 0);
+  assert(curlSrc->multiHandle != 0);
+  return curl_multi_remove_handle(curlSrc->multiHandle, easy_handle);
+}
+/*______________________________________________________________________*/
+
+/* Call this whenever you have added a request using
+   curl_multi_add_handle(). */
+void glibcurl_start() {
+  D((stderr, "glibcurl_start\n"));
+  curlSrc->callPerform = TRUE;
+}
+/*______________________________________________________________________*/
+
+void glibcurl_set_callback(GlibcurlCallback function, void* data) {
+  g_source_set_callback(&curlSrc->source, (GSourceFunc)function, data,
+                        NULL);
+}
+/*______________________________________________________________________*/
+
+static gpointer selectThread(gpointer data) {
+  int fdCount;
+/*   int multiCount; */
+/*   CURLMcode x; */
+  struct timeval timeout;
+
+  D((stderr, "selectThread\n"));
+  g_mutex_lock(curlSrc->mutex);
+  D((stderr, "selectThread: got lock\n"));
+
+  curlSrc->selectRunning = TRUE;
+  while (curlSrc->selectRunning) {
+
+    FD_ZERO(&curlSrc->fdRead);
+    FD_ZERO(&curlSrc->fdWrite);
+    FD_ZERO(&curlSrc->fdExc);
+    curlSrc->fdMax = -1;
+    /* What fds does libcurl want us to poll? */
+    curl_multi_fdset(curlSrc->multiHandle, &curlSrc->fdRead,
+                     &curlSrc->fdWrite, &curlSrc->fdExc, &curlSrc->fdMax);
+    timeout.tv_sec = GLIBCURL_TIMEOUT / 1000;
+    timeout.tv_usec = (GLIBCURL_TIMEOUT % 1000) * 1000;
+    fdCount = select(curlSrc->fdMax + 1, &curlSrc->fdRead, &curlSrc->fdWrite,
+                     &curlSrc->fdExc, &timeout);
+    D((stderr, "selectThread: select() fdCount=%d\n", fdCount));
+
+/*     if (fdCount <= 0) continue; */
+    /* PROBLEM: Ensure prepare() is called SOON. Call below doesn't work. */
+    g_main_context_wakeup(NULL);
+    D((stderr, "selectThread: Waiting for main to call perform()\n"));
+    g_cond_wait(curlSrc->cond, curlSrc->mutex);
+/*     D((stderr, "selectThread: cond_waited\n")); */
+
+/*     if (multiCount == 0) break; */
+
+  } /* endwhile (TRUE) */
+
+  curlSrc->selectThread = NULL;
+  D((stderr, "selectThread: exit\n"));
+  g_mutex_unlock(curlSrc->mutex);
+  return NULL;
+}
+/*______________________________________________________________________*/
+
+/* Returning FALSE may cause the main loop to block indefinitely, but that is
+   not a problem, we use g_main_context_wakeup to wake it up */
+gboolean prepare(GSource* source, gint* timeout) {
+  D((stderr, "prepare: callPerform=%d, thread=%p\n",
+     curlSrc->callPerform, curlSrc->selectThread));
+  
+  *timeout = -1;
+
+  /* Always dispatch if callPerform */
+  if (curlSrc->callPerform) {
+    curlSrc->callPerform = FALSE;
+    /* PROBLEM: May block for up to 1 sec if selectThread in select() */
+    g_mutex_lock(curlSrc->mutex);
+    if (curlSrc->selectThread == NULL) {
+      D((stderr, "prepare: starting select thread\n"));
+      /* Note that the thread will stop soon because we hold mutex */
+      curlSrc->selectThread = g_thread_create(&selectThread, curlSrc, FALSE,
+                                              NULL);
+      assert(curlSrc->selectThread != NULL);
+    }
+    return TRUE;
+  }
+
+  if (curlSrc->selectThread == NULL) return FALSE;
+
+  /* Test whether selectThread wants us to dispatch. We can tell that it's
+     waiting in g_cond_wait() by the fact that mutex is unlocked.
+     Locked by selectThread => return FALSE here, do nothing.
+     Otherwise, lock it, return TRUE */
+  return g_mutex_trylock(curlSrc->mutex);
+}
+/*______________________________________________________________________*/
+
+/* Called after all the file descriptors are polled by glib. */
+/* Returns TRUE iff it holds the mutex lock */
+gboolean check(GSource* source) {
+  return FALSE;
+}
+/*______________________________________________________________________*/
+
+gboolean dispatch(GSource* source, GSourceFunc callback,
+                  gpointer user_data) {
+  CURLMcode x;
+  int multiCount;
+
+  do {
+    x = curl_multi_perform(curlSrc->multiHandle, &multiCount);
+    D((stderr, "dispatched: code=%d, reqs=%d\n", x, multiCount));
+  } while (x == CURLM_CALL_MULTI_PERFORM);
+
+  if (multiCount == 0)
+    curlSrc->selectRunning = FALSE;
+
+  /* Let selectThread call select() again */
+  g_mutex_unlock(curlSrc->mutex);
+  g_cond_signal(curlSrc->cond);
+  g_thread_yield();
+
+  if (callback != 0) (*callback)(user_data);
+
+  return TRUE; /* "Do not destroy me" */
+}
+/*______________________________________________________________________*/
+
+void finalize(GSource* source) {
+  assert(source == &curlSrc->source);
+}
+/*======================================================================*/
+
+#if 0
 
 /* Number of highest allowed fd */
 #define GLIBCURL_FDMAX 127
@@ -293,6 +523,8 @@ void finalize(GSource* source) {
   assert(source == &curlSrc->source);
   registerUnregisterFds();
 }
+
+#endif
 /*______________________________________________________________________*/
 
 void glibcurl_add_proxy(const gchar *protocol, const gchar *proxy) { }
