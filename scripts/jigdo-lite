@@ -1,6 +1,6 @@
 #! /bin/sh
 # Poor man's jigdo - download and assemble Jigsaw Download files
-# Copyright 2001-2003 Richard Atterer
+# Copyright 2001-2004 Richard Atterer
 # Portability improvements by J.A. Bezemer, Jan 2002
 # License: GPL version 2
 
@@ -590,16 +590,6 @@ imageDownload() {
         --template="$template" $jigdoOpts $uriOpts \
       | egrep -i '^(http:|ftp:|$)' >"$list"
       missingCount=`egrep '^$' <"$list" | wc -l | sed -e 's/ *//g'`
-      if test "$pass" = "x"; then
-        totalCount="$missingCount"
-      elif test "$missingCount" -ge 25 -a \
-        "`expr 100 \* $missingCount / $totalCount`" -ge "$maxMissing"; then
-        echo
-        echo "Too many files ($missingCount out of $totalCount) are missing"
-        echo "- I will not try to retrieve the remaining files from any"
-        echo "alternative download locations"
-        break;
-      fi
       # Accumulate URLs in $@, pass them to fetchAndMerge in batches
       shift "$#" # Solaris /bin/sh doesn't understand "set --"
       count=""
