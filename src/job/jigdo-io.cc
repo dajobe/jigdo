@@ -535,14 +535,14 @@ void JigdoIO::entry(string* label, string* data, unsigned valueOff) {
   } else if (section == "Jigdo") {
     if (*label == "Version") {
       if (value.empty()) return generateError(_("Missing argument"));
-      int ver = 0;
+      unsigned ver = 0;
       string::const_iterator i = value.front().begin();
       string::const_iterator e = value.front().end();
       while (i != e && *i >= '0' && *i <= '9') {
         ver = 10 * ver + *i - '0';
         ++i;
       }
-      if (ver > SUPPORTED_FORMAT)
+      if (ver > FILEFORMAT_MAJOR)
         return generateError(_("Upgrade required - this .jigdo file needs "
                                "a newer version of the jigdo program"));
     }

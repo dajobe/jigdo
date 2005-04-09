@@ -69,12 +69,15 @@ JigdoConfig::JigdoConfig(const char* jigdoFile, ProgressReporter& pr)
   f >> *config;
 
   rescan();
+
 # if DEBUG
-  debug("[Servers] mapping is:");
-  for (Map::iterator i = serverMap.begin(), e =serverMap.end(); i != e; ++i){
-    for (vector<string>::iterator j = i->second.begin(), k = i->second.end();
-         j != k; ++j)
-      debug("    %1 => %2", i->first, *j);
+  if (debug.enabled()) {
+    debug("[Servers] mapping is:");
+    for (Map::iterator i = serverMap.begin(), e =serverMap.end(); i != e; ++i){
+      for (vector<string>::iterator j = i->second.begin(), k = i->second.end();
+           j != k; ++j)
+        debug("    %1 => %2", i->first, *j);
+    }
   }
 # endif
 }
@@ -135,6 +138,8 @@ void JigdoConfig::rescan() {
     debug("rescan: `%1'", label);
     rescan_addLabel(entries, label, printError);
   }
+
+  scanVersionInfo();
 }
 //________________________________________
 
@@ -267,4 +272,30 @@ JigdoConfig::Map::iterator JigdoConfig::rescan_addLabel(
     entries.erase(i);
   }
   return mapl;
+}
+//______________________________________________________________________
+
+void JigdoConfig::scanVersionInfo() {
+  ConfigFile::iterator versionLine = config->firstSection("Jigdo");
+  if (versionLine == config->end()) return;
+  size_t n = versionLine.nextLabel("Version");
+  if (n == 0) return;
+
+  vector<string> value;
+  ConfigFile::split(value, *versionLine, n);
+  if (value.empty()) return;
+
+  unsigned ver = 0;
+  string::const_iterator i = value.front().begin();
+  string::const_iterator e = value.front().end();
+  while (i != e && *i >= '0' && *i <= '9') {
+    ver = 10 * ver + *i - '0';
+    ++i;
+  }
+  debug("scanVersionInfo major=%1", ver);
+  if (ver > FILEFORMAT_MAJOR) {
+    throw Error(_("Upgrade required - this .jigdo file needs "
+                  "a newer version of the jigdo program"));
+    //freporter.reporter->error(err);
+  }
 }

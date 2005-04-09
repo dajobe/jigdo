@@ -40,13 +40,6 @@ namespace Job {
 class Job::JigdoIO : NoCopy, public Job::DataSource::IO, Gunzip::IO {
 public:
 
-  /** The supported major version format number inside .jigdo files. E.g. "1"
-      means that this code will accept all .jigdo files whose [Jigdo]
-      sections contain "Version=" lines followed by 0.x or 1.x version
-      numbers. A hard (non-recoverable) error happens for 2.x or bigger
-      numbers. */
-  static const int SUPPORTED_FORMAT = 1;
-
   /** Create a new JigdoIO which is owned by m, gets data from download (will
       register itself with download's IOPtr) and passes it on to childIo.
       @param c Object which owns us (it is the MakeImageDl's child, but our
