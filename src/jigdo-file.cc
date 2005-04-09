@@ -239,7 +239,7 @@ void MyProgressReporter::print(string s, bool addNewline) {
 /* If stdout is redirected to a file, the file should just contain the
    progress reports, none of the padding space chars. */
 void MyProgressReporter::coutInfo(const string& message) {
-  cout << message;
+  cout << message << flush;
   if (message.size() < prevLine.size()) {
     size_t nrSpaces = prevLine.size() - message.size();
     while (nrSpaces >= 10) { cerr << "          "; nrSpaces -= 10; }
