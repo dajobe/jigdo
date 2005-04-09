@@ -230,7 +230,7 @@ void MyProgressReporter::print(string s, bool addNewline) {
     prevLine = "";
   } else {
     // Yes, overwrite with next message
-    cerr << '\r';
+    cerr << '\r' << flush;
     prevLine = s;
   }
 }
@@ -239,14 +239,14 @@ void MyProgressReporter::print(string s, bool addNewline) {
 /* If stdout is redirected to a file, the file should just contain the
    progress reports, none of the padding space chars. */
 void MyProgressReporter::coutInfo(const string& message) {
-  cout << message << flush;
+  cout << message << flush; // Need to flush because we mix cout and cerr
   if (message.size() < prevLine.size()) {
     size_t nrSpaces = prevLine.size() - message.size();
     while (nrSpaces >= 10) { cerr << "          "; nrSpaces -= 10; }
     if (nrSpaces > 0) cerr << ("         " + 9 - nrSpaces);
   }
   cout << endl;
-  cerr << '\r';
+  cerr << '\r' << flush;
   /* Ensure good-looking progress reports even if cout goes to a file
      and cerr to the terminal. */
   if (message.size() > prevLine.size())
