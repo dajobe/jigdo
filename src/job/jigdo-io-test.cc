@@ -40,7 +40,7 @@ namespace {
   typedef map<string, const char*> MapWww;
   MapWww www;
 
-  /* Special DataSource which outputs data from memory */
+  /** Special DataSource which outputs data from memory */
   class MemData : public Job::DataSource {
   public:
     /* If contents == 0, will call job_failed() */

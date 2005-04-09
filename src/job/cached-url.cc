@@ -62,6 +62,7 @@ const Progress* CachedUrl::progress() const { return &progressVal; }
 const string& CachedUrl::location() const { return filenameVal; }
 
 void CachedUrl::run() {
+  debug("CachedUrl %1 run()", this);
   IOSOURCE_SEND(DataSource::IO, io,
                 dataSource_dataSize, (progressVal.dataSize()));
   cont();

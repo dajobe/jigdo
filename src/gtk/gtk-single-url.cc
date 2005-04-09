@@ -124,6 +124,7 @@ void GtkSingleUrl::openOutputAndRun(/*bool pragmaNoCache*/) {
   // Allocate job and run it
   status = _("Waiting...");
   if (job == 0) job = singleUrl = new Job::SingleUrl(uri);
+  debug("singleUrl=%1", singleUrl);
   singleUrl->io.addListener(*this);
   singleUrl->setDestination(destStream.get(), 0, 0);
   //singleUrl->setPragmaNoCache(pragmaNoCache);
@@ -148,6 +149,7 @@ void GtkSingleUrl::openOutputAndResume() {
                      Job::SingleUrl::RESUME_SIZE / 1024);
       updateWindow();
       if (job == 0) job = singleUrl = new Job::SingleUrl(uri);
+      debug("singleUrl=%1", singleUrl);
       iList_remove();
       singleUrl->io.addListener(*this);
       singleUrl->setResumeOffset(fileInfo.st_size);
@@ -378,7 +380,7 @@ void GtkSingleUrl::resumeResponse(GtkDialog*, int r, gpointer data) {
 
 /* The job whose io ptr references us is being deleted. */
 void GtkSingleUrl::job_deleted() {
-  debug("job_deleted");
+  debug("job_deleted job=singleUrl=0");
   job = singleUrl = 0;
   return;
 }
@@ -428,6 +430,7 @@ void GtkSingleUrl::job_failed(const string& message) {
      JobLine doesn't overwrite all data from the first one, we end up with
      file contents like "data from 2nd download" + "up to a page full of null
      bytes" + "stale data from 1st download". */
+  Paranoid(singleUrl != 0);
   if (!childMode) singleUrl->setDestination(0, 0, 0);
   destStream.clear();
   if (state != STOPPED) state = ERROR;

@@ -71,6 +71,7 @@ void SingleUrl::setDestination(BfstreamCounted* destStream,
 }
 
 void SingleUrl::run() {
+  debug("SingleUrl %1 run()", this);
   if (!haveResumeOffset) setResumeOffset(0);
   haveResumeOffset = false;
   if (!haveDestination) setDestination(0, 0, 0);

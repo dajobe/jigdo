@@ -56,35 +56,22 @@ public:
   /** Calls close(), which might throw a Zerror exception! Call
       close() before destroying the object to avoid this. */
   virtual ~Zobstream() { close(); delete zipBuf; Assert(todoBuf == 0); }
-//   inline Zobstream(bostream& s, size_t chunkLimit,
-//                    int level = Z_DEFAULT_COMPRESSION, int windowBits = 15,
-//                    int memLevel = 8, size_t todoBufSz = 256U,
-//                    MD5Sum* md = 0);
   bool is_open() const { return stream != 0; }
-  /** @param s Output stream
-      @param chunkLimit Size limit for output data, will buffer this much
-      @param level 0 to 9
-      @param windowBits zlib param
-      @param memLevel zlib param
-      @param todoBufSz Size of mini buffer, which holds data sent to
-      the stream with single put() calls or << statements */
-//   void open(bostream& s, size_t chunkLimit, int level =Z_DEFAULT_COMPRESSION,
-//             int windowBits = 15, int memLevel = 8, size_t todoBufSz = 256U);
-  /// Forces any remaining data to be compressed and written out
+  /** Forces any remaining data to be compressed and written out */
   void close();
 
-  /// Get reference to underlying ostream
+  /** Get reference to underlying ostream */
   bostream& getStream() { return *stream; }
 
-  /// Output 1 character
+  /** Output 1 character */
   inline Zobstream& put(unsigned char x);
   inline Zobstream& put(signed char x);
-  /// Output the low 8 bits of an integer
+  /** Output the low 8 bits of an integer */
   inline Zobstream& put(int x);
   inline Zobstream& put(char x);
-  /// Output 32 bit integer in little-endian order
+  /** Output 32 bit integer in little-endian order */
   Zobstream& put(uint32 x);
-  /// Output n characters
+  /* Output n characters */
 //   inline Zobstream& write(const char* x, size_t n);
 //   inline Zobstream& write(const signed char* x, size_t n);
 //   Zobstream& write(const unsigned char* x, size_t n);
@@ -218,7 +205,7 @@ public:
 //   inline Zibstream& read(const void* x, size_t n);
   Zibstream& read(byte* x, unsigned n);
   typedef uint64 streamsize;
-  /// Number of characters read by last read()
+  /** Number of characters read by last read() */
   inline streamsize gcount() const { return gcountVal; gcountVal = 0; }
 
   bool good() const { return is_open() && buf != 0; }
