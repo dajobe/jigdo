@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   Download (via SingleURL) & interpret .jigdo data, download parts, assemble
   image
 

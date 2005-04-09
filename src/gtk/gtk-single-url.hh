@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   'Simple' file download, i.e. download data and write it to a file.
 
 */

@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   Interface to the GtkTreeView of running jobs (downloads etc),
   GUI::window.jobs, i.e. the list at the bottom of the jigdo window.
 
@@ -38,17 +40,20 @@
     ~JobList deletes all JobLine objects in the list. */
 class JobList : NoCopy {
 public:
-  // Assumed number of columns in job display (progress bar, URL)
   enum {
-    COLUMN_STATUS, // Pixmap "% done" + text message ("x kB/sec" etc)
-    COLUMN_OBJECT, // URL
-    COLUMN_DATA, // pointer to JobLine object (not displayed on screen)
+    /** Pixmap "% done" + text message ("x kB/sec" etc) */
+    COLUMN_STATUS,
+    /** URL */
+    COLUMN_OBJECT,
+    /** pointer to JobLine object (not displayed on screen) */
+    COLUMN_DATA,
+    /** Assumed number of columns in job display (progress bar, URL) */
     NR_OF_COLUMNS
   };
   static const int WIDTH_STATUS = 280;
 
-  /* Time values are in milliseconds. All values should be multiples
-     of TICK_INTERVAL */
+  /** Time values are in milliseconds. All values should be multiples
+      of TICK_INTERVAL */
   static const int TICK_INTERVAL = 250; // = progress report update interval
 
   LOCAL_DEBUG_UNIT_DECL;
@@ -174,7 +179,7 @@ private:
 };
 //______________________________________________________________________
 
-/// Global list of running jobs
+/** Global list of running jobs */
 namespace GUI {
   extern JobList jobList;
 }

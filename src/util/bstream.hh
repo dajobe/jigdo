@@ -7,7 +7,9 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  I/O streams for bytes (byte is unsigned char, not regular char)
+*//** @file
+
+  I/O streams for bytes (byte is unsigned char, not regular char).
 
   This was first solved with typedefs like "typedef
   basic_istream<byte> bistream;". That turns out to be difficult,

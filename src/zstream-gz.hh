@@ -7,6 +7,10 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
+  zlib (gzip-style) compression and decompression for zstream
+
 */
 
 #ifndef ZSTREAM_GZ_HH
@@ -130,19 +134,5 @@ ZobstreamGz::ZobstreamGz(bostream& s, unsigned chunkLimit, int level,
   z.opaque = 0;
   open(s, chunkLimit, level, windowBits, memLevel, todoBufSz);
 }
-//______________________________________________________________________
-
-// ZibstreamGz::ZibstreamGz(bistream& s, unsigned bufSz) : Zibstream(bufSz) {
-//   z.zalloc = (alloc_func)0;
-//   z.zfree = (free_func)0;
-//   z.opaque = 0;
-//   open(s);
-// }
-
-// ZibstreamGz::ZibstreamGz(unsigned bufSz) : Zibstream(bufSz) {
-//   z.zalloc = (alloc_func)0;
-//   z.zfree = (free_func)0;
-//   z.opaque = 0;
-// }
 
 #endif

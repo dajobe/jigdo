@@ -7,6 +7,10 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
+  Bzip2 compression and decompression for zstream
+
 */
 
 #ifndef ZSTREAM_BZ_HH

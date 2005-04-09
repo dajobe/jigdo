@@ -7,9 +7,7 @@
   it under the terms of the GNU General Public License, version 2 or
   later. See the file COPYING for details.
 
-*/
-
-/** @file
+*//** @file
 
   Smart pointer, i.e.\ pointer-like object that maintains a count for
   how many times an object is referenced, and only deletes the object

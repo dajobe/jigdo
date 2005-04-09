@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   A 32 or 64 bit rolling checksum
 
 */
@@ -44,11 +46,11 @@
     calls, e.g. obj.addBack(x).addBack(y) */
 class RsyncSum {
 public:
-  /// Initialises the checksum with zero
+  /** Initialises the checksum with zero */
   RsyncSum() : sum(0) { };
-  /// Initialises with the checksum of a memory area
+  /** Initialises with the checksum of a memory area */
   RsyncSum(const byte* mem, size_t len) : sum(0) { addBack(mem, len); };
-  /// Compare two RsyncSum objects
+  /** Compare two RsyncSum objects */
   bool operator==(const RsyncSum& x) const { return get() == x.get(); }
   bool operator!=(const RsyncSum& x) const { return get() != x.get(); }
   bool operator< (const RsyncSum& x) const { return get() < x.get(); }
@@ -57,7 +59,7 @@ public:
   bool operator>=(const RsyncSum& x) const { return get() >= x.get(); }
   /** Append memory area to end of area covered by the checksum */
   RsyncSum& addBack(const byte* mem, size_t len);
-  /// Append one byte at end of area covered by the checksum
+  /** Append one byte at end of area covered by the checksum */
   inline RsyncSum& addBack(byte x);
   /** Append the same byte n times at end of area covered by the
       checksum. (addBack() is not overloaded for this in order to
@@ -73,11 +75,11 @@ public:
   RsyncSum& removeFront(const byte* mem, size_t len, size_t areaSize);
   /** Remove one byte from start of area covered by checksum */
   inline RsyncSum& removeFront(byte x, size_t areaSize);
-  /// Read stored checksum
+  /** Read stored checksum */
   uint32 get() const { return sum; }
-  /// Reset to initial state
+  /** Reset to initial state */
   RsyncSum& reset() { sum = 0; return *this; }
-  /// Check whether sum is zero
+  /** Check whether sum is zero */
   bool empty() const { return sum == 0; }
   // Using default dtor & copy ctor
 private:
@@ -108,9 +110,9 @@ public:
   INLINE RsyncSum64& addBackNtimes(byte x, size_t n);
   RsyncSum64& removeFront(const byte* mem, size_t len, size_t areaSize);
   inline RsyncSum64& removeFront(byte x, size_t areaSize);
-   /// Return lower 32 bits of checksum
+  /** Return lower 32 bits of checksum */
   uint32 getLo() const { return sumLo; }
-   /// Return higher 32 bits of checksum
+  /** Return higher 32 bits of checksum */
   uint32 getHi() const { return sumHi; }
   RsyncSum64& reset() { sumLo = sumHi = 0; return *this; }
   bool empty() const { return sumLo == 0 && sumHi == 0; }

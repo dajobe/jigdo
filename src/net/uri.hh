@@ -7,6 +7,10 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
+  Helper functions for dealing with URLs.
+
 */
 
 #ifndef URI_HH

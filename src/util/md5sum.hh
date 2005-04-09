@@ -9,7 +9,9 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  Quite secure 128-bit checksum
+*//** @file
+
+  128-bit checksum, secure enough for our purposes
 
 */
 

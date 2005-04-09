@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//**@file
+
   Display an error box with a message and standard or user-supplied buttons.
 
 */

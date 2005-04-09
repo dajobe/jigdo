@@ -500,7 +500,7 @@ void JigdoIO::include(string* url) {
 //______________________________________________________________________
 
 namespace {
-  // For Base64In - put decoded bytes into 16-byte array
+  /** Local class: For Base64In - put decoded bytes into 16-byte array */
   struct ArrayOut {
     typedef ArrayOut& ResultType;
     ArrayOut() { }

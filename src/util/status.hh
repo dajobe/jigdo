@@ -7,6 +7,8 @@
   under the terms of the GNU General Public License, version 2. See the file
   COPYING for details.
 
+*//** @file
+
   Return type for functions to show success or failure
 
 */

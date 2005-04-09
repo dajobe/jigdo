@@ -7,6 +7,10 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
+  Debugging aids, including Error objects and assertions.
+
   The Error class is just a convenient base class for all kinds of
   errors which result in a text error message for printing to the
   user.

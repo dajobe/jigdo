@@ -61,7 +61,8 @@ CacheFile::CacheFile(const char* dbName) {
 
 namespace {
 
-  // Wrapper which calls close() for any DBC cursor at end of scope
+  /** Local struct: Wrapper which calls close() for any DBC cursor at end of
+      scope */
   struct AutoCursor {
     AutoCursor() : c(0) { }
     ~AutoCursor() { close(); }

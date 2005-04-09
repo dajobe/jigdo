@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   subst("Format %1, %2", arg1, arg2) creates strings with the arguments
   filled in, and does so in a safer way than sprintf() and friends.
 

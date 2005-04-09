@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   Zlib/bzlib2 compression layer which integrates with C++ streams. When
   deflating, chops up data into DATA chunks of approximately zippedBufSz (see
   ctor below and ../doc/TechDetails.txt).
@@ -190,7 +192,7 @@ public:
   bool is_open() const { return stream != 0; }
   void close();
 
-  /// Get reference to underlying istream
+  /** Get reference to underlying istream */
   bistream& getStream() { return *stream; }
 
   /// Input 1 character
@@ -243,22 +245,7 @@ private:
    calls to put() and write() */
 Zobstream::Zobstream(MD5Sum* md)
     : zipBuf(0), zipBufLast(0), todoBuf(0), todoBufSize(0), todoCount(0),
-      stream(0), md5sum(md) {
-//   z.zalloc = (alloc_func)0;
-//   z.zfree = (free_func)0;
-//   z.opaque = 0;
-}
-
-// Zobstream::Zobstream(bostream& s, size_t chunkLimit, int level,
-//                      int windowBits, int memLevel, size_t todoBufSz,
-//                      MD5Sum* md)
-//     : todoBuf(0), todoBufSize(0), todoCount(0), stream(0),
-//       zipBuf(0), zipBufLast(0), md5sum(md) {
-//   z.zalloc = (alloc_func)0;
-//   z.zfree = (free_func)0;
-//   z.opaque = 0;
-//   open(s, chunkLimit, level, windowBits, memLevel, todoBufSz);
-// }
+      stream(0), md5sum(md) { }
 //________________________________________
 
 void Zobstream::open(bostream& s, unsigned chunkLimit, unsigned todoBufSz) {

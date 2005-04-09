@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   Algorithm for depth-first traversal of the objects in a GtkTreeModel, the
   parent is visited before its children.
 

@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   Download data from URL, write to output function, report on progress
 
   This is an abstraction of the HTTP/FTP download facility. The rest of the

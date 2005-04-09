@@ -7,6 +7,8 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
+*//** @file
+
   A job is a certain task - just the application logic, *no* user interface.
   All interaction with the rest of the system (input/output, user
   interaction) happens via an IO object.

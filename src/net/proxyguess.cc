@@ -183,6 +183,7 @@ void proxyGuess() {
 
 namespace {
 
+  /** Local struct: Info about a browser configuration file */
   struct BrowserConfig {
     /* Init filename and timestamp */
     BrowserConfig(const string& name, time_t timestamp);

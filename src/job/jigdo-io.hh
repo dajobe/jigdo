@@ -7,9 +7,7 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-*/
-
-/* @file
+*//** @file
 
   IO object for .jigdo downloads; download, gunzip, interpret
 

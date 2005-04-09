@@ -7,7 +7,9 @@
   it under the terms of the GNU General Public License, version 2. See
   the file COPYING for details.
 
-  Single HTTP or FTP retrievals
+*//** @file
+
+  Single HTTP or FTP retrievals.
   More low-level code which interfaces with libwww is in download.cc
   Higher-level GUI code is in gtk-single-url.cc
 

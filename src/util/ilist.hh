@@ -7,7 +7,9 @@
   under the terms of the GNU General Public License, version 2. See the file
   COPYING for details.
 
-  Intrusive list, i.e. every list member needs to derive publically from
+*//** @file
+
+  Intrusive list, ie every list member needs to derive publically from
   IListBase
 
   A speciality is that list members will remove themselves from their list
