@@ -86,8 +86,11 @@ string Subst::subst(const char* format, int args, const Subst arg[]) {
   while (*++i != '\0') {
     if (*i != '%') { result += *i; continue; }
     ++i;
+    const char* iPos = i;
+    while (*i == 'F' || *i == 'L' || *i == 'E') ++i;
     if (*i == '\0') break;
     if (*i == '%') { result += '%'; continue; }
+
     if (*i >= '1' && *i < max) {
       int n = *i - '1';
       switch (arg[n].type) {
@@ -123,6 +126,7 @@ string Subst::subst(const char* format, int args, const Subst arg[]) {
       }
       continue;
     }
+    i = iPos;
     result += '%';
     result += *i;
   }
