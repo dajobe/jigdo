@@ -30,14 +30,18 @@ DEBUG_UNIT("gtk-single-url")
 GtkSingleUrl::GtkSingleUrl(const string& uriStr, const string& destFile)
   : childMode(false), uri(uriStr), dest(destFile), progress(), status(),
     treeViewStatus(), destStream(0), messageBox(), job(0), singleUrl(0),
-    state(CREATED) { }
+    state(CREATED) {
+  debug("GtkSingleUrl %1, not child", this);
+}
 
 // Child mode, using supplied DataSource
 GtkSingleUrl::GtkSingleUrl(const string& uriStr, const string& destDesc,
                            Job::DataSource* download)
   : childMode(true), uri(uriStr), dest(destDesc), progress(), status(),
     treeViewStatus(), destStream(0), messageBox(), job(download),
-    singleUrl(0), state(CREATED) { }
+    singleUrl(0), state(CREATED) {
+  debug("GtkSingleUrl %1, is child", this);
+}
 
 GtkSingleUrl::~GtkSingleUrl() {
   debug("~GtkSingleUrl %1", childMode);
@@ -430,17 +434,17 @@ void GtkSingleUrl::job_failed(const string& message) {
      JobLine doesn't overwrite all data from the first one, we end up with
      file contents like "data from 2nd download" + "up to a page full of null
      bytes" + "stale data from 1st download". */
-  Paranoid(singleUrl != 0);
+  Paranoid(job != 0);
   if (!childMode) singleUrl->setDestination(0, 0, 0);
   destStream.clear();
   if (state != STOPPED) state = ERROR;
-  debug("job_failed: %1 job=%2 state=%3 resumePoss=%4",
-        message, job, state, singleUrl->resumePossible());
-
   bool resumePossible = (job != 0
                          && !childMode
                          && state == ERROR
                          && singleUrl->resumePossible());
+  debug("job_failed: %1 job=%2 state=%3 resumePossible=%4",
+        message, job, state, resumePossible);
+
   if (resumePossible) {
     treeViewStatus = subst(_("Try %1 of %2 after <b>%E3</b>"),
                            singleUrl->currentTry() + 1,

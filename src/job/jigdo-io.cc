@@ -51,7 +51,9 @@ JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url/*,
     firstChild(0), next(0), rootAndImageSectionCandidate(this), line(0),
     section(), imageSectionLine(0), imageName(), imageInfo(),
     imageShortInfo(), templateUrls(), templateMd5(0), /*childFailedId(0),*/
-    gunzip(this) { }
+    gunzip(this) {
+  debug("JigdoIO %1", this);
+}
 
 // Non-root, i.e. [Include]d object
 JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url,
@@ -62,7 +64,7 @@ JigdoIO::JigdoIO(MakeImageDl::Child* c, const string& url,
     rootAndImageSectionCandidate(parent->root()), line(0), section(),
     imageSectionLine(0), imageName(), imageInfo(), imageShortInfo(),
     templateUrls(), templateMd5(0), /*childFailedId(0),*/ gunzip(this) {
-  //debug("JigdoIO: Parent of %1 is %2", url, parent->urlVal);
+  debug("JigdoIO %1: Parent of %2 is %3", this, url, parent->urlVal);
 }
 //______________________________________________________________________
 

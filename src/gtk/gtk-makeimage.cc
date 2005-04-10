@@ -182,9 +182,6 @@ void GtkMakeImage::makeImageDl_new(
     Job::DataSource* childDownload, const string& uri,
     const string& destDesc) {
   debug("makeImageDl_new: %1", uri);
-// # if DEBUG
-//   msg("GtkMakeImage::makeImageDl_new", 0);
-// # endif
   GtkSingleUrl* child = new GtkSingleUrl(uri, destDesc, childDownload);
   GUI::jobList.prepend(child, this); // New child of "this" is "child"
   bool status = child->run();

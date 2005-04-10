@@ -135,6 +135,7 @@ void MakeImageDl::run() {
   // Run initial .jigdo download, will start other downloads as needed
   auto_ptr<Child> childDl(childFor(jigdoUrl));
   if (childDl.get() != 0) {
+    debug("jigdo download child %1", childDl.get());
     string info = _("Retrieving .jigdo");
     jigdoIo = new JigdoIO(childDl.get(), jigdoUrl/*, frontend.get()*/);
     IOSOURCE_SEND(IO, io, job_message, (info));

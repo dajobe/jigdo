@@ -13,7 +13,7 @@
 
   Beware of the interesting ownership relations here: As the front-end,
   GtkMakeImage creates and owns a MakeImageDl. That MakeImageDl creates child
-  downloads of its own which are owned by *it*. However, GtkSingleUrls are
+  downloads of its own which are owned by the MakeImageDl. GtkSingleUrls are
   attached to those child downloads.
 
 */
