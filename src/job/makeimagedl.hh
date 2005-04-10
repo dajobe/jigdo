@@ -242,10 +242,16 @@ private: // To be called by Child only:
      u-UrlChecksum */
   void singleUrlWrongContent(Child* c);
 
+  // Called from Child::job_succeeded() when the template d/l has finished
+  void templateFinished();
+
 private: // Really private
 
   // Write a ReadMe.txt to the download dir; fails silently
   void writeReadMe();
+
+  // Starts the initial .jigdo download
+  void createJigdoDownload();
 
   /* Return filename for content md5sum cache entry:
      "/home/x/jigdo-blasejfwe/c-nGJ2hQpUNCIZ0fafwQxZmQ"

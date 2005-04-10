@@ -131,17 +131,7 @@ void MakeImageDl::run() {
     }
   }
   writeReadMe();
-
-  // Run initial .jigdo download, will start other downloads as needed
-  auto_ptr<Child> childDl(childFor(jigdoUrl));
-  if (childDl.get() != 0) {
-    debug("jigdo download child %1", childDl.get());
-    string info = _("Retrieving .jigdo");
-    jigdoIo = new JigdoIO(childDl.get(), jigdoUrl/*, frontend.get()*/);
-    IOSOURCE_SEND(IO, io, job_message, (info));
-    childDl->source()->io.addListener(*jigdoIo);
-    (childDl.release())->source()->run();
-  }
+  createJigdoDownload();
 }
 //______________________________________________________________________
 
@@ -491,6 +481,65 @@ void MakeImageDl::setImageSection(string* imageName, string* imageInfo,
 }
 //______________________________________________________________________
 
+void MakeImageDl::Child::job_deleted() { }
+
+void MakeImageDl::Child::job_succeeded() {
+  debug("Child::job_succeeded: %1", source()->location());
+# if DEBUG
+  childSuccFail = true;
+# endif
+  IOSOURCE_SEND(MakeImageDl::IO, master()->io,
+                makeImageDl_finished, (source()));
+
+  // For SingleUrls, maybe rename cache entry
+  if (dynamic_cast<SingleUrl*>(source()) != 0)
+    master()->singleUrlFinished(this);
+  // singleUrlSucceeded() calls this - also call it for other sources
+  deleteSource();
+
+  if (master()->state() == DOWNLOADING_TEMPLATE)
+    master()->templateFinished();
+}
+
+void MakeImageDl::Child::job_failed(const string& /*error*/) {
+  //debug("Child::job_failed %1", error);
+  master()->childFailed(this); // Causes "delete this"
+}
+
+void MakeImageDl::Child::job_message(const string&) { }
+
+void MakeImageDl::Child::dataSource_dataSize(uint64) { }
+
+void MakeImageDl::Child::dataSource_data(const byte* data, unsigned size,
+                                         uint64) {
+  // Desired checksum is in md; calculate actual checksum in mdCheck
+  if (checkContent)
+    mdCheck.update(data, size);
+}
+
+//======================================================================
+
+/* Below is the code for the "big picture" of a download: Download .jigdo,
+   download .template, download individual files. */
+
+/** Run initial .jigdo download, will start further downloads of [Include]d
+    .jigdo files as necessary. */
+void MakeImageDl::createJigdoDownload() {
+  auto_ptr<Child> childDl(childFor(jigdoUrl));
+  if (childDl.get() != 0) {
+    debug("jigdo download child %1", childDl.get());
+    string info = _("Retrieving .jigdo");
+    jigdoIo = new JigdoIO(childDl.get(), jigdoUrl/*, frontend.get()*/);
+    IOSOURCE_SEND(IO, io, job_message, (info));
+    childDl->source()->io.addListener(*jigdoIo);
+    (childDl.release())->source()->run();
+  }
+}
+//______________________________________________________________________
+
+/** To be called by JigdoIO only. Called to notify the MakeImageDl that the
+    last JigdoIO has successfully finished. Called just after
+    childSucceeded() for that JigdoIO. */
 void MakeImageDl::jigdoFinished() {
   debug("jigdoFinished");
   callbackId = g_idle_add_full(G_PRIORITY_HIGH_IDLE, &jigdoFinished_callback,
@@ -504,10 +553,9 @@ gboolean MakeImageDl::jigdoFinished_callback(gpointer mi) {
   return FALSE; // "Don't call me again"
 }
 
-/* All .jigdo data available now - this is called by JigdoIO. At this point,
-   the only children that we ever started were all SingleUrls with JigdoIOs
-   attached to them, so we can delete all jigdo-downloading children simply
-   by deleting all children. */
+/* All .jigdo data available now. At this point, the only children that we
+   ever started were all SingleUrls with JigdoIOs attached to them, so we can
+   delete all jigdo-downloading children simply by deleting all children. */
 void MakeImageDl::jigdoFinished2() {
   debug("jigdoFinished2");
 
@@ -528,47 +576,10 @@ void MakeImageDl::jigdoFinished2() {
 
 /* Template download finished. This just means that the data was downloaded,
    need to verify its md5sum if appropriate. */
-// void MakeImageDl::templateFinished() {
-//   debug("MakeImageDl::templateFinished()");
-//   if (finalState()) return; // I.e. there was an error
-//   Paranoid(stateVal == DOWNLOADING_TEMPLATE);
+void MakeImageDl::templateFinished() {
+  debug("templateFinished");
+  if (finalState()) return; // I.e. there was an error
+  Paranoid(stateVal == DOWNLOADING_TEMPLATE);
 
 //   stateVal = DOWNLOADING____;
-// }
-//______________________________________________________________________
-
-void MakeImageDl::Child::job_deleted() { }
-
-void MakeImageDl::Child::job_succeeded() {
-  debug("Child::job_succeeded: %1", source()->location());
-# if DEBUG
-  childSuccFail = true;
-# endif
-  IOSOURCE_SEND(MakeImageDl::IO, master()->io,
-                makeImageDl_finished, (source()));
-
-  // For SingleUrls, maybe rename cache entry
-  if (dynamic_cast<SingleUrl*>(source()) != 0)
-    master()->singleUrlFinished(this);
-  // singleUrlSucceeded() calls this - also call it for other sources
-  deleteSource();
-
-//   if (master()->state() == DOWNLOADING_TEMPLATE)
-//     master()->templateFinished();
-}
-
-void MakeImageDl::Child::job_failed(const string& /*error*/) {
-  //debug("Child::job_failed %1", error);
-  master()->childFailed(this); // Causes "delete this"
-}
-
-void MakeImageDl::Child::job_message(const string&) { }
-
-void MakeImageDl::Child::dataSource_dataSize(uint64) { }
-
-void MakeImageDl::Child::dataSource_data(const byte* data, unsigned size,
-                                         uint64) {
-  // Desired checksum is in md; calculate actual checksum in mdCheck
-  if (checkContent)
-    mdCheck.update(data, size);
 }

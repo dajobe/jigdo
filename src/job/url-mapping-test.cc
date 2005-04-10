@@ -65,8 +65,6 @@ namespace {
   void ap(UrlMap& m, const MD5& md, const char* s) {
     vector<string> value;
     ConfigFile::split(value, s, 0);
-//     vector<string> v;
-//     v.push_back(s);
     const char* result = m.addPart(base, md, value);
     if (result != 0) msg("addPart: %1", result);
     Assert(result == 0);
@@ -77,8 +75,6 @@ namespace {
           bool expectFailure = false) {
     vector<string> value;
     ConfigFile::split(value, s, 0);
-//     vector<string> v;
-//     v.push_back(s);
     const char* result = m.addServer(base, label, value);
     if (result != 0) msg("addServer: %1", result);
     Assert(expectFailure == (result != 0));

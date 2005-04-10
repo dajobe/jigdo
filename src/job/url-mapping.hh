@@ -49,7 +49,7 @@
     represented with a pointer to another UrlMapping, whose output URL(s)
     need to be prepended to "some/path". UrlMappings can be chained into a
     linked list - that list is a list of alternative mappings for the same
-    Label. */
+    label. */
 class UrlMapping : public SmartPtrBase, public NoCopy {
   friend class ServerUrlMapping;
   friend class PartUrlMapping;
