@@ -669,11 +669,24 @@ dnl builds the program. TAGS should only be updated once changes are
 dnl made to the source.
 touch "$srcdir/src/TAGS"
 
+SUBDIRS="glibcurl gtk job net util"
 SRC_MAKEDEPS="$srcdir/src/Makedeps"
+dnl When bootstrapping from CVS, we need to make sure that correct
+dnl dependencies cause gtk/interface.hh to be created
+if test -e "$SRC_MAKEDEPS"; then true; else
+  AC_MSG_RESULT(Creating $SRC_MAKEDEPS)
+  touch "$SRC_MAKEDEPS"
+  echo >"$srcdir/src/gtk/interface.hh"
+  (cd "$srcdir/src"
+   find . -type f '(' -name '*.cc' -o -name '*.c' ')' \
+   | xargs "$ac_cv_prog_AWK" -f ../scripts/depend.awk "$srcdir" $SUBDIRS -
+  )
+  rm -f "$SRC_MAKEDEPS.bak" "$srcdir/src/gtk/interface.hh"
+fi
 AC_SUBST_FILE(SRC_MAKEDEPS)
 
 dnl Create subdirs in src directory
-for dir in "" glibcurl gtk job net util; do
+for dir in $SUBDIRS; do
     test ! -d "src/$dir" && mkdir "src/$dir"
 done
 AC_OUTPUT(Makefile doc/Makefile src/Makefile po/Makefile)
