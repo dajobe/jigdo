@@ -411,6 +411,16 @@ AC_SUBST(CURLCFLAGS)
 AC_SUBST(CURLLIBS)
 dnl ____________________
 
+if test "$jigdo_gui" = "yes" && test ! -e "$srcdir/src/gtk/interface.hh"; then
+  AC_CHECK_PROG(have_glade, glade-2, yes, no)
+  if test "$have_glade" = "no"; then
+    AC_MSG_RESULT([   * glade-2 was not found on your system. Please install])
+    AC_MSG_RESULT([   * it, it is needed to compile the jigdo GUI (actually,])
+    AC_MSG_RESULT([   * to create the file src/gtk/interface.hh)])
+  fi
+fi
+dnl ____________________
+
 AC_MSG_CHECKING(for value of --with-uint64)
 AC_ARG_WITH(uint64,
     [  --with-uint64=TYPE      Specify unsigned type of at least 64 bits [auto]
