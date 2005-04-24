@@ -1,3 +1,4 @@
+
 /* $Id$ -*- C++ -*-
   __   _
   |_) /|  Copyright (C) 2003  |  richard@
@@ -580,6 +581,9 @@ void MakeImageDl::templateFinished() {
   debug("templateFinished");
   if (finalState()) return; // I.e. there was an error
   Paranoid(stateVal == DOWNLOADING_TEMPLATE);
+
+#warning "todo: mi.templateFinished();"
+  //mi.templateFinished();
 
 //   stateVal = DOWNLOADING____;
 }
