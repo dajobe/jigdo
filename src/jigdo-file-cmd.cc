@@ -240,6 +240,7 @@ int JigdoFileCmd::makeTemplate() {
 
   JigdoCache cache(cacheFile, optCacheExpiry, readAmount, *optReporter);
   cache.setParams(blockLength, md5BlockLength);
+  cache.setCheckFiles(optCheckFiles);
   if (addLabels(cache)) return 3;
   while (true) {
     try { cache.readFilenames(fileNames); } // Recurse through directories
@@ -586,6 +587,7 @@ int JigdoFileCmd::scanFiles() {
 int JigdoFileCmd::md5sumFiles() {
   JigdoCache cache(cacheFile, optCacheExpiry, readAmount, *optReporter);
   cache.setParams(blockLength, md5BlockLength);
+  cache.setCheckFiles(optCheckFiles);
   while (true) {
     try { cache.readFilenames(fileNames); } // Recurse through directories
     catch (RecurseError e) { optReporter->error(e.message); continue; }

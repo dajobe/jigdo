@@ -30,6 +30,7 @@
 #include <recursedir.fh>
 #include <rsyncsum.hh>
 #include <scan.fh>
+#include <string.hh>
 //______________________________________________________________________
 
 /** First part of the filename of a "part", a directory on the local
@@ -230,6 +231,10 @@ public:
   /** Return reporter supplied by JigdoCache creator */
   ProgressReporter* getReporter() { return &reporter; }
 
+  /** Set and get whether to check if files exist in the filesystem */
+  inline void setCheckFiles(bool check) { checkFiles = check; }
+  inline bool getCheckFiles() const { return checkFiles; }
+
   /** Returns number of files in cache */
   inline size_t size() const { return nrOfFiles; }
 
@@ -287,6 +292,9 @@ private:
   static ProgressReporter noReport;
 
   size_t blockLength, md5BlockLength;
+
+  /* Check if files exist in the filesystem */
+  bool checkFiles;
 
   /* List of files in the cache (not vector<> because jigdo-file keeps
      ptrs, and if a vector realloc()s, all elements' addresses may
@@ -410,8 +418,22 @@ template <class RecurseDir>
 void JigdoCache::readFilenames(RecurseDir& rd) {
   string name;
   while (true) {
-    bool status = rd.getName(name, &fileInfo); // Might throw error
+    bool status = rd.getName(name, &fileInfo, checkFiles); // Might throw error
     if (status == FAILURE) return; // No more names
+#   if HAVE_LIBDB
+    if (!checkFiles) {
+      const byte* data;
+      size_t dataSize;
+      try {
+        if (cacheFile->findName(data, dataSize, name, fileInfo.st_size,
+                                fileInfo.st_mtime).failed())
+          continue;
+      } catch (DbError e) {
+        string err = subst(_("Error accessing cache: %1"), e.message);
+        reporter.error(err);
+      }
+    }
+#   endif
     if (fileInfo.st_size == 0) continue; // Skip zero-length files
     addFile(name);
   }

@@ -83,8 +83,8 @@ public:
   typedef const byte* pointer;
   typedef const byte& reference;
 
-  SerialIstreamIterator() : stream(0) { }
-  SerialIstreamIterator(istream_type& s) : stream(&s) { }
+  SerialIstreamIterator() : stream(0), val(0) { }
+  SerialIstreamIterator(istream_type& s) : stream(&s), val(0) { }
   SerialIstreamIterator& operator++() { stream->get(); return *this; }
   SerialIstreamIterator operator++(int) {
     SerialIstreamIterator i = *this; stream->get(); return i; }

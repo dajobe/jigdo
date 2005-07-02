@@ -85,6 +85,7 @@ class JigdoFileCmd {
   static bool optBzip2;
   static bool optForce; // true => Silently delete existent output
   static bool optMkImageCheck; // true => check MD5sums
+  static bool optCheckFiles; // true => check if files exist
   static bool optScanWholeFile; // false => read only first block
   static bool optAddImage; // true => Add [Image] section to output .jigdo
   static bool optAddServers; // true => Add [Servers] to output .jigdo

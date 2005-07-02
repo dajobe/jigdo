@@ -71,7 +71,8 @@ public:
       returns, in order to determine whether it is a directory. If the
       information returned by stat() is useful for you, supply your
       own struct stat for getName() to use. */
-  bool getName(string& result, struct stat* fileInfo = 0)
+  bool getName(string& result, struct stat* fileInfo = 0,
+               bool checkFiles = true)
       throw(RecurseError, bad_alloc);
 
   /** Flush list of "already visited device/inode pairs", which would

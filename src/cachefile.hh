@@ -56,6 +56,7 @@
 #include <string.h> /* memcpy(), memset() */
 
 #include <debug.hh>
+#include <status.hh>
 //______________________________________________________________________
 
 /** libdb errors */
@@ -74,16 +75,26 @@ public:
   CacheFile(const char* dbName);
   inline ~CacheFile();
 
-  /** Look for an entry in the database which matches the specified
-      filename (which must be absolute), file modification time and
-      file size. If no entry is found, return false. Otherwise, return
-      true and overwrite resultData/resultSize with ptr/len of the
-      binary string associated with this file. The first byte of
-      resultData is the first byte of the "blockLength" entry (see
-      start of this file). The result pointer is only valid until the
-      next database operation. */
-  bool find(const byte*& resultData, size_t& resultSize,
-            const string& fileName, uint64 fileSize, time_t mtime);
+  /** Look for an entry in the database which matches the specified filename
+      (which must be absolute), file modification time and file size. If no
+      entry is found, return FAILED. Otherwise, return OK and overwrite
+      resultData/resultSize with ptr/len of the binary string associated with
+      this file. The first byte of resultData is the first byte of the
+      "blockLength" entry (see start of this file). The result pointer is
+      only valid until the next database operation. */
+  Status find(const byte*& resultData, size_t& resultSize,
+              const string& fileName, uint64 fileSize, time_t mtime);
+
+  /** Look for an entry in the database which matches the specified filename
+      (which must be absolute).
+      If no entry is found, return FAILED. Otherwise, return OK and overwrite
+      resultData/resultSize with ptr/len of the binary string associated with
+      this file. The first byte of resultData is the first byte of the
+      "blockLength" entry (see start of this file). The result pointer is
+      only valid until the next database operation. */
+  Status findName(const byte*& resultData, size_t& resultSize,
+                  const string& fileName,
+                  long long int& resultFileSize, time_t& resultMtime);
 
   /** Insert/overwrite entry for the given file (name must be
       absolute, file must have the supplied mtime and size). The data
@@ -151,6 +162,10 @@ public:
   CacheFile(const char*) { }
   ~CacheFile() { }
   bool find(const byte*&, size_t&, const string&, time_t, uint64) {
+    return false;
+  }
+  bool find_name(const byte*&, size_t&, const string&,
+                 long long int&, time_t&) {
     return false;
   }
   template<class Functor>

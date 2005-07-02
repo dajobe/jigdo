@@ -55,6 +55,7 @@ int JigdoFileCmd::optZipQuality = Z_BEST_COMPRESSION;
 bool JigdoFileCmd::optBzip2 = false;
 bool JigdoFileCmd::optForce = false;
 bool JigdoFileCmd::optMkImageCheck = true;
+bool JigdoFileCmd::optCheckFiles = true;
 bool JigdoFileCmd::optScanWholeFile = false;
 bool JigdoFileCmd::optAddImage = true;
 bool JigdoFileCmd::optAddServers = true;
@@ -365,9 +366,12 @@ inline void printUsage(bool detailed, size_t blockLength,
     "  --readbuffer=BYTES [default %3k]\n"
     "                   Amount of data to read at a time\n"
     "  --check-files [default]\n"
+    "                   [make-template,md5sum] Check if files exist and\n"
+    "                   get or verify checksums, date and size\n"
     "                   [make-image] Verify checksum of files written to\n"
     "                   image\n"
-    "  --no-check-files [make-image] Do not verify checksums\n"
+    "  --no-check-files [make-template,md5sum] when used with --cache,\n"
+    "                   [make-image] Do not verify checksums of files\n"
     "  --scan-whole-file [scan] Scan whole file instead of only first block\n"
     "  --image-section [default]\n"
     "  --no-image-section\n"
@@ -564,8 +568,10 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
         error = true;
       }
       break;
-    case LONGOPT_MKIMAGECHECK: optMkImageCheck = true; break;
-    case LONGOPT_NOMKIMAGECHECK: optMkImageCheck = false; break;
+    case LONGOPT_MKIMAGECHECK: optMkImageCheck = true;
+                               optCheckFiles = true; break;
+    case LONGOPT_NOMKIMAGECHECK: optMkImageCheck = false;
+                                 optCheckFiles = false; break;
     case LONGOPT_SCANWHOLEFILE: optScanWholeFile = true; break;
     case LONGOPT_NOSCANWHOLEFILE: optScanWholeFile = false; break;
     case LONGOPT_ADDSERVERS: optAddServers = true; break;

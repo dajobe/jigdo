@@ -87,18 +87,18 @@ namespace {
 }
 //________________________________________
 
-bool CacheFile::find(const byte*& resultData, size_t& resultSize,
-                     const string& fileName, uint64 fileSize, time_t mtime) {
+Status CacheFile::find(const byte*& resultData, size_t& resultSize,
+                       const string& fileName, uint64 fileSize, time_t mtime) {
   DBT key; memset(&key, 0, sizeof(DBT));
   key.data = const_cast<char*>(fileName.c_str());
   key.size = fileName.size();
 
   AutoCursor cursor;
   // Cursor with no transaction id, no flags
-  if (db->cursor(db, 0, &cursor.c, 0) != 0) return false;
+  if (db->cursor(db, 0, &cursor.c, 0) != 0) return FAILED;
 
   if (cursor.get(&key, &data, DB_SET) == DB_NOTFOUND
-      || data.data == 0) return false;
+      || data.data == 0) return FAILED;
 
   // Check whether mtime and size matches
   Paranoid(data.size >= USER_DATA);
@@ -106,10 +106,10 @@ bool CacheFile::find(const byte*& resultData, size_t& resultSize,
   Paranoid(d != 0);
   time_t cacheMtime;
   unserialize4(cacheMtime, d + MTIME);
-  if (cacheMtime != mtime) return false;
+  if (cacheMtime != mtime) return FAILED;
   uint64 cacheFileSize;
   unserialize6(cacheFileSize, d + SIZE);
-  if (cacheFileSize != fileSize) return false;
+  if (cacheFileSize != fileSize) return FAILED;
 
   // Match - update access time
   time_t now = time(0);
@@ -126,7 +126,51 @@ bool CacheFile::find(const byte*& resultData, size_t& resultSize,
 
   resultData = d + USER_DATA;
   resultSize = data.size - USER_DATA;
-  return true;
+  return OK;
+}
+//________________________________________
+
+Status CacheFile::findName(const byte*& resultData, size_t& resultSize,
+    const string& fileName, long long int& resultFileSize,
+    time_t& resultMtime) {
+  DBT key; memset(&key, 0, sizeof(DBT));
+  key.data = const_cast<char*>(fileName.c_str());
+  key.size = fileName.size();
+
+  AutoCursor cursor;
+  // Cursor with no transaction id, no flags
+  if (db->cursor(db, 0, &cursor.c, 0) != 0) return FAILED;
+
+  if (cursor.get(&key, &data, DB_SET) == DB_NOTFOUND
+      || data.data == 0) return FAILED;
+
+  // get mtime and size
+  Paranoid(data.size >= USER_DATA);
+  byte* d = static_cast<byte*>(data.data);
+  Paranoid(d != 0);
+  time_t cacheMtime;
+  unserialize4(cacheMtime, d + MTIME);
+  resultMtime = cacheMtime;
+  uint64 cacheFileSize;
+  unserialize6(cacheFileSize, d + SIZE);
+  resultFileSize = cacheFileSize;
+
+  // Match - update access time
+  time_t now = time(0);
+  Paranoid(now != static_cast<time_t>(-1));
+  serialize4(now, d + ACCESS);
+  DBT partial; memset(&partial, 0, sizeof(DBT));
+  partial.data = d + ACCESS;
+  partial.size = 4;
+  partial.flags |= DB_DBT_PARTIAL;
+  partial.doff = ACCESS;
+  partial.dlen = 4;
+  //cerr << "CacheFile lookup successfull for "<<fileName<<endl;
+  cursor.put(&key, &partial, DB_CURRENT);
+
+  resultData = d + USER_DATA;
+  resultSize = data.size - USER_DATA;
+  return OK;
 }
 //______________________________________________________________________
 
