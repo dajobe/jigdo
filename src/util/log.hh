@@ -111,7 +111,7 @@ public:
 
 # ifndef DOXYGEN_SKIP
   /* Logged strings are output via a OutputFunction* pointer. */
-  typedef void (Logger::OutputFunction)(const string& unitName,
+  typedef void (OutputFunction)(const string& unitName,
       unsigned char unitNameLen, const char* format, int args,
       const Subst arg[]);
 # endif

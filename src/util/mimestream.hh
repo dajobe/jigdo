@@ -250,7 +250,7 @@ Base64Out<Output>& Base64Out<Output>::write(const unsigned char* x,
 template <class Output>
 class Base64In {
 public:
-  Base64In() : bits(0) { }
+  Base64In() : bits(0), data(0) { }
   typename Output::ResultType result() { return out.result(); }
 
   /** Output operators, for handing in the ASCII Base64 string. */

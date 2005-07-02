@@ -151,6 +151,9 @@
 // Do not change this
 #define PACKAGE "jigdo"
 
+// For copyright messages, the year of the last change to the program code
+#define CURRENT_YEAR 2005
+
 // __attribute__ only present with GCC
 #ifndef __GNUC__
 #  define __attribute__(x)
