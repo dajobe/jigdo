@@ -45,7 +45,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
-#include <unistd.h>
+#include <unistd-jigdo.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 

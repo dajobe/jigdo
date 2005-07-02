@@ -99,7 +99,7 @@ objects-torture = cachefile.o compat.o jigdoconfig.o mkimage.o mkjigdo.o \
 .PHONY:         all all-msg clean distclean mostlyclean maintainer-clean \
                 dep depend doc strip test test-v test-c
 all:		all-msg Makefile $(programs) $(debug-programs) \
-		@IF_DEBUG@@IF_NOGXX2@ test
+		@IF_DEBUG@@IFNOT_GXX2@ test-c @IFNOT_CROSSCOMPILING@ test
 all-msg:
 		-@if test "$$EMACS" != t; then \
 		    echo "export cpp='$(CPPFLAGS)'"; \
@@ -200,7 +200,7 @@ jigdo.res:	jigdo.rc jigdo32.ico
 
 jigdo@exe@:	$(objects-jigdo)
 		$(LD) -o $@ $(objects-jigdo) $(LDFLAGS) $(GTKLIBS) \
-		    $(CURLLIBS) @IF_WINDOWS@ -lws2_32 @IF_NODEBUG@ -mwindows
+		    $(CURLLIBS) @IF_WINDOWS@ -lws2_32 @IFNOT_DEBUG@ -mwindows
 glibcurl/glibcurl-example@exe@:	glibcurl/glibcurl-example.o \
 		    glibcurl/glibcurl.o
 		$(LD_C) -o $@ glibcurl/glibcurl-example.o \
@@ -233,5 +233,7 @@ gtk/interface.cc gtk/interface.hh: $(srcdir)/../jigdo.glade \
 		cd $(srcdir) && rm -f gtk/gui.cc.tmp gtk/gui.hh.tmp \
 		    gtk/interface.cc.tmp gtk/interface.hh.tmp
 #______________________________________________________________________
+
+LDFLAGS_WINSOCK = @IF_WINDOWS@ -lws2_32
 
 @SRC_MAKEDEPS@

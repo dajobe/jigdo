@@ -7,15 +7,19 @@ Current CVS version
     files, as an alternative to zlib compression. Bzip2 is disabled by
     default (but may become the default in the future). Use --bzip and
     --gzip to switch between the two.
+  - Patch by Jochen Hepp: New switch --scan-whole-file for "jigdo-file
+    scan" command: Scan whole file instead of only first block
   - jigdo: Switched over from libwww to libcurl for downloads
   - jigdo-lite: Fixed regular expressions so they work with sed 4.1
+    and non-GNU sed
   - jigdo-lite: --noask switch to allow running jigdo-lite from cron
     jobs (Silas Bennett)
   - jigdo-file: Bugfix for the code which deduces missing --image/
     --jigdo/--template arguments. Broken in 0.7.1, would deduce
     /x.iso.template from /x.iso, instead of /x.template (Adrian Bunk)
   - Fix for compilation on 64 bit architectures
-  - Fixed "compiler recent enough" check in configure.ac for GCC 3.5
+  - Fixed "compiler recent enough" check in configure.ac for GCC 3.5+
+  - Fixes for GCC 4.0
 
 jigdo 0.7.1 -- Richard Atterer, 20 Jun 2004
 

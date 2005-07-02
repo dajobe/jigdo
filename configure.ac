@@ -45,7 +45,7 @@ AC_PROG_CXX
 CFLAGS=`echo "$CFLAGS" | sed 's/\(^\| \)-g\( \|$\)/ /'`
 CXXFLAGS=`echo "$CXXFLAGS" | sed 's/\(^\| \)-g\( \|$\)/ /'`
 IF_GXX2="#"
-IF_NOGXX2=""
+IFNOT_GXX2=""
 if test "$GXX" = yes; then
     AC_MSG_CHECKING(for GCC version)
     gccver=`$CXX -dumpversion`
@@ -53,7 +53,7 @@ if test "$GXX" = yes; then
     case "$gccver" in
         2.*)
             IF_GXX2=""
-            IF_NOGXX2="#";;
+            IFNOT_GXX2="#";;
         3.0|3.0.*|3.1|3.1.*|3.3|3.3.*)
         #AC_MSG_RESULT([   * Big file support may be broken in GCC 3.2 and])
         #AC_MSG_RESULT([   * 3.3! If you compile jigdo on Linux (and maybe])
@@ -63,7 +63,7 @@ if test "$GXX" = yes; then
     esac
 fi
 AC_SUBST(IF_GXX2)
-AC_SUBST(IF_NOGXX2)
+AC_SUBST(IFNOT_GXX2)
 AC_PROG_INSTALL
 dnl ____________________
 
@@ -153,7 +153,7 @@ AC_ARG_ENABLE(debug,
 AC_MSG_RESULT(\"$jigdo_debug\")
 if test "$jigdo_debug" = "yes"; then
     IF_DEBUG=""
-    IF_NODEBUG="#"
+    IFNOT_DEBUG="#"
     AC_DEFINE(DEBUG, 1)
     if test "$ac_cv_prog_cc_g" = "yes"; then CFLAGS="$CFLAGS -g"; fi
     if test "$ac_cv_prog_cxx_g" = "yes"; then CXXFLAGS="$CXXFLAGS -g"; fi
@@ -161,11 +161,11 @@ elif test "$jigdo_debug" != "no"; then
     AC_MSG_ERROR(Invalid argument to --enable-debug option)
 else
     IF_DEBUG="#"
-    IF_NODEBUG=""
+    IFNOT_DEBUG=""
     AC_DEFINE(DEBUG, 0)
 fi
 AC_SUBST(IF_DEBUG)
-AC_SUBST(IF_NODEBUG)
+AC_SUBST(IFNOT_DEBUG)
 
 dnl dnl cppunit
 dnl CPPUNITCFLAGS='# `cppunit-config --cflags`'
@@ -672,6 +672,17 @@ if test "$GXX" = "yes"; then
     CFLAGS="-Wall $CFLAGS -W"
     CXXFLAGS="$CXXFLAGS -Wall -W -Wpointer-arith -Wconversion -Woverloaded-virtual"
 fi
+dnl ______________________________________________________________________
+
+if test "$cross_compiling" = yes; then
+  IF_CROSSCOMPILING=""
+  IFNOT_CROSSCOMPILING="#"
+else
+  IF_CROSSCOMPILING="#"
+  IFNOT_CROSSCOMPILING=""
+fi
+AC_SUBST(IF_CROSSCOMPILING)
+AC_SUBST(IFNOT_CROSSCOMPILING)
 dnl ______________________________________________________________________
 
 dnl Touch TAGS to prevent it from being recreated when a normal user

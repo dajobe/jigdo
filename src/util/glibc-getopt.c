@@ -66,7 +66,7 @@
 /* Don't include stdlib.h for non-GNU C libraries because some of them
    contain conflicting prototypes for getopt.  */
 # include <stdlib.h>
-# include <unistd.h>
+# include <unistd-jigdo.h>
 #endif  /* GNU C library.  */
 
 #ifdef VMS

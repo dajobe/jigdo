@@ -23,7 +23,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
+#include <unistd-jigdo.h>
 #include <zlib.h>
 
 #include <compat.hh>
@@ -55,6 +55,7 @@ int JigdoFileCmd::optZipQuality = Z_BEST_COMPRESSION;
 bool JigdoFileCmd::optBzip2 = false;
 bool JigdoFileCmd::optForce = false;
 bool JigdoFileCmd::optMkImageCheck = true;
+bool JigdoFileCmd::optScanWholeFile = false;
 bool JigdoFileCmd::optAddImage = true;
 bool JigdoFileCmd::optAddServers = true;
 bool JigdoFileCmd::optHex = false;
@@ -367,6 +368,7 @@ inline void printUsage(bool detailed, size_t blockLength,
     "                   [make-image] Verify checksum of files written to\n"
     "                   image\n"
     "  --no-check-files [make-image] Do not verify checksums\n"
+    "  --scan-whole-file [scan] Scan whole file instead of only first block\n"
     "  --image-section [default]\n"
     "  --no-image-section\n"
     "  --servers-section [default]\n"
@@ -469,7 +471,7 @@ enum {
   LONGOPT_LABEL, LONGOPT_URI, LONGOPT_ADDSERVERS, LONGOPT_NOADDSERVERS,
   LONGOPT_ADDIMAGE, LONGOPT_NOADDIMAGE, LONGOPT_NOCACHE, LONGOPT_CACHEEXPIRY,
   LONGOPT_MERGE, LONGOPT_HEX, LONGOPT_NOHEX, LONGOPT_DEBUG, LONGOPT_NODEBUG,
-  LONGOPT_MATCHEXEC, LONGOPT_BZIP2, LONGOPT_GZIP
+  LONGOPT_MATCHEXEC, LONGOPT_BZIP2, LONGOPT_GZIP, LONGOPT_SCANWHOLEFILE
 };
 
 // Deal with command line switches
@@ -510,6 +512,7 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
       { "no-servers-section", no_argument,       0, LONGOPT_NOADDSERVERS },
       { "readbuffer",         required_argument, 0, LONGOPT_BUFSIZE },
       { "report",             required_argument, 0, 'r' },
+      { "scan-whole-file",    no_argument,       0, LONGOPT_SCANWHOLEFILE },
       { "servers-section",    no_argument,       0, LONGOPT_ADDSERVERS },
       { "template",           required_argument, 0, 't' },
       { "uri",                required_argument, 0, LONGOPT_URI },
@@ -561,6 +564,7 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
       break;
     case LONGOPT_MKIMAGECHECK: optMkImageCheck = true; break;
     case LONGOPT_NOMKIMAGECHECK: optMkImageCheck = false; break;
+    case LONGOPT_SCANWHOLEFILE: optScanWholeFile = true; break;
     case LONGOPT_ADDSERVERS: optAddServers = true; break;
     case LONGOPT_NOADDSERVERS: optAddServers = false; break;
     case LONGOPT_ADDIMAGE: optAddImage = true; break;

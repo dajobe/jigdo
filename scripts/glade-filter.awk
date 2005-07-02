@@ -47,6 +47,7 @@ BEGIN {
   namespace = "GUI";
 
   cc = "// Automatically created from `"leaf".cc.tmp' by glade-filter.awk\n\n";
+  addcc("#include <unistd-jigdo.h>");
   hh = cc;
   #addcc("#include <"outputhh">");
   addhh("#ifndef "hhGuard);

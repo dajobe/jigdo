@@ -21,7 +21,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
+#include <unistd-jigdo.h>
 
 #include <bstream.hh>
 #include <compat.hh>

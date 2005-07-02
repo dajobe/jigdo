@@ -11,7 +11,7 @@
 
 #include <iostream>
 #if defined DEBUG && defined HAVE_UNISTD_H
-#  include <unistd.h> /* for sleep() */
+#  include <unistd-jigdo.h> /* for sleep() */
 #endif
 #include <stdlib.h>
 
@@ -36,7 +36,7 @@ int Debug::assertFail(const char* assertion, const char* file,
 
 #if DEBUG && UNIX
 
-#include <unistd.h>
+#include <unistd-jigdo.h>
 #include <stdlib.h>
 
 /** In order for memprof to be used, the process needs to sleep after

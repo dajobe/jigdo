@@ -11,6 +11,11 @@
 
 #include <config.h>
 
+#if DEBUG
+#  include <string.h>
+#  include <unistd-jigdo.h>
+#endif
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -24,11 +29,6 @@
 #include <proxyguess.hh>
 #include <string-utf.hh>
 #include <support.hh>
-
-#if DEBUG
-#  include <string.h>
-#  include <unistd.h>
-#endif
 
 #if WINDOWS
 #  include <windows.h>

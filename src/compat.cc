@@ -34,7 +34,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
+#include <unistd-jigdo.h>
 #ifndef O_LARGEFILE
 #  define O_LARGEFILE 0 // Linux: Allow 64-bit file sizes on 32-bit arches
 #endif
