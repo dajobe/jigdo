@@ -9,7 +9,7 @@
     <copyright>
       <year>2001-2005</year><holder>Richard Atterer</holder>
     </copyright>
-    <date>Apr 4, 2005</date>
+    <date>Jul 2, 2005</date>
   </refentryinfo>
   <refmeta>
     <refentrytitle>jigdo-file</refentrytitle>
@@ -859,6 +859,29 @@
       them into the cache, unless they are already cached. The
       <option>--cache</option> option must be present for this
       command.</para>
+
+      <variablelist>
+        <varlistentry>
+          <term><option>--no-scan-whole-file</option></term>
+          <listitem>
+
+            <para><emphasis>This is the default.</emphasis> This only
+            causes the first <option>--md5-block-size</option> bytes
+            of each file to be read. If the cache is used later by
+            <command>jigdo-file make-image</command>, the rest of the
+            file will be read once these first bytes are recognized in
+            the input image.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><option>--scan-whole-file</option></term>
+          <listitem>
+            <para>Immediately read the entire file contents and store
+            them in the cache.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
 
     </refsect2>
     <!-- ========================================= -->

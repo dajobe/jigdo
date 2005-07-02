@@ -471,7 +471,8 @@ enum {
   LONGOPT_LABEL, LONGOPT_URI, LONGOPT_ADDSERVERS, LONGOPT_NOADDSERVERS,
   LONGOPT_ADDIMAGE, LONGOPT_NOADDIMAGE, LONGOPT_NOCACHE, LONGOPT_CACHEEXPIRY,
   LONGOPT_MERGE, LONGOPT_HEX, LONGOPT_NOHEX, LONGOPT_DEBUG, LONGOPT_NODEBUG,
-  LONGOPT_MATCHEXEC, LONGOPT_BZIP2, LONGOPT_GZIP, LONGOPT_SCANWHOLEFILE
+  LONGOPT_MATCHEXEC, LONGOPT_BZIP2, LONGOPT_GZIP, LONGOPT_SCANWHOLEFILE,
+  LONGOPT_NOSCANWHOLEFILE
 };
 
 // Deal with command line switches
@@ -509,6 +510,7 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
       { "no-force",           no_argument,       0, LONGOPT_NOFORCE },
       { "no-hex",             no_argument,       0, LONGOPT_NOHEX },
       { "no-image-section",   no_argument,       0, LONGOPT_NOADDIMAGE },
+      { "no-scan-whole-file", no_argument,       0, LONGOPT_NOSCANWHOLEFILE },
       { "no-servers-section", no_argument,       0, LONGOPT_NOADDSERVERS },
       { "readbuffer",         required_argument, 0, LONGOPT_BUFSIZE },
       { "report",             required_argument, 0, 'r' },
@@ -565,6 +567,7 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
     case LONGOPT_MKIMAGECHECK: optMkImageCheck = true; break;
     case LONGOPT_NOMKIMAGECHECK: optMkImageCheck = false; break;
     case LONGOPT_SCANWHOLEFILE: optScanWholeFile = true; break;
+    case LONGOPT_NOSCANWHOLEFILE: optScanWholeFile = false; break;
     case LONGOPT_ADDSERVERS: optAddServers = true; break;
     case LONGOPT_NOADDSERVERS: optAddServers = false; break;
     case LONGOPT_ADDIMAGE: optAddImage = true; break;
