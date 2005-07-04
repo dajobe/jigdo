@@ -7,11 +7,13 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-/** @{ What OS do we compile for? Exactly one of these must be 1.  Assumes a
+/** @name
+    What OS do we compile for? Exactly one of these must be 1.  Assumes a
     native Windows environment like mingw32, not Cygwin. */
+//@{
 #define WINDOWS 0
 #define UNIX 0
-/*@}*/
+//@}
 
 /** Define if target architecture is big-endian */
 #undef WORDS_BIGENDIAN

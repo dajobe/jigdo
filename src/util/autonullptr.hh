@@ -72,8 +72,9 @@ private:
 };
 //______________________________________________________________________
 
-/** The regular pointer tests */
-/*@{*/
+/** @name
+    The regular pointer tests */
+//@{
 template<class T>
 inline bool operator==(const AutoNullPtr<T>& a, const T* b) {
   return a.get() == b;
@@ -151,7 +152,7 @@ template<class T>
 inline bool operator>=(const AutoNullPtr<T>& a, const AutoNullPtr<T>& b) {
   return a.get() >= b.get();
 }
-/*@}*/
+//@}
 //______________________________________________________________________
 
 #endif

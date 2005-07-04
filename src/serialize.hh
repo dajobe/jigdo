@@ -124,8 +124,9 @@ private:
 // Serializations of common data types. Stores in little-endian.
 //________________________________________
 
-/** Numeric types - append the number of bytes to use (e.g. 4 for 32-bit) */
-/*@{*/
+/** @name
+    Numeric types - append the number of bytes to use (e.g. 4 for 32-bit) */
+//@{
 template<class NumType, class Iterator>
 inline Iterator serialize1(NumType x, Iterator i) {
   *i = x & 0xff; ++i;
@@ -212,7 +213,7 @@ inline ConstIterator unserialize8(NumType& x, ConstIterator i) {
   x |= static_cast<NumType>(*i) << 56; ++i;
   return i;
 }
-/*@}*/
+//@}
 //______________________________________________________________________
 
 #endif

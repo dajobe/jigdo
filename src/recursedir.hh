@@ -70,7 +70,10 @@ public:
       @param fileInfo getName() must call stat() for any filename it
       returns, in order to determine whether it is a directory. If the
       information returned by stat() is useful for you, supply your
-      own struct stat for getName() to use. */
+      own struct stat for getName() to use.
+      @param checkFiles if true, normal operation, check whether files exist
+      before using cache entries. If false, only check whether cache entry
+      present and return it if so. */
   bool getName(string& result, struct stat* fileInfo = 0,
                bool checkFiles = true)
       throw(RecurseError, bad_alloc);

@@ -52,8 +52,9 @@ public:
   virtual const IOPtr<DataSource::IO>& io() const;
 
 private:
-  /** Methods from SingleUrl::IO */
-  /**@{*/
+  /** @name
+      Methods from SingleUrl::IO */
+  //@{
   virtual void job_deleted();
   virtual void job_succeeded();
   virtual void job_failed(string* message);
@@ -61,7 +62,7 @@ private:
   virtual void dataSource_dataSize(uint64 n);
   virtual void dataSource_data(const byte* data, unsigned size,
                                uint64 currentSize);
-  /**@}*/
+  //@}
 
   // Virtual methods from Gunzip::IO
   virtual void gunzip_deleted();
