@@ -84,6 +84,9 @@ objects-torture = cachefile.o compat.o jigdoconfig.o mkimage.o mkjigdo.o \
 		util/log.o util/md5sum.o util/rsyncsum.o util/string.o \
 		zstream.o zstream-bz.o zstream-gz.o \
 		util/debug.o # this must come last!
+objects-random = util/glibc-md5.o util/log.o util/md5sum.o util/random.o \
+		util/string.o \
+		util/debug.o # this must come last!
 #______________________________
 
 .SUFFIXES:
@@ -167,7 +170,7 @@ EXE =@exe@
 # Compile only
 test-c:		$(test-programs)
 # Compile and run
-test:		$(test-programs)
+test:		$(test-programs) jigdo-file@exe@
 		@echo "Running unit tests..."; \
 		for p in $(test-programs); do \
 		    if "$$p"; then continue; fi; \
@@ -182,7 +185,7 @@ test:		$(test-programs)
 		set $(test-programs) $$testscripts; \
 		    echo "All $$# tests succeeded"
 # Compile and run, re-run in verbose mode after error
-test-v:		$(test-programs)
+test-v:		$(test-programs) jigdo-file@exe@
 		@echo "Running unit tests..."; \
 		for p in $(test-programs); do \
 		    if "$$p"; then echo "OK: $$p"; continue; fi; \
@@ -224,6 +227,8 @@ jigdo-file@exe@: $(objects-jigdo-file)
 		$(LD) -o $@ $(objects-jigdo-file) $(LDFLAGS)
 torture@exe@:	$(objects-torture)
 		$(LD) -o $@ $(objects-torture) $(LDFLAGS)
+util/random@exe@: $(objects-random)
+		$(LD) -o $@ $(objects-random) $(LDFLAGS)
 mimestreamtest@exe@: mimestreamtest.o util/debug.o
 		$(LD) -o $@ mimestreamtest.o util/log.o util/string-utf.o \
 		    util/debug.o $(LDFLAGS) $(GTKLIBS)

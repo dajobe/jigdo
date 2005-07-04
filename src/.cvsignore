@@ -20,3 +20,4 @@ cvs
 *.dll
 Makedeps
 jigdo.res
+apidoc
