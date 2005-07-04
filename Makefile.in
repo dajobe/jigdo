@@ -30,13 +30,14 @@ catalogs =	@CATALOGS@
 		install-jigdo-file install-jigdo-lite install-jigdo \
 		install-po
 # "gfx" symlink is needed for the pixmaps to be found by jigdo
-all doc mostlyclean dep depend check: Makefile
+all doc mostlyclean dep depend: Makefile
 		-test -h gfx -o -d gfx || ln -s "$(srcdir)/gfx" gfx
 		cd src && $(MAKE) $@
 		cd doc && $(MAKE) $@
 		cd po  && $(MAKE) $@
-test:
-		@echo "You mean \`make check'. Try again... ;-)"
+check test: Makefile
+		-test -h gfx -o -d gfx || ln -s "$(srcdir)/gfx" gfx
+		cd src && $(MAKE) $@
 clean:		Makefile
 		cd src && $(MAKE) $@
 		cd doc && $(MAKE) $@

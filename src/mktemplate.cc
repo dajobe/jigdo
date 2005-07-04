@@ -237,6 +237,7 @@ void MkTemplate::checkRsyncSumMatch2(const size_t blockLen,
      [I think A gets matched, then the following line prevents that a partial
      match for B is also recorded.] */
   if (off - blockLen < unmatchedStart) return;
+  //if (off < unmatchedStart + blockLen) return;
 
   PartialMatch* x; // Ptr to new entry in "matches"
   if (matches->full()) {

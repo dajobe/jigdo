@@ -173,7 +173,14 @@ test:		$(test-programs)
 		    if "$$p"; then continue; fi; \
 		    echo "$$p failed, for details enter: $$p all"; exit 1; \
 		done; \
-		set $(test-programs); echo "All $$# tests succeeded"
+		testscripts="`cd $(srcdir) && echo *-test*.sh`"; \
+		export srcdir="$(srcdir)"; \
+		for p in $$testscripts; do \
+		    if sh "$(srcdir)/$$p"; then continue; fi; \
+		    echo "$$p failed"; exit 1; \
+		done; \
+		set $(test-programs) $$testscripts; \
+		    echo "All $$# tests succeeded"
 # Compile and run, re-run in verbose mode after error
 test-v:		$(test-programs)
 		@echo "Running unit tests..."; \
@@ -181,7 +188,14 @@ test-v:		$(test-programs)
 		    if "$$p"; then echo "OK: $$p"; continue; fi; \
 		    echo "$$p failed"; "$$p" all; exit 1; \
 		done; \
-		set $(test-programs); echo "All $$# tests succeeded"
+		testscripts="`cd $(srcdir) && echo *-test*.sh`"; \
+		export srcdir="$(srcdir)"; \
+		for p in $$testscripts; do \
+		    if sh "$(srcdir)/$$p"; then echo "OK: $$p"; continue; fi; \
+		    echo "$$p failed"; sh "$(srcdir)/$$p" all; exit 1; \
+		done; \
+		set $(test-programs) $$testscripts; \
+		    echo "All $$# tests succeeded"
 
 config.h:	$(srcdir)/../jigdo.spec
 		rm -f config.h
