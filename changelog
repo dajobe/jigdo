@@ -9,6 +9,9 @@ Current CVS version
     --gzip to switch between the two.
   - Patch by Jochen Hepp: New switch --scan-whole-file for "jigdo-file
     scan" command: Scan whole file instead of only first block
+  - Patch by Jochen Hepp: New switch --no-greedy-matching for
+    "jigdo-file make-template" prevents small matches from cancelling
+    pending larger matches.
   - jigdo: Switched over from libwww to libcurl for downloads
   - jigdo-lite: Fixed regular expressions so they work with sed 4.1
     and non-GNU sed
