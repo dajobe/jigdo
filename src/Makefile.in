@@ -170,7 +170,7 @@ EXE =@exe@
 # Compile only
 test-c:		$(test-programs)
 # Compile and run
-test:		$(test-programs) jigdo-file@exe@
+test:		$(test-programs) jigdo-file@exe@ util/random@exe@
 		@echo "Running unit tests..."; \
 		for p in $(test-programs); do \
 		    if "$$p"; then continue; fi; \
@@ -185,7 +185,7 @@ test:		$(test-programs) jigdo-file@exe@
 		set $(test-programs) $$testscripts; \
 		    echo "All $$# tests succeeded"
 # Compile and run, re-run in verbose mode after error
-test-v:		$(test-programs) jigdo-file@exe@
+test-v:		$(test-programs) jigdo-file@exe@ util/random@exe@
 		@echo "Running unit tests..."; \
 		for p in $(test-programs); do \
 		    if "$$p"; then echo "OK: $$p"; continue; fi; \
