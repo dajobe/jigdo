@@ -57,6 +57,7 @@ bool JigdoFileCmd::optForce = false;
 bool JigdoFileCmd::optMkImageCheck = true;
 bool JigdoFileCmd::optCheckFiles = true;
 bool JigdoFileCmd::optScanWholeFile = false;
+bool JigdoFileCmd::optGreedyMatching = true;
 bool JigdoFileCmd::optAddImage = true;
 bool JigdoFileCmd::optAddServers = true;
 bool JigdoFileCmd::optHex = false;
@@ -373,6 +374,12 @@ inline void printUsage(bool detailed, size_t blockLength,
     "  --no-check-files [make-template,md5sum] when used with --cache,\n"
     "                   [make-image] Do not verify checksums of files\n"
     "  --scan-whole-file [scan] Scan whole file instead of only first block\n"
+    "  --greedy-matching [make-template] Prefer immediate matches of small\n"
+    "                   files now over possible (but uncertain) matches of \n"
+    "                   larger files later [default]\n"
+    "  --no-greedy-matching\n"
+    "                   [make-template] Skip a smaller match and prefer a\n"
+    "                   pending larger one, with the risk of missing both\n"
     "  --image-section [default]\n"
     "  --no-image-section\n"
     "  --servers-section [default]\n"
@@ -476,7 +483,7 @@ enum {
   LONGOPT_ADDIMAGE, LONGOPT_NOADDIMAGE, LONGOPT_NOCACHE, LONGOPT_CACHEEXPIRY,
   LONGOPT_MERGE, LONGOPT_HEX, LONGOPT_NOHEX, LONGOPT_DEBUG, LONGOPT_NODEBUG,
   LONGOPT_MATCHEXEC, LONGOPT_BZIP2, LONGOPT_GZIP, LONGOPT_SCANWHOLEFILE,
-  LONGOPT_NOSCANWHOLEFILE
+  LONGOPT_NOSCANWHOLEFILE, LONGOPT_GREEDYMATCHING, LONGOPT_NOGREEDYMATCHING
 };
 
 // Deal with command line switches
@@ -496,6 +503,7 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
       { "debug",              optional_argument, 0, LONGOPT_DEBUG },
       { "files-from",         required_argument, 0, 'T' }, // "-T" like tar's
       { "force",              no_argument,       0, 'f' },
+      { "greedy-matching",    no_argument,       0, LONGOPT_GREEDYMATCHING },
       { "gzip",               no_argument,       0, LONGOPT_GZIP },
       { "help",               no_argument,       0, 'h' },
       { "help-all",           no_argument,       0, 'H' },
@@ -504,14 +512,15 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
       { "image-section",      no_argument,       0, LONGOPT_ADDIMAGE },
       { "jigdo",              required_argument, 0, 'j' },
       { "label",              required_argument, 0, LONGOPT_LABEL },
-      { "md5-block-size",     required_argument, 0, LONGOPT_MD5SIZE },
       { "match-exec",         required_argument, 0, LONGOPT_MATCHEXEC },
+      { "md5-block-size",     required_argument, 0, LONGOPT_MD5SIZE },
       { "merge",              required_argument, 0, LONGOPT_MERGE },
       { "min-length",         required_argument, 0, LONGOPT_MINSIZE },
       { "no-cache",           no_argument,       0, LONGOPT_NOCACHE },
       { "no-check-files",     no_argument,       0, LONGOPT_NOMKIMAGECHECK },
       { "no-debug",           no_argument,       0, LONGOPT_NODEBUG },
       { "no-force",           no_argument,       0, LONGOPT_NOFORCE },
+      { "no-greedy-matching", no_argument,       0, LONGOPT_NOGREEDYMATCHING },
       { "no-hex",             no_argument,       0, LONGOPT_NOHEX },
       { "no-image-section",   no_argument,       0, LONGOPT_NOADDIMAGE },
       { "no-scan-whole-file", no_argument,       0, LONGOPT_NOSCANWHOLEFILE },
@@ -572,6 +581,8 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
                                optCheckFiles = true; break;
     case LONGOPT_NOMKIMAGECHECK: optMkImageCheck = false;
                                  optCheckFiles = false; break;
+    case LONGOPT_GREEDYMATCHING: optGreedyMatching = true; break;
+    case LONGOPT_NOGREEDYMATCHING: optGreedyMatching = false; break;
     case LONGOPT_SCANWHOLEFILE: optScanWholeFile = true; break;
     case LONGOPT_NOSCANWHOLEFILE: optScanWholeFile = false; break;
     case LONGOPT_ADDSERVERS: optAddServers = true; break;

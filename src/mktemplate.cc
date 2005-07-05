@@ -62,7 +62,7 @@ MkTemplate::MkTemplate(JigdoCache* jcache, bistream* imageStream,
     int zipQuality, size_t readAmnt, bool addImage, bool addServers,
     bool useBzip2)
   : fileSizeTotal(0U), fileCount(0U), block(), readAmount(readAmnt),
-    off(), unmatchedStart(),
+    off(), unmatchedStart(), greedyMatching(true),
     cache(jcache),
     image(imageStream), templ(templateStream), zip(0),
     zipQual(zipQuality), reporter(pr), matches(new PartialMatchQueue()),
@@ -496,13 +496,21 @@ bool MkTemplate::checkMD5Match(byte* const buf,
   Assert(off == x->startOffset() + x->file()->size());
   // Heureka! *MATCH*
   // x = address of PartialMatch obj of file that matched
+
+  const PartialMatch* oldestMatch = matches->findLowestStartOffset();
+
+  if (!greedyMatching && x != oldestMatch) {
+    // A larger match is possible, so skip this match
+    matches->eraseFront(); // return x to free pool
+    return SUCCESS;
+  }
+
   reporter.matchFound(x->file(), x->startOffset());
   matchedParts.push_back(x->file());
 
   /* Re-read and write out data before the start of the match, i.e. of any
      half-finished bigger match (which we abandon now that we've found a
      smaller match inside it). */
-  const PartialMatch* oldestMatch = matches->findLowestStartOffset();
   if (x != oldestMatch && oldestMatch->startOffset() < off - stillBuffered) {
     unmatchedStart = min(off - stillBuffered, x->startOffset());
     debugRangeInfo(oldestMatch->startOffset(), unmatchedStart,

@@ -87,6 +87,8 @@ class JigdoFileCmd {
   static bool optMkImageCheck; // true => check MD5sums
   static bool optCheckFiles; // true => check if files exist
   static bool optScanWholeFile; // false => read only first block
+  // true => skip smaller matches if a larger match could be possible
+  static bool optGreedyMatching;
   static bool optAddImage; // true => Add [Image] section to output .jigdo
   static bool optAddServers; // true => Add [Servers] to output .jigdo
   static bool optHex; // true => Use hex not base64 output for md5/ls cmds

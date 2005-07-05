@@ -253,6 +253,7 @@ int JigdoFileCmd::makeTemplate() {
                       optZipQuality, readAmount, optAddImage, optAddServers,
                       optBzip2));
   op->setMatchExec(optMatchExec);
+  op->setGreedyMatching(optGreedyMatching);
   size_t lastDirSep = imageFile.rfind(DIRSEP);
   if (lastDirSep == string::npos) lastDirSep = 0; else ++lastDirSep;
   string imageFileLeaf(imageFile, lastDirSep);
