@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: jigdo\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-07-02 20:47+0200\n"
-"PO-Revision-Date: 2005-07-02 20:46+0200\n"
+"POT-Creation-Date: 2005-07-05 14:48+0200\n"
+"PO-Revision-Date: 2005-07-05 14:48+0200\n"
 "Last-Translator: RA -*- coding: utf-8; -*-\n"
 "Language-Team: de\n"
 "MIME-Version: 1.0\n"
@@ -29,7 +29,7 @@ msgstr ""
 "\tHomepage von Jigsaw Download: http://atterer.net/jigdo\n"
 "\n"
 
-#: jigdo-file.cc:286
+#: jigdo-file.cc:288
 msgid ""
 "\n"
 "Copyright (C) 2001-%1 Richard Atterer <http://atterer.net>\n"
@@ -52,7 +52,7 @@ msgstr ""
 "\n"
 ".jigdo-Daten werden heruntergeladen - bitte warten..."
 
-#: jigdo-file.cc:355
+#: jigdo-file.cc:357
 msgid ""
 "\n"
 "Further options: (can append 'k', 'M', 'G' to any BYTES argument)\n"
@@ -67,10 +67,20 @@ msgid ""
 "  --readbuffer=BYTES [default %3k]\n"
 "                   Amount of data to read at a time\n"
 "  --check-files [default]\n"
+"                   [make-template,md5sum] Check if files exist and\n"
+"                   get or verify checksums, date and size\n"
 "                   [make-image] Verify checksum of files written to\n"
 "                   image\n"
-"  --no-check-files [make-image] Do not verify checksums\n"
+"  --no-check-files [make-template,md5sum] when used with --cache,\n"
+"                   [make-image] Do not verify checksums of files\n"
 "  --scan-whole-file [scan] Scan whole file instead of only first block\n"
+"  --no-scan-whole-file [scan] Scan only first block [default]\n"
+"  --greedy-matching [make-template] Prefer immediate matches of small\n"
+"                   files now over possible (but uncertain) matches of \n"
+"                   larger files later [default]\n"
+"  --no-greedy-matching\n"
+"                   [make-template] Skip a smaller match and prefer a\n"
+"                   pending larger one, with the risk of missing both\n"
 "  --image-section [default]\n"
 "  --no-image-section\n"
 "  --servers-section [default]\n"
@@ -107,9 +117,21 @@ msgstr ""
 "  --readbuffer=BYTES [Voreinstellung %3k]\n"
 "                   Datenmenge, die jeweils am Stück eingelesen wird\n"
 "  --check-files [Voreinstellung]\n"
+"                   [make-template,md5sum] Überprüfen, ob Eingabedateien\n"
+"                   existieren, und Prüfsummen, Datum und Größe überprüfen\n"
 "                   [make-image] Prüfsummen von Dateien überprüfen,\n"
 "                   die in die Image-Datei geschrieben werden\n"
-"  --no-check-files [make-image] Prüfsummen nicht überprüfen\n"
+"  --no-check-files [make-template,md5sum] Bei Benutzung von --cache,\n"
+"                   [make-image] Prüfsummen nicht überprüfen\n"
+"  --scan-whole-file [scan] Ganze Datei einlesen, nicht nur den ersten Block\n"
+"  --no-scan-whole-file [scan] Nur ersten Block einlesen [Voreinstellung]\n"
+"  --greedy-matching [make-template] Sofortiges Erkennen kleinerer Dateien\n"
+"                   anstelle von möglichem (aber unsicheren) Erkennen\n"
+"                   größerer Dateien später [Voreinstellung]\n"
+"  --no-greedy-matching\n"
+"                   [make-template] Kleineren Match überspringen und dafür\n"
+"                   größeren bevorzugen, jedoch besteht das Risiko, dass der\n"
+"                   größere sich als Nicht-Match herausstellt\n"
 "  --image-section [Voreinstellung]\n"
 "  --no-image-section\n"
 "  --servers-section [Voreinstellung]\n"
@@ -136,7 +158,7 @@ msgstr ""
 "  --gzip           [Voreinstellung] Gzip-Kompression verwenden, nicht --"
 "bzip\n"
 
-#: jigdo-file.cc:316
+#: jigdo-file.cc:318
 msgid ""
 "\n"
 "Important options:\n"
@@ -199,7 +221,7 @@ msgstr ""
 "\n"
 "Lizenz von Jigsaw Download\n"
 
-#: jigdo-file.cc:294
+#: jigdo-file.cc:296
 msgid ""
 "\n"
 "Usage: %1 COMMAND [OPTIONS] [FILES...]\n"
@@ -220,7 +242,7 @@ msgstr ""
 "  print-missing pm Gibt nach make-image die Dateien aus, die zur\n"
 "                   Wiederherstellung des Image noch benötigt werden\n"
 
-#: jigdo-file.cc:342
+#: jigdo-file.cc:344
 msgid ""
 "      --no-cache   Do not cache information about scanned files\n"
 "      --cache-expiry=SECONDS[h|d|w|m|y]\n"
@@ -238,7 +260,7 @@ msgstr ""
 "  -h  --help       Kurzen Hilfetext ausgeben\n"
 "  -H  --help-all   Diesen Hilfetext ausgeben\n"
 
-#: jigdo-file.cc:349
+#: jigdo-file.cc:351
 msgid ""
 "  -h  --help       Output this help\n"
 "  -H  --help-all   Output more detailed help\n"
@@ -246,11 +268,11 @@ msgstr ""
 "  -h  --help       Diesen Hilfetext ausgeben\n"
 "  -H  --help-all   Detaillierteren Hilfetext ausgeben\n"
 
-#: jigdo-file.cc:352
+#: jigdo-file.cc:354
 msgid "  -v  --version    Output version info"
 msgstr "  -v  --version    Versionsnummer ausgeben"
 
-#: jigdo-file.cc:312
+#: jigdo-file.cc:314
 msgid ""
 "  list-template ls Print low-level listing of contents of template\n"
 "                   data or tmp file\n"
@@ -258,7 +280,7 @@ msgstr ""
 "  list-template ls Low-level-Informationen über Inhalt von\n"
 "                   template- oder tmp-Datei ausgeben\n"
 
-#: jigdo-file.cc:304
+#: jigdo-file.cc:306
 msgid ""
 "  print-missing-all pma\n"
 "                   Print all URIs for each missing file\n"
@@ -269,7 +291,7 @@ msgstr ""
 "  scan sc          Dateien scannen und Informationen über sie in\n"
 "                   Puffer aufnehmen\n"
 
-#: jigdo-file.cc:308
+#: jigdo-file.cc:310
 msgid ""
 "  verify ver       Check whether image matches checksum from template\n"
 "  md5sum md5       Print MD5 checksums similar to md5sum(1)\n"
@@ -350,19 +372,19 @@ msgstr "%1 Tage und %2 Stunden"
 msgid "%1 hours and %2 minutes"
 msgstr "%1 Stunden und %2 Minuten"
 
-#: jigdo-file-cmd.cc:343
+#: jigdo-file-cmd.cc:345
 msgid "%1 list-template: %2"
 msgstr "%1 list-template: %2"
 
-#: jigdo-file-cmd.cc:317
+#: jigdo-file-cmd.cc:319
 msgid "%1 list-template: --template not specified.\n"
 msgstr "%1 list-template: --template muss angegeben werden.\n"
 
-#: jigdo-file-cmd.cc:322
+#: jigdo-file-cmd.cc:324
 msgid "%1 list-template: Sorry, cannot read from standard input.\n"
 msgstr "%1 list-template: Sorry, kann nicht von stdin lesen.\n"
 
-#: jigdo-file-cmd.cc:281
+#: jigdo-file-cmd.cc:283
 msgid ""
 "%1 make-image: Not both --image and --template specified.\n"
 "(Attempt to deduce missing names failed.)\n"
@@ -374,11 +396,11 @@ msgstr ""
 msgid "%1 make-template: Could not read `%2' (%3)"
 msgstr "%1 make-template: Konnte »%2« nicht lesen (%3)"
 
-#: jigdo-file-cmd.cc:268
+#: jigdo-file-cmd.cc:270
 msgid "%1 make-template: Could not write `%2' (%3)"
 msgstr "%1 make-template: Konnte »%2« nicht schreiben (%3)"
 
-#: jigdo-file-cmd.cc:202 jigdo-file-cmd.cc:440
+#: jigdo-file-cmd.cc:202 jigdo-file-cmd.cc:442
 msgid ""
 "%1 make-template: Not all of --image, --jigdo, --template specified.\n"
 "(Attempt to deduce missing names failed.)\n"
@@ -390,23 +412,23 @@ msgstr ""
 msgid "%1 minutes"
 msgstr "%1 Minuten"
 
-#: jigdo-file-cmd.cc:477
+#: jigdo-file-cmd.cc:479
 msgid "%1 print-missing: %2"
 msgstr "%1 print-missing: %2"
 
-#: jigdo-file-cmd.cc:555
+#: jigdo-file-cmd.cc:557
 msgid "%1 scan: Please specify a --cache file.\n"
 msgstr "%1 scan: Bitte geben Sie eine Datei für --cache an.\n"
 
-#: jigdo-file-cmd.cc:381
+#: jigdo-file-cmd.cc:383
 msgid "%1 verify: %2"
 msgstr "%1 verify: %2"
 
-#: jigdo-file-cmd.cc:387
+#: jigdo-file-cmd.cc:389
 msgid "%1 verify: Invalid template data - corrupted file?"
 msgstr "%1 verify: Ungültige template-Daten - kaputte Datei?"
 
-#: jigdo-file-cmd.cc:360
+#: jigdo-file-cmd.cc:362
 msgid ""
 "%1 verify: Not both --image and --template specified.\n"
 "(Attempt to deduce missing names failed.)\n"
@@ -414,7 +436,7 @@ msgstr ""
 "%1 verify: Es wurde nicht sowohl --image als auch --template\n"
 "angegeben. (Versuch, die Dateinamen zu raten, schlug fehl.)\n"
 
-#: jigdo-file-cmd.cc:349 jigdo-file-cmd.cc:393
+#: jigdo-file-cmd.cc:351 jigdo-file-cmd.cc:395
 msgid "%1: %2"
 msgstr "%1: %2"
 
@@ -430,7 +452,7 @@ msgstr "%1: Fehler beim Öffnen von »%2« zur Ausgabe: %3"
 msgid "%1: Invalid argument to --label: `%2'"
 msgstr "%1: Ungültiges Argument für --label: »%2«"
 
-#: jigdo-file.cc:559
+#: jigdo-file.cc:575
 msgid ""
 "%1: Invalid argument to --report (allowed: default noprogress quiet grep)"
 msgstr ""
@@ -440,7 +462,7 @@ msgstr ""
 msgid "%1: Invalid argument to --uri: `%2'"
 msgstr "%1: Ungültiges Argument für --uri: »%2«"
 
-#: jigdo-file.cc:660
+#: jigdo-file.cc:681
 msgid ""
 "%1: Invalid command `%2'\n"
 "(Must be one of:%3)"
@@ -448,15 +470,15 @@ msgstr ""
 "%1: Ungültiges Kommando »%2«\n"
 "(Muss eines der Folgenden sein:%3)"
 
-#: jigdo-file.cc:415
+#: jigdo-file.cc:427
 msgid "%1: Invalid size specifier `%2'"
 msgstr "%1: Ungültige Größenangabe »%2«"
 
-#: jigdo-file.cc:441
+#: jigdo-file.cc:453
 msgid "%1: Invalid time specifier `%2'"
 msgstr "%1: Ungültige Zeitspanne »%2«"
 
-#: jigdo-file.cc:707
+#: jigdo-file.cc:728
 msgid "%1: Out of memory - aborted."
 msgstr "%1: Nicht genug Speicher - Abbruch."
 
@@ -466,11 +488,11 @@ msgstr ""
 "%1: Ausgabedatei »%2« existiert bereits - löschen Sie sie oder benutzen Sie "
 "--force"
 
-#: jigdo-file.cc:617
+#: jigdo-file.cc:638
 msgid "%1: Please specify a command"
 msgstr "%1: Bitte geben Sie ein Kommando an"
 
-#: jigdo-file.cc:715
+#: jigdo-file.cc:736
 msgid "%1: Try `%1 -h' or `man jigdo-file' for more information"
 msgstr "%1: Weitere Informationen mit »%1 -h« oder »man jigdo-file«"
 
@@ -792,7 +814,7 @@ msgstr "Cache löschen"
 msgid "Click on lines below to display corresponding info above"
 msgstr "Auf Zeile unten klicken, um Infos über sie oben anzuzeigen"
 
-#: mktemplate.cc:432
+#: mktemplate.cc:435
 msgid "Command supplied with --match-exec failed"
 msgstr "Kommando von --match-exec gab Fehlerstatus zurück"
 
@@ -824,7 +846,7 @@ msgstr "Fehler beim Öffnen von »%1« zur Eingabe: %2"
 msgid "Could not open `%1' for output: %2"
 msgstr "Fehler beim Öffnen von »%1« zur Ausgabe: %2"
 
-#: scan.cc:283
+#: scan.cc:284
 msgid "Could not open `%L1' for input - excluded"
 msgstr "Fehler beim Öffnen von »%L1« zur Eingabe - Datei wird ignoriert"
 
@@ -858,7 +880,7 @@ msgstr "Von »%L1« konnte nicht gelesen werden: %L2"
 msgid "Could not rename `%L1' to `%L2': %L3"
 msgstr "Datei »%L1« konnte nicht in »%L2« umbenannt werden: %L3"
 
-#: mktemplate.cc:424
+#: mktemplate.cc:427
 msgid "Could not set up environment for --match-exec command"
 msgstr "Setzen der Umgebungsvariablen für --match-exec fehlgeschlagen"
 
@@ -866,7 +888,7 @@ msgstr "Setzen der Umgebungsvariablen für --match-exec fehlgeschlagen"
 msgid "Could not truncate `%1' (%2)"
 msgstr "Datei »%1« konnte nicht verkürzt werden (%2)"
 
-#: mktemplate.cc:921 zstream.cc:85 zstream.cc:96
+#: mktemplate.cc:932 zstream.cc:85 zstream.cc:96
 msgid "Could not write template data"
 msgstr "Schreiben der template-Daten schlug fehl"
 
@@ -927,7 +949,7 @@ msgstr "Herunterladen wurde neu gestartet - warte..."
 msgid "Download was stopped manually"
 msgstr "Herunterladen wurde gestoppt"
 
-#: jigdo-file-cmd.cc:409
+#: jigdo-file-cmd.cc:411
 msgid "ERROR: Checksums do not match, image might be corrupted!"
 msgstr "FEHLER: Prüfsummen nicht gleich, Image könnte Fehler enthalten!"
 
@@ -961,7 +983,7 @@ msgstr "Fehler - Zugriff auf temporäre Datei schlug fehl"
 msgid "Error - template data's DESC section invalid"
 msgstr "Fehler - DESC-Abschnitt in template-Daten ungültig"
 
-#: scan.cc:264
+#: scan.cc:265 scan.hh:432
 msgid "Error accessing cache: %1"
 msgstr "Fehler beim Cache-Zugriff: %1"
 
@@ -986,7 +1008,7 @@ msgstr ""
 "Fehler beim Entfernen alter Cache-Einträge: %1. Die Cache-Datei könnte "
 "unbrauchbar geworden sein, eventuell sollten Sie sie löschen."
 
-#: mktemplate.cc:911
+#: mktemplate.cc:922
 msgid "Error during compression: %1"
 msgstr "Fehler bei der Komprimierung: %1"
 
@@ -995,7 +1017,7 @@ msgstr "Fehler bei der Komprimierung: %1"
 msgid "Error loading `%LE1': %LE2"
 msgstr "Fehler beim Laden von »%LE1«: %LE2"
 
-#: scan.cc:280
+#: scan.cc:281
 msgid "Error opening file `-' (using standard input not allowed here)"
 msgstr "Fehler bei Öffnen von »-« (stdin ist hier nicht erlaubt)"
 
@@ -1015,7 +1037,7 @@ msgstr "Fehler beim Lesen der Dateinamen von »%1« (%2)"
 msgid "Error reading filenames from standard input (%1)"
 msgstr "Fehler beim Lesen der Dateinamen von stdin (%2)"
 
-#: mkimage.cc:389 mktemplate.cc:320
+#: mkimage.cc:389 mktemplate.cc:323
 msgid "Error reading from `%1' (%2)"
 msgstr "Fehler beim Lesen von »%1« (%2)"
 
@@ -1027,11 +1049,11 @@ msgstr "Fehler beim Lesen aus Verzeichnis »%1« (%2)"
 msgid "Error reading template data (%1)"
 msgstr "Fehler beim Lesen der Template-Daten - %1"
 
-#: jigdo-file.cc:170
+#: jigdo-file.cc:172
 msgid "Error scanning image - abort"
 msgstr "Fehler beim Scannen der Image-Datei - Abbruch"
 
-#: scan.cc:408
+#: scan.cc:409
 msgid "Error while reading `%1' - file will be ignored (%2)"
 msgstr "Fehler beim Lesen von »%1« - ignoriere Datei (%2)"
 
@@ -1067,7 +1089,7 @@ msgstr "Eingabefeld für Quell-URL bzw -Dateiname ist leer"
 msgid "Finished - fetched %1"
 msgstr "Fertig - %1 heruntergeladen"
 
-#: jigdo-file.cc:180
+#: jigdo-file.cc:182
 msgid "Finished - image size is %1 bytes."
 msgstr "Fertig - Image-Größe ist %1 Bytes."
 
@@ -1249,7 +1271,7 @@ msgstr "Schleife von [Include]-Directiven"
 msgid "MB"
 msgstr "MB"
 
-#: jigdo-file.cc:174
+#: jigdo-file.cc:176
 msgid "Match of `%1' at offset %2"
 msgstr "Datei »%1« an Offset %2 gefunden"
 
@@ -1283,7 +1305,7 @@ msgstr "Non-US"
 msgid "OK"
 msgstr "OK"
 
-#: jigdo-file-cmd.cc:404
+#: jigdo-file-cmd.cc:406
 msgid "OK: Checksums match, image is good!"
 msgstr "OK: Prüfsummen stimmen überein, Image-Datei ist in Ordnung!"
 
@@ -1610,7 +1632,7 @@ msgstr ""
 "Achtung - es wurden keine Dateien angegeben. Das Template wird die "
 "kompletten Image-Daten enthalten!"
 
-#: jigdo-file-cmd.cc:335 jigdo-file-cmd.cc:376
+#: jigdo-file-cmd.cc:337 jigdo-file-cmd.cc:378
 msgid "Warning: This does not seem to be a template file"
 msgstr "Achtung: Dies scheint keine Template-Datei zu sein"
 
@@ -1714,11 +1736,11 @@ msgstr "kB"
 msgid "no proxy"
 msgstr "kein Proxy"
 
-#: jigdo-file.cc:110
+#: jigdo-file.cc:112
 msgid "scanning"
 msgstr "Scanne"
 
-#: jigdo-file.cc:135
+#: jigdo-file.cc:137
 msgid "scanning image"
 msgstr "Scanne Image"
 
@@ -1726,11 +1748,11 @@ msgstr "Scanne Image"
 msgid "since its creation, the template was regenerated."
 msgstr "seit seiner Erzeugung wurde das Template neu erzeugt."
 
-#: jigdo-file.cc:150
+#: jigdo-file.cc:152
 msgid "verifying image"
 msgstr "Verifiziere Image"
 
-#: jigdo-file.cc:166
+#: jigdo-file.cc:168
 msgid "writing image"
 msgstr "Schreibe Image"
 

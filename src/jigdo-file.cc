@@ -374,6 +374,7 @@ inline void printUsage(bool detailed, size_t blockLength,
     "  --no-check-files [make-template,md5sum] when used with --cache,\n"
     "                   [make-image] Do not verify checksums of files\n"
     "  --scan-whole-file [scan] Scan whole file instead of only first block\n"
+    "  --no-scan-whole-file [scan] Scan only first block [default]\n"
     "  --greedy-matching [make-template] Prefer immediate matches of small\n"
     "                   files now over possible (but uncertain) matches of \n"
     "                   larger files later [default]\n"
