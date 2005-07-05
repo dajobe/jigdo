@@ -235,7 +235,10 @@ void MkTemplate::checkRsyncSumMatch2(const size_t blockLen,
      immediately matched once seen), and the first 1024 bytes of file B are
      equal to file A, and file B is in the image.
      [I think A gets matched, then the following line prevents that a partial
-     match for B is also recorded.] */
+     match for B is also recorded.]
+     Also prevents matches whose startOffset is <0, which could otherwise
+     happen because rsum covers a blockLen-sized area of 0x7f bytes at the
+     beginning. */
   if (off < unmatchedStart + blockLen) return;
 
   PartialMatch* x; // Ptr to new entry in "matches"
