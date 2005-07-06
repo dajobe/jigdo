@@ -501,6 +501,8 @@ bool MkTemplate::checkMD5Match(byte* const buf,
 
   if (!greedyMatching && x != oldestMatch) {
     // A larger match is possible, so skip this match
+    debug("IGNORING match due to --no-greedy-matching: [%1,%2) %3",
+          x->startOffset(), off, x->file()->leafName());
     matches->eraseFront(); // return x to free pool
     return SUCCESS;
   }
