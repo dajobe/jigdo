@@ -222,12 +222,12 @@ cvsdist:	Makefile
 		cp src/Makedeps jigdo/src
 		cp src/gtk/interface.cc src/gtk/interface.hh jigdo/src/gtk
 		cd jigdo/po && $(MAKE) -f ../../po/Makefile update-gmo
-		jdir=jigdo-`read a b v <"$(srcdir)/jigdo.spec" && echo $$v`; \
-		    mv jigdo "$$jdir"; \
-		    find "$$jdir" -type f | sort \
+		v=`read a b v <"$(srcdir)/jigdo.spec" && echo $$v`; \
+		    mv jigdo "jigdo-$$v"; \
+		    find "jigdo-$$v" -type f | sort \
 		    | tar --exclude=CVS --exclude=autom4te.cache -T - -cf \
-                          "$$jdir.tar"; \
-		    test -d ~/deb/my && \
-		     gzip -9 -c <"$$jdir.tar" >~/deb/my/"$$jdir.orig.tar.gz"; \
-		    bzip2 -f -9 "$$jdir.tar"; \
-		    rm -rf "$$jdir"
+                          "jigdo-$$v.tar"; \
+		    test -d ~/deb/my && gzip -9 -c \
+		        <"jigdo-$$v.tar" >~/deb/my/"jigdo_$$v.orig.tar.gz"; \
+		    bzip2 -f -9 "jigdo-$$v.tar"; \
+		    rm -rf "jigdo-$$v"
