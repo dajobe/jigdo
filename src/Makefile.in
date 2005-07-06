@@ -44,7 +44,7 @@ CURLCFLAGS =	@CURLCFLAGS@
 CURLLIBS =	@CURLLIBS@
 
 programs =	jigdo-file@exe@ @IF_GUI@ jigdo@exe@
-debug-programs = @IF_DEBUG@ torture@exe@ \
+debug-programs = @IF_DEBUG@ torture@exe@ util/random@exe@ \
 		@IF_GUI@ glibcurl/glibcurl-example@exe@
 #libwww-hacks =	@IF_LIBWWW_HACKS@ net/libwww-HTFTP.o net/libwww-HTHost.o
 windows-res =	@IF_WINDOWS@ jigdo.res
