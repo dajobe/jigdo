@@ -1578,7 +1578,7 @@ msgid ""
 "program"
 msgstr ""
 "Upgrade nötig - diese .jigdo-Datei funktioniert nur mit einer neueren "
-"Version des jigdo-Programs"
+"Version des jigdo-Programms"
 
 #: gtk/jigdo.cc:107
 msgid ""
