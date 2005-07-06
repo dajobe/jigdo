@@ -44,7 +44,7 @@ CURLCFLAGS =	@CURLCFLAGS@
 CURLLIBS =	@CURLLIBS@
 
 programs =	jigdo-file@exe@ @IF_GUI@ jigdo@exe@
-debug-programs = @IF_DEBUG@ torture@exe@ util/random@exe@ \
+debug-programs = torture@exe@ util/random@exe@ \
 		@IF_GUI@ glibcurl/glibcurl-example@exe@
 #libwww-hacks =	@IF_LIBWWW_HACKS@ net/libwww-HTFTP.o net/libwww-HTHost.o
 windows-res =	@IF_WINDOWS@ jigdo.res
@@ -101,8 +101,8 @@ objects-random = util/glibc-md5.o util/log.o util/md5sum.o util/random.o \
 
 .PHONY:         all all-msg clean distclean mostlyclean maintainer-clean \
                 dep depend doc strip test test-v test-c
-all:		all-msg Makefile $(programs) $(debug-programs) \
-		@IF_DEBUG@@IFNOT_GXX2@ test-c @IFNOT_CROSSCOMPILING@ test
+all:		all-msg Makefile $(programs) @IF_DEBUG@ $(debug-programs) \
+		@IFNOT_GXX2@ test-c @IFNOT_CROSSCOMPILING@ test
 all-msg:
 		-@if test "$$EMACS" != t; then \
 		    echo "export cpp='$(CPPFLAGS)'"; \
