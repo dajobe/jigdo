@@ -23,7 +23,9 @@
 #include <url-mapping.hh>
 //______________________________________________________________________
 
-DEBUG_UNIT("url-mapping")
+// "make test" needs the logging built in even if DEBUG=0
+#undef debug
+namespace { Logger debug("url-mapping"); }
 
 namespace {
 
