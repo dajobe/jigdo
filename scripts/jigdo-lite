@@ -698,9 +698,11 @@ if strEmpty "$debianMirror$nonusMirror" && test -f "/etc/apt/sources.list"; then
     while $readLine deb url dist rest; do
         case "$deb $dist" in
             "deb "*/non-US)
-                test "$nonusMirror" = "" && nonusMirror="${url%/}/";;
+                test "$nonusMirror" = "" && \
+                nonusMirror=`echo "$url"|sed 's%^copy://%file://%; s%//*$%/%'`;;
             "deb "*)
-                test "$debianMirror" = "" && debianMirror="${url%/}/";;
+                test "$debianMirror" = "" && \
+                debianMirror=`echo "$url"|sed 's%^copy://%file://%; s%//*$%/%'`;;
         esac
     done <"/etc/apt/sources.list"
 fi
