@@ -1,4 +1,3 @@
-
 /* $Id$ -*- C++ -*-
   __   _
   |_) /|  Copyright (C) 2003  |  richard@
