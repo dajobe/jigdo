@@ -227,5 +227,7 @@ cvsdist:	Makefile
 		    find "$$jdir" -type f | sort \
 		    | tar --exclude=CVS --exclude=autom4te.cache -T - -cf \
                           "$$jdir.tar"; \
+		    test -d ~/deb/my && \
+		     gzip -9 -c <"$$jdir.tar" >~/deb/my/"$$jdir.orig.tar.gz"; \
 		    bzip2 -f -9 "$$jdir.tar"; \
 		    rm -rf "$$jdir"
