@@ -697,6 +697,40 @@
             with an earlier use of this option.</para>
           </listitem>
         </varlistentry>
+
+        <varlistentry>
+          <term><option>--greedy-matching</option></term>
+          <listitem>
+            <para><emphasis>This is the default.</emphasis> Imagine
+            that your image contains a <filename>.tar</filename> file
+            which in turn contains another file
+            <filename>x</filename>, and that you provide both the
+            <filename>.tar</filename> and the files inside it on the
+            command line. When <command>jigdo-file</command> scans the
+            image, it encounters the beginning of the
+            <filename>.tar</filename> file, and then the file
+            <filename>x</filename>.</para>
+
+	    <para>At this point, a decision must be made: Should the
+	    smaller file <filename>x</filename> be recorded as
+	    matched, or should it be ignored in favour of the larger
+	    (and thus better) match of the <filename>.tar</filename>
+	    file?  Unfortunately, at this point it is not clear
+	    whether there will actually be a full match of the
+	    <filename>.tar</filename>, so by default, the program
+	    prefers the small match.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><option>--no-greedy-matching</option></term>
+          <listitem>
+            <para>In the case where a large partial match is present
+            and a shorter match has been confirmed, ignore the small
+            match. (See the option above.)</para>
+          </listitem>
+        </varlistentry>
+
       </variablelist>
 
     </refsect2>
