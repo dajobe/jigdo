@@ -226,7 +226,7 @@ fi
 if test "$have_zlib" != "no"; then LIBS="$have_zlib $LIBS"; fi
 
 
-AC_CHECK_LIB(bz2, BZ2_bzCompressInit, have_bzlib="-lbz2", have_zlib="no")
+AC_CHECK_LIB(bz2, BZ2_bzCompressInit, have_bzlib="-lbz2", have_bzlib="no")
 AC_CHECK_HEADER(bzlib.h, have_bzlib_h="yes", have_bzlib_h="no")
 if test "$have_bzlib" = "no" -o "$have_bzlib_h" = "no"; then
     AC_MSG_RESULT([   * Please install libbz2, it is needed by all of the])
