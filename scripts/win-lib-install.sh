@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # This script will download all necessary libraries to compile jigdo
-# and jigdo-lite under Windows, or to cross-compile it for
+# and jigdo-file under Windows, or to cross-compile it for
 # Windows under Linux. The links are bound to become outdated over
 # time, please send updates to the jigdo-user list.
 
