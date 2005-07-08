@@ -14,6 +14,10 @@ dl=~/samba/gtkwin-$date-dl
 
 # Sourceforge mirror
 sf=mesh.dl.sourceforge.net
+
+if test -f ~/.jigdo-win-lib-install; then
+  . ~/.jigdo-win-lib-install
+fi
 #______________________________________________________________________
 
 cmd() {
@@ -96,4 +100,9 @@ unzip $dl/gettext-runtime-[0-9.]*.zip
 
 # Still missing, but not strictly needed ATM:
 # - libdb
-# - gettext 
+
+# http://curl.haxx.se/download.html
+get http://curl.haxx.se/download/curl-7.13.0-win32-ssl-devel-mingw32.zip
+unzip $dl/curl-[0-9.]*mingw32.zip
+cmd mv libcurl.a libcurldll.a lib/
+cmd mv curl.exe libcurl.dll bin/
