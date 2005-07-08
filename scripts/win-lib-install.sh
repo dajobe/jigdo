@@ -42,7 +42,7 @@ buntar() {
 }
 
 unzip() {
-    cmd /usr/bin/unzip -q "$@"
+    cmd /usr/bin/unzip -q -o "$@"
 }
 #______________________________________________________________________
 
@@ -106,3 +106,9 @@ get http://curl.haxx.se/download/curl-7.13.0-win32-ssl-devel-mingw32.zip
 unzip $dl/curl-[0-9.]*mingw32.zip
 cmd mv libcurl.a libcurldll.a lib/
 cmd mv curl.exe libcurl.dll bin/
+
+# OpenSSL for curl
+# http://curl.haxx.se/download.html
+get http://curl.haxx.se/download/openssl-0.9.7e-win32-bin.zip
+unzip $dl/openssl-[0-9.]*.zip
+mv libeay32.dll libssl32.dll openssl.exe bin/
