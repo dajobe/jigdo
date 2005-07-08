@@ -1,0 +1,99 @@
+#! /bin/sh
+
+# This script will download all necessary libraries to compile jigdo
+# and jigdo-lite under Windows, or to cross-compile it for
+# Windows under Linux. The links are bound to become outdated over
+# time, please send updates to the jigdo-user list.
+
+date=050707
+# Dest dir. Will create subdirs called lib, bin, ...
+inst=~/samba/gtkwin-$date
+
+# Dir for downloaded software tarballs
+dl=~/samba/gtkwin-$date-dl
+
+# Sourceforge mirror
+sf=mesh.dl.sourceforge.net
+#______________________________________________________________________
+
+cmd() {
+    echo "$@"
+    "$@"
+}
+
+cmd rm -rf "$inst/"*
+cmd mkdir -p "$inst"
+cmd mkdir -p "$dl"
+cd "$inst"
+
+get() {
+    cmd wget -nc -nv --directory-prefix="$dl" "$@"
+}
+
+buntar() {
+    echo buntar "$@"
+    for f; do
+	bzip2 -cd "$f" | tar -xf -
+    done
+}
+
+unzip() {
+    cmd /usr/bin/unzip -q "$@"
+}
+#______________________________________________________________________
+
+# GTK+ for Windows
+# http://www.gimp.org/~tml/gimp/win32/downloads.html
+
+get ftp://ftp.gtk.org/pub/gtk/v2.6/win32/glib-2.6.5.zip
+unzip $dl/glib-[0-9]*.zip
+
+get ftp://ftp.gtk.org/pub/gtk/v2.6/win32/glib-dev-2.6.5.zip
+unzip $dl/glib-dev-[0-9]*.zip
+
+get ftp://ftp.gtk.org/pub/gtk/v2.6/win32/gtk+-2.6.8.zip
+unzip $dl/gtk+-[0-9]*.zip
+
+get ftp://ftp.gtk.org/pub/gtk/v2.6/win32/gtk+-dev-2.6.8.zip
+unzip $dl/gtk+-dev-[0-9]*.zip
+
+get ftp://ftp.gtk.org/pub/gtk/v2.6/win32/pango-1.8.0.zip
+unzip $dl/pango-[0-9]*.zip
+
+get ftp://ftp.gtk.org/pub/gtk/v2.6/win32/pango-dev-1.8.0.zip
+unzip $dl/pango-dev-[0-9]*.zip
+
+get ftp://ftp.gtk.org/pub/gtk/v2.6/win32/atk-1.9.0.zip
+unzip $dl/atk-[0-9]*.zip
+
+get ftp://ftp.gtk.org/pub/gtk/v2.6/win32/atk-dev-1.9.0.zip
+unzip $dl/atk-dev-[0-9]*.zip
+
+#______________________________________________________________________
+
+# Various dependencies
+# http://www.gimp.org/~tml/gimp/win32/downloads.html
+
+get http://www.zlib.net/zlib122-dll.zip
+unzip $dl/zlib[0-9]*-dll.zip
+mv zlib1.dll bin/
+
+get http://$sf/sourceforge/gnuwin32/bzip2-1.0.3-lib.zip
+unzip $dl/bzip2-[0-9.]*-lib.zip
+
+get http://$sf/sourceforge/gnuwin32/bzip2-1.0.3-bin.zip
+unzip $dl/bzip2-[0-9.]*-bin.zip
+
+get http://www.gimp.org/~tml/gimp/win32/pkgconfig-0.15.zip
+unzip $dl/pkgconfig-[0-9.]*.zip
+
+get http://www.gimp.org/~tml/gimp/win32/libiconv-1.9.1.bin.woe32.zip
+unzip $dl/libiconv-[0-9.]*.bin*.zip
+
+get http://www.gimp.org/~tml/gimp/win32/gettext-runtime-0.13.1.zip
+unzip $dl/gettext-runtime-[0-9.]*.zip
+#______________________________________________________________________
+
+# Still missing, but not strictly needed ATM:
+# - libdb
+# - gettext 

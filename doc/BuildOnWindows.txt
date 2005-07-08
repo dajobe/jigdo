@@ -4,6 +4,7 @@ There are many different ways of building jigdo for Windows:
 Recommended:
  - On Linux, cross-compiling for Windows. Most comfortable in the long
    run, recommended! Described in detail below.
+ - On Windows, using MinGW + MSYS.
  - On Windows, using Cygwin, but actually calling the MinGW gcc/g++.
    This has the advantage that the final binary will not need the
    Cygwin DLL. Described in detail in the second half of this file.
@@ -25,6 +26,8 @@ window ("DOS window") will open alongside the jigdo window if you
 compile jigdo with --enable-debug. Otherwise, the console window will
 not appear.
 
+scripts/win-lib-install.sh may help you to download and install all
+Windows libraries that jigdo needs.
 
 
 Cross-compiling jigdo on Linux for Windows
