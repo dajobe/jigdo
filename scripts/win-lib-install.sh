@@ -14,7 +14,7 @@ inst=~/samba/gtkwin-$date
 dl=~/samba/gtkwin-$date-dl
 
 # Sourceforge mirror
-sf=mesh.dl.sourceforge.net
+sf=ovh.dl.sourceforge.net
 
 if test -f ~/.jigdo-win-lib-install; then
   . ~/.jigdo-win-lib-install
@@ -32,7 +32,7 @@ cmd mkdir -p "$dl"
 cd "$inst"
 
 get() {
-    cmd wget -nc -nv --directory-prefix="$dl" "$@"
+    cmd wget -nc --directory-prefix="$dl" "$@"
 }
 
 buntar() {
@@ -79,13 +79,17 @@ unzip $dl/atk-dev-[0-9]*.zip
 # Various dependencies
 # http://www.gimp.org/~tml/gimp/win32/downloads.html
 
+get http://$sf/sourceforge/gnuwin32/libpng-1.2.8-lib.zip
+unzip $dl/libpng-[0-9]*-lib.zip
+get http://$sf/sourceforge/gnuwin32/libpng-1.2.8-bin.zip
+unzip $dl/libpng-[0-9]*-bin.zip
+
 get http://www.zlib.net/zlib122-dll.zip
 unzip $dl/zlib[0-9]*-dll.zip
 mv zlib1.dll bin/
 
 get http://$sf/sourceforge/gnuwin32/bzip2-1.0.3-lib.zip
 unzip $dl/bzip2-[0-9.]*-lib.zip
-
 get http://$sf/sourceforge/gnuwin32/bzip2-1.0.3-bin.zip
 unzip $dl/bzip2-[0-9.]*-bin.zip
 
