@@ -6,7 +6,8 @@
 # time, please send updates to the jigdo-user list.
 
 date=050707
-# Dest dir. Will create subdirs called lib, bin, ...
+# Dest dir. WARNING, the dir will be deleted at the beginning of this
+# script! Subdirs called lib, bin, ... will be created.
 inst=~/samba/gtkwin-$date
 
 # Dir for downloaded software tarballs
