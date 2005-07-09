@@ -177,6 +177,7 @@ int main(int argc, char *argv[]) {
       add_pixmap_directory("gfx");
 #     endif
       string pixDir = packageDataDir; pixDir += "pixmaps";
+      add_pixmap_directory("..\\gfx");
       add_pixmap_directory(pixDir.c_str());
     }
     cmdOptions(argc, argv);
