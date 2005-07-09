@@ -735,7 +735,7 @@ fi
 AC_SUBST_FILE(SRC_MAKEDEPS)
 
 dnl Create subdirs in src directory
-for dir in $SUBDIRS; do
+for dir in "" $SUBDIRS; do
     test ! -d "src/$dir" && mkdir "src/$dir"
 done
 AC_OUTPUT(Makefile doc/Makefile src/Makefile po/Makefile)
