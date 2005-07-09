@@ -112,6 +112,11 @@ unzip $dl/curl-[0-9.]*mingw32.zip
 cmd mv libcurl.a libcurldll.a lib/
 cmd mv curl.exe libcurl.dll bin/
 
+#get http://curl.haxx.se/download/libcurl-7.14.0-win32-msvc.zip
+#unzip $dl/libcurl-[0-9.]*-win32-msvc.zip
+#mv libcurl.lib lib/
+#mv libcurl.dll bin/
+
 # OpenSSL for curl
 # http://curl.haxx.se/download.html
 get http://curl.haxx.se/download/openssl-0.9.7e-win32-bin.zip
