@@ -405,6 +405,7 @@ if test "$jigdo_gui" = "yes"; then
   else
     AC_CHECK_LIB(curl, curl_global_init, have_libcurl="-lcurl", have_libcurl="no")
     AC_CHECK_LIB(curldll, curl_global_init, have_libcurl="-lcurldll", )
+    AC_CHECK_LIB(libcurl, curl_global_init, have_libcurl="-llibcurl", )
     AC_CHECK_HEADER(curl/curl.h, have_curl_h="yes", have_curl_h="no")
     if test "$have_libcurl" = "no" -o "$have_curl_h" = "no"; then
         AC_MSG_RESULT([   * Please install libcurl 7.11.0 or later, it is])
