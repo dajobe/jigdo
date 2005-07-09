@@ -189,6 +189,26 @@ fi
 AC_SUBST(IF_DEBUG)
 AC_SUBST(IFNOT_DEBUG)
 
+AC_MSG_CHECKING(for value of --with-pkg-config-prefix)
+AC_ARG_WITH(pkg-config-prefix,
+[  --with-pkg-config-prefix=PATH  When cross-compiling, specify prefix of
+                      libraries/headers for target architecture [none]],
+    jigdo_pkg_config_prefix="$withval", jigdo_pkg_config_prefix="")
+if test "$jigdo_pkg_config_prefix" = ""; then
+    AC_MSG_RESULT(not set)
+    jigdo_pkg_config_switch=""
+else
+    AC_MSG_RESULT(\"$jigdo_pkg_config_prefix\")
+    if test "$GXX" = "yes"; then
+        CFLAGS="$CFLAGS -I$jigdo_pkg_config_prefix/include -L$jigdo_pkg_config_prefix/lib"
+        CXXFLAGS="$CXXFLAGS -I$jigdo_pkg_config_prefix/include -L$jigdo_pkg_config_prefix/lib"
+        CPPFLAGS="$CPPFLAGS -I$jigdo_pkg_config_prefix/include"
+        LDFLAGS="$LDFLAGS -L$jigdo_pkg_config_prefix/lib"
+    fi
+    export PKG_CONFIG_PATH="$jigdo_pkg_config_prefix/lib/pkgconfig"
+    jigdo_pkg_config_prefix="--define-variable=prefix=$jigdo_pkg_config_prefix"
+fi
+
 dnl dnl cppunit
 dnl CPPUNITCFLAGS='# `cppunit-config --cflags`'
 dnl CPPUNITLIBS='# `cppunit-config --libs`'
@@ -346,18 +366,6 @@ CURLCFLAGS="$GTKCFLAGS"
 CURLLIBS="$GTKCFLAGS"
 dnl The following adds flags for GTK+ and glib
 if test "$jigdo_gui" = "yes"; then
-    AC_MSG_CHECKING(for value of --with-pkg-config-prefix)
-    AC_ARG_WITH(pkg-config-prefix,
-    [  --with-pkg-config-prefix=PATH  When cross-compiling, specify prefix of
-                          libraries/headers for target architecture [none]],
-        jigdo_pkg_config_prefix="$withval", jigdo_pkg_config_prefix="")
-    if test "$jigdo_pkg_config_prefix" = ""; then
-        AC_MSG_RESULT(not set)
-    else
-        AC_MSG_RESULT(\"$jigdo_pkg_config_prefix\")
-        jigdo_pkg_config_prefix="--define-variable=prefix=$jigdo_pkg_config_prefix"
-    fi
-
     AC_MSG_CHECKING(for GTK+ 2.4.0 or later)
     gtk_ver="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 --modversion`"
     AC_MSG_RESULT($gtk_ver)
@@ -366,44 +374,11 @@ if test "$jigdo_gui" = "yes"; then
         jigdo_gui_failed
     fi
     if test "$is_windows" = yes; then gth="gthread-2.0"; else gth=""; fi
-#gth="gthread-2.0"
     GTKCFLAGS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 $gth --cflags 2>/dev/null`"
     GTKLIBS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 $gth --libs 2>/dev/null`"
     GLIBLIBS="`pkg-config $jigdo_pkg_config_prefix glib-2.0 $gth --libs 2>/dev/null`"
 fi
-
-dnl dnl The following adds flags for libwww
-dnl if test "$jigdo_gui" = "yes"; then
-dnl     AC_MSG_CHECKING(for libwww 5.3.2 or later)
-dnl     jigdo_libwwwver="`libwww-config --version 2>&1`"
-dnl     AC_MSG_RESULT($jigdo_libwwwver)
-dnl     case "$jigdo_libwwwver" in
-dnl         dnl Extra [] around [0-9] style wildcards, or M4 swallows them
-dnl         [[6-9]*|5.[4-9]*|5.[1-9][0-9]*|5.3.[2-9]*|5.3.[1-9][0-9]*])
-dnl             LIBWWWCFLAGS="`libwww-config --cflags 2>/dev/null`"
-dnl             LIBWWWLIBS="`libwww-config --libs 2>/dev/null`"
-dnl             dnl Some versions of libwww-config include "-I/usr/include" in
-dnl             dnl their --cflags output, which completely upsets some versions
-dnl             dnl of GCC.
-dnl             LIBWWWCFLAGS=`echo " $LIBWWWCFLAGS " | sed -e 's% -I/usr/include/* % %'`
-dnl             dnl If we are cross-compiling for Windows and the wrong
-dnl             dnl (ie host system's) libwww-config was executed above, we
-dnl             dnl may need to turn -lz from its output into -lzdll. Yuk,
-dnl             dnl that's hacky, but then it'll save people some trouble
-dnl             case "$is_windows $LIBS " in
-dnl                 yes*"-lzdll "*)
-dnl                     LIBWWWLIBS=`echo " $LIBWWWLIBS " | sed -e 's% -lz % -lzdll %'`
-dnl             esac
-dnl             ;;
-dnl         *)
-dnl         AC_MSG_RESULT([   * libwww not installed, or the installed version])
-dnl         AC_MSG_RESULT([   * is too old, or libwww-config is not in \$PATH.])
-dnl         AC_MSG_RESULT([   * Please install libwww 5.3.2 or later, it is])
-dnl         AC_MSG_RESULT([   * needed by the jigdo GUI application.])
-dnl         installDevel "libwww" "w3c-libwww-devel/libopenssl0"
-dnl         jigdo_gui_failed
-dnl     esac
-dnl fi
+dnl ____________________
 
 dnl The following adds flags for libcurl
 dnl On Windows, no curl-config is supplied
