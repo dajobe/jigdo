@@ -14,6 +14,7 @@
 #include <config.h>
 
 #include <compat.hh>
+#include <debug.hh>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +28,28 @@
 
 #if HAVE_TRUNCATE
 // No additional code required
+//______________________________________________________________________
+
+#elif WINDOWS
+// Truncate using native Windows API
+int compat_truncate(const char* path, uint64 length) {
+  // TODO error handling: GetLastError(), FormatMessage()
+  HANDLE handle = CreateFile(path, GENERIC_READ | GENERIC_WRITE, 0, 0,
+                             OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+  if (handle == INVALID_HANDLE_VALUE) return -1;
+
+  LARGE_INTEGER targetFileLen;
+  targetFileLen.QuadPart = length;
+  LARGE_INTEGER newFileLen;
+  if (SetFilePointerEx(handle, targetFileLen, &newFileLen, FILE_BEGIN) == 0
+      || SetEndOfFile(handle) == 0U) {
+    CloseHandle(handle);
+    return -1;
+  }
+  Assert(static_cast<uint64>(newFileLen.QuadPart) == length);
+  if (CloseHandle(handle) == 0) return -1;
+  return 0;
+}
 //______________________________________________________________________
 
 #elif !HAVE_TRUNCATE && HAVE_FTRUNCATE
@@ -43,24 +66,6 @@ int compat_truncate(const char* path, uint64 length) {
   if (fd == -1) return -1;
   if (ftruncate(fd, length) != 0) { close(fd); return -1; }
   return close(fd);
-}
-//______________________________________________________________________
-
-#elif !HAVE_TRUNCATE && WINDOWS
-// Truncate using native Windows API
-int compat_truncate(const char* path, uint64 length) {
-  // TODO error handling: GetLastError(), FormatMessage()
-  HANDLE handle = CreateFile(path, GENERIC_READ | GENERIC_WRITE, 0, 0,
-                             OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-  if (handle == INVALID_HANDLE_VALUE) return -1;
-  LONG lengthHi = length >> 32;
-  if (SetFilePointer(handle, length, &lengthHi, FILE_BEGIN) == 0xffffffffU
-      || SetEndOfFile(handle) == 0U) {
-    CloseHandle(handle);
-    return -1;
-  }
-  if (CloseHandle(handle) == 0) return -1;
-  return 0;
 }
 //______________________________________________________________________
 

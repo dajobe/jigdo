@@ -148,6 +148,19 @@ else
 fi
 dnl ________________________________________
 
+dnl Doesn't work
+dnl AC_CACHE_CHECK([whether C++ supports accessing files larger than 4 GB],
+dnl                jigdo_cv_prog_cxx_lfs,
+dnl     AC_TRY_COMPILE([#include <fstream>],
+dnl         [using namespace std; ifstream i; i.seekg(0x100000000, ios::beg);],
+dnl         jigdo_cv_prog_cxx_lfs="yes", jigdo_cv_prog_cxx_lfs="no")
+dnl )
+dnl if test "$jigdo_cv_prog_cxx_lfs" = "no"; then
+dnl     AC_MSG_RESULT([   * There is a problem accessing large files.])
+dnl     AC_MSG_RESULT([   * jigdo may be unable to work with DVD-sized images.])
+dnl fi
+dnl ________________________________________
+
 AC_CHECK_PROG(have_wget, wget, yes, no)
 if test "$have_wget" = "no"; then
     AC_MSG_RESULT([   * wget was not found on your system. Please install])

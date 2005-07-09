@@ -75,6 +75,8 @@ bool JigdoDesc::isTemplate(bistream& file) {
 
 void JigdoDesc::seekFromEnd(bistream& file) throw(JigdoDescError) {
   file.seekg(-6, ios::end);
+  debug("JigdoDesc::seekFromEnd0: now at file offset %1",
+        static_cast<uint64>(file.tellg()));
   uint64 descLen;
   SerialIstreamIterator f(file);
   unserialize6(descLen, f);
@@ -84,6 +86,8 @@ void JigdoDesc::seekFromEnd(bistream& file) throw(JigdoDescError) {
   }
 
   file.seekg(-descLen, ios::end);
+  debug("JigdoDesc::seekFromEnd2: now at file offset %1",
+        static_cast<uint64>(file.tellg()));
 
   size_t toRead = 4;
   byte buf[4];
@@ -92,12 +96,14 @@ void JigdoDesc::seekFromEnd(bistream& file) throw(JigdoDescError) {
   do {
     readBytes(file, b, toRead);
     size_t n = file.gcount();
+    debug("JigdoDesc::seekFromEnd3: read %1, now at file offset %2",
+          n, static_cast<uint64>(file.tellg()));
     //cerr<<"read "<<n<<' '<<file.tellg()<<endl;
     b += n;
     toRead -= n;
   } while (file.good() && toRead > 0);
   if (buf[0] != 'D' || buf[1] != 'E' || buf[2] != 'S' || buf[3] != 'C') {
-    debug("JigdoDesc::seekFromEnd2 %1 %2 %3 %4",
+    debug("JigdoDesc::seekFromEnd4 %1 %2 %3 %4",
           int(buf[0]), int(buf[1]), int(buf[2]), int(buf[3]));
     throw JigdoDescError(_("Invalid template data - corrupted file?"));
   }
