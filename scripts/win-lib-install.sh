@@ -87,6 +87,7 @@ unzip $dl/libpng-[0-9]*-bin.zip
 get http://www.zlib.net/zlib122-dll.zip
 unzip $dl/zlib[0-9]*-dll.zip
 mv zlib1.dll bin/
+cp lib/zdll.lib lib/libz.a # allows -lz to be used for linking
 
 get http://$sf/sourceforge/gnuwin32/bzip2-1.0.3-lib.zip
 unzip $dl/bzip2-[0-9.]*-lib.zip
@@ -107,10 +108,10 @@ unzip $dl/gettext-runtime-[0-9.]*.zip
 # - libdb
 
 # http://curl.haxx.se/download.html
-get http://curl.haxx.se/download/curl-7.13.0-win32-ssl-devel-mingw32.zip
-unzip $dl/curl-[0-9.]*mingw32.zip
-cmd mv libcurl.a libcurldll.a lib/
-cmd mv curl.exe libcurl.dll bin/
+#get http://curl.haxx.se/download/curl-7.13.0-win32-ssl-devel-mingw32.zip
+#unzip $dl/curl-[0-9.]*mingw32.zip
+#cmd mv libcurl.a libcurldll.a lib/
+#cmd mv curl.exe libcurl.dll bin/
 
 #get http://curl.haxx.se/download/libcurl-7.14.0-win32-msvc.zip
 #unzip $dl/libcurl-[0-9.]*-win32-msvc.zip
@@ -119,6 +120,14 @@ cmd mv curl.exe libcurl.dll bin/
 
 # OpenSSL for curl
 # http://curl.haxx.se/download.html
-get http://curl.haxx.se/download/openssl-0.9.7e-win32-bin.zip
-unzip $dl/openssl-[0-9.]*.zip
-mv libeay32.dll libssl32.dll openssl.exe bin/
+
+# This one only has the DLL:
+#get http://curl.haxx.se/download/openssl-0.9.7e-win32-bin.zip
+#unzip $dl/openssl-[0-9.]*.zip
+#mv libeay32.dll libssl32.dll openssl.exe bin/
+
+# This one also has the developer libs, headers etc.
+get http://$sf/sourceforge/gnuwin32/openssl-0.9.7c-lib.zip
+unzip $dl/openssl-[0-9.]*-lib.zip
+get http://$sf/sourceforge/gnuwin32/openssl-0.9.7c-bin.zip
+unzip $dl/openssl-[0-9.]*-bin.zip
