@@ -41,7 +41,7 @@ bistream* openForInput(bistream*& dest, const string& name) throw(Cleanup) {
   }
   bifstream* fdest = new bifstream(name.c_str(), ios::binary);
   dest = fdest;
-  if (!*dest || !fdest->is_open()) {
+  if (!*dest /*|| !fdest->is_open()*/) {
     cerr << subst(_("%1: Could not open `%2' for input: %3"),
                   binName(), name, strerror(errno)) << endl;
     throw Cleanup(3);

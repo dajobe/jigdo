@@ -108,10 +108,10 @@ unzip $dl/gettext-runtime-[0-9.]*.zip
 # - libdb
 
 # http://curl.haxx.se/download.html
-#get http://curl.haxx.se/download/curl-7.13.0-win32-ssl-devel-mingw32.zip
-#unzip $dl/curl-[0-9.]*mingw32.zip
-#cmd mv libcurl.a libcurldll.a lib/
-#cmd mv curl.exe libcurl.dll bin/
+get http://curl.haxx.se/download/curl-7.13.0-win32-ssl-devel-mingw32.zip
+unzip $dl/curl-[0-9.]*mingw32.zip
+cmd mv libcurl.a libcurldll.a lib/
+cmd mv curl.exe libcurl.dll bin/
 
 #get http://curl.haxx.se/download/libcurl-7.14.0-win32-msvc.zip
 #unzip $dl/libcurl-[0-9.]*-win32-msvc.zip
