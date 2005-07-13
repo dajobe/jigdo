@@ -3,6 +3,10 @@ Changelog for Jigsaw Download                               -*- Text -*-
 
 Current CVS version
 
+  -
+
+jigdo 0.7.2 -- Richard Atterer, 12 Jul 2005
+
   - jigdo-file: Added support for bzip2 (de)compression in .template
     files, as an alternative to zlib compression. Bzip2 is disabled by
     default (but may become the default in the future). Use --bzip and
