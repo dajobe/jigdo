@@ -94,7 +94,7 @@ public:
       only valid until the next database operation. */
   Status findName(const byte*& resultData, size_t& resultSize,
                   const string& fileName,
-                  long long int& resultFileSize, time_t& resultMtime);
+                  off_t& resultFileSize, time_t& resultMtime);
 
   /** Insert/overwrite entry for the given file (name must be
       absolute, file must have the supplied mtime and size). The data

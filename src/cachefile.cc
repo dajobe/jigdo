@@ -131,7 +131,7 @@ Status CacheFile::find(const byte*& resultData, size_t& resultSize,
 //________________________________________
 
 Status CacheFile::findName(const byte*& resultData, size_t& resultSize,
-    const string& fileName, long long int& resultFileSize,
+    const string& fileName, off_t& resultFileSize,
     time_t& resultMtime) {
   DBT key; memset(&key, 0, sizeof(DBT));
   key.data = const_cast<char*>(fileName.c_str());

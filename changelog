@@ -3,7 +3,7 @@ Changelog for Jigsaw Download                               -*- Text -*-
 
 Current CVS version
 
-  -
+  - Fix for compilation on 64 bit architectures (sigh, as usual...)
 
 jigdo 0.7.2 -- Richard Atterer, 12 Jul 2005
 
