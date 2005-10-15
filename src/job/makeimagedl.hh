@@ -220,7 +220,7 @@ public:
       &lt;, &gt; &amp; */
   void imageInfo(string* output, bool escapedText,
                  const char* subst[13]) const;
-  /** Helper enum for the offsets above */
+  /** Helper enum for the offsets above. E.g. TT is <tt>, TT_ is </tt> */
   enum { B, B_, I, I_, TT, TT_, U, U_, BIG, BIG_, SMALL, SMALL_, BR };
 
   /** Return ImageInfo as it appears in the .jigdo file. The value has *not*
