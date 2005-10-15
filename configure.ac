@@ -192,7 +192,7 @@ AC_SUBST(IFNOT_DEBUG)
 AC_MSG_CHECKING(for value of --with-pkg-config-prefix)
 AC_ARG_WITH(pkg-config-prefix,
 [  --with-pkg-config-prefix=PATH  When cross-compiling, specify prefix of
-                      libraries/headers for target architecture [none]],
+                          libraries/headers for target architecture [none]],
     jigdo_pkg_config_prefix="$withval", jigdo_pkg_config_prefix="")
 if test "$jigdo_pkg_config_prefix" = ""; then
     AC_MSG_RESULT(not set)
@@ -374,14 +374,26 @@ if test "$jigdo_gui" = "yes"; then
         jigdo_gui_failed
     fi
     if test "$is_windows" = yes; then gth="gthread-2.0"; else gth=""; fi
+dnl gth="gthread-2.0"
     GTKCFLAGS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 $gth --cflags 2>/dev/null`"
     GTKLIBS="`pkg-config $jigdo_pkg_config_prefix gtk+-2.0 $gth --libs 2>/dev/null`"
     GLIBLIBS="`pkg-config $jigdo_pkg_config_prefix glib-2.0 $gth --libs 2>/dev/null`"
 fi
 dnl ____________________
 
+AC_MSG_CHECKING(for value of --with-libcurl)
+AC_ARG_WITH(libcurl,
+    [  --with-libcurl=-lcurl   Use given -l switch instead of trying to
+                          determine the right one],
+    jigdo_libcurl="$withval", jigdo_libcurl="auto")
+AC_MSG_RESULT(\"$jigdo_libcurl\")
+if test "$jigdo_libcurl" = "auto" \
+    || test "$jigdo_libcurl" = "yes" \
+    || test "$jigdo_libcurl" = "no"; then
+    jigdo_libcurl=""
+fi
+
 dnl The following adds flags for libcurl
-dnl On Windows, no curl-config is supplied
 if test "$jigdo_gui" = "yes"; then
   if test "$is_windows" = "no"; then
     AC_MSG_CHECKING(for libcurl 7.11.0 or later)
@@ -394,6 +406,7 @@ if test "$jigdo_gui" = "yes"; then
         [[1-9][0-9].*|[8-9].*|7.1[1-9]*|7.[2-9][0-9]*])
             CURLCFLAGS="`curl-config --cflags 2>/dev/null`"
             CURLLIBS="`curl-config --libs 2>/dev/null`"
+            if test -n "$jigdo_libcurl"; then CURLLIBS="$jigdo_libcurl"; fi
             ;;
         *)
         AC_MSG_RESULT([   * libcurl not installed, or the installed version])
@@ -403,9 +416,19 @@ if test "$jigdo_gui" = "yes"; then
         installDevel "libcurl2" "libcurl2"
     esac
   else
-    AC_CHECK_LIB(curl, curl_global_init, have_libcurl="-lcurl", have_libcurl="no")
-    AC_CHECK_LIB(curldll, curl_global_init, have_libcurl="-lcurldll", )
-    AC_CHECK_LIB(libcurl, curl_global_init, have_libcurl="-llibcurl", )
+    dnl On Windows, no curl-config is supplied
+    if test -n "$jigdo_libcurl"; then
+        have_libcurl="$jigdo_libcurl"
+    else
+        dnl Just -lcurl will attempt static linking. You will need to specify
+        dnl "make X=-DCURL_STATICLIB" for this to work
+        dnl Will try SSL/non-SSL curl
+        AC_CHECK_LIB(curl, curl_global_init, have_libcurl="-lcurl", have_libcurl="no", -lwinmm -lws2_32)
+        AC_CHECK_LIB(curl , curl_global_init, have_libcurl="-lcurl", , -lcurl -lssl -lcrypto -lwinmm -lws2_32)
+	dnl This will pick up DLLs to link against
+        AC_CHECK_LIB(libcurl, curl_global_init, have_libcurl="-llibcurl",)
+        AC_CHECK_LIB(curldll, curl_global_init, have_libcurl="-lcurldll",)
+    fi
     AC_CHECK_HEADER(curl/curl.h, have_curl_h="yes", have_curl_h="no")
     if test "$have_libcurl" = "no" -o "$have_curl_h" = "no"; then
         AC_MSG_RESULT([   * Please install libcurl 7.11.0 or later, it is])
