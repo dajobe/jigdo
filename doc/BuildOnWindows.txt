@@ -27,9 +27,9 @@ These days, jigdo depends on a quite large number of libraries. An
 incomplete list is: zlib, libbzip2, libcurl + OpenSSL, GTK+.
 
 Tracking down, downloading and installing all the Windows versions of
-these libraries, together with heade files, DLLs etc is quite a bit of
-work. For this reason, I have put together a script which does all
-this work for you.
+these libraries, together with header files, DLLs etc is quite a bit of
+work. For this reason, I have put together a script which does all this
+work for you.
 
 "scripts/win-lib-install.sh" only needs to be given destination
 directories for the downloaded .zip files (variable "dl" near the top
