@@ -356,7 +356,7 @@ void GtkSingleUrl::resumeAsk(struct stat* fileInfo) {
 void GtkSingleUrl::resumeResponse(GtkDialog*, int r, gpointer data) {
   GtkSingleUrl* self = static_cast<GtkSingleUrl*>(data);
 
-  if (r == GTK_RESPONSE_CANCEL) {
+  if (r == GTK_RESPONSE_CANCEL || r == GTK_RESPONSE_DELETE_EVENT) {
     delete self;
     return;
   }
@@ -634,7 +634,7 @@ void GtkSingleUrl::afterStartButtonClickedResponse(GtkDialog*, int r,
   GtkSingleUrl* self = static_cast<GtkSingleUrl*>(data);
 
   self->messageBox.set(0);
-  if (r == GTK_RESPONSE_CANCEL) return;
+  if (r == GTK_RESPONSE_CANCEL || r == GTK_RESPONSE_DELETE_EVENT) return;
   self->openOutputAndResume();
   self->updateWindow();
   gtk_label_set_text(GTK_LABEL(GUI::window.download_buttonInfo), "");
@@ -669,7 +669,7 @@ void GtkSingleUrl::on_closeButton_clicked() {
 
 void GtkSingleUrl::afterCloseButtonClickedResponse(GtkDialog*, int r,
                                                    gpointer data) {
-  if (r == GTK_RESPONSE_CANCEL) return;
+  if (r == GTK_RESPONSE_CANCEL || r == GTK_RESPONSE_DELETE_EVENT) return;
   GtkSingleUrl* self = static_cast<GtkSingleUrl*>(data);
   debug("afterCloseButtonClickedResponse: deleting %1", self);
   delete self;
@@ -721,7 +721,7 @@ void GtkSingleUrl::on_restartButton_clicked() {
 
 void GtkSingleUrl::afterRestartButtonClickedResponse(GtkDialog*, int r,
                                                      gpointer data) {
-  if (r == GTK_RESPONSE_CANCEL) return;
+  if (r == GTK_RESPONSE_CANCEL || r == GTK_RESPONSE_DELETE_EVENT) return;
   GtkSingleUrl* self = static_cast<GtkSingleUrl*>(data);
   self->restart();
 }

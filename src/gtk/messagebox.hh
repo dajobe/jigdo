@@ -113,6 +113,16 @@ public:
   inline GtkWidget* addStockButton(const char* buttonType,
                                    GtkResponseType response);
 
+  /** implResponseHandler(GtkDialog* diag, int response, gpointer data)
+      @param diag 
+      @param response Code of response. Either one of the responses you
+      registered, or GTK_RESPONSE_DELETE_EVENT if the user clicked on the
+      window's close icon. If the user presses the Escape key, either any
+      GTK_RESPONSE_CANCEL (if present) is simulated as pressed, or the only
+      button of the dialog is simulated as pressed (if there is only one), or
+      nothing happens (i.e. >1 buttons and none of them is
+      GTK_RESPONSE_CANCEL).
+      @param data The pointer passed to onResponse(). */
   typedef void (*ResponseHandler)(GtkDialog*, int, gpointer);
   /** You must take care yourself to be delivered signals when the user
       clicks on a button. The MessageBox object is deleted when the dialog is
