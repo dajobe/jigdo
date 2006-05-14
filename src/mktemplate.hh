@@ -136,7 +136,7 @@ private:
   void prepareJigdo();
   void finalizeJigdo(const string& imageLeafName,
     const string& templLeafName, const MD5Sum& templMd5Sum);
-  INLINE bool MkTemplate::scanFiles(size_t blockLength, uint32 blockMask,
+  INLINE bool scanFiles(size_t blockLength, uint32 blockMask,
     size_t md5BlockLength);
   INLINE bool scanImage(byte* buf, size_t bufferLength, size_t blockLength,
     uint32 blockMask, size_t md5BlockLength, MD5Sum&);

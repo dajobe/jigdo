@@ -101,7 +101,7 @@ private:
   string curDir;
   stack<Level> recurseStack;
 
-  inline bool RecurseDir::getNextObjectName(string& result)
+  inline bool getNextObjectName(string& result)
     throw(RecurseError);
   queue<string> objects; // Queue of filenames to output/dirs to recurse into
   queue<string> objectsFrom; // Files containing filenames

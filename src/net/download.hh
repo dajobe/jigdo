@@ -126,7 +126,7 @@ private:
   static size_t curlWriter(void* data, size_t size, size_t nmemb,
                            void* selfPtr);
   // Called by glibcurl after curl_multi_perform()
-  static void Download::glibcurlCallback(void*);
+  static void glibcurlCallback(void*);
 
   // Unregister request from glibwww event loop
 //   void pauseNow();

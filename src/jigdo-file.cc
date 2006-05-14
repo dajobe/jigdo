@@ -477,6 +477,14 @@ inline void deduceName(string& dest, const char* ext, const string& src) {
 }
 //______________________________________________________________________
 
+void outOfMemory() {
+  cerr << subst(_("%1: Out of memory - aborted."), binName()) << endl;
+  exit(3);
+}
+//______________________________________________________________________
+
+} // local namespace
+
 enum {
   LONGOPT_BUFSIZE = 0x100, LONGOPT_NOFORCE, LONGOPT_MINSIZE,
   LONGOPT_MD5SIZE, LONGOPT_MKIMAGECHECK, LONGOPT_NOMKIMAGECHECK,
@@ -723,14 +731,6 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
   return result;
 }
 //______________________________________________________________________
-
-void outOfMemory() {
-  cerr << subst(_("%1: Out of memory - aborted."), binName()) << endl;
-  exit(3);
-}
-//______________________________________________________________________
-
-} // local namespace
 
 void exit_tryHelp() {
   cerr << subst(_("%1: Try `%1 -h' or `man jigdo-file' for more "

@@ -54,84 +54,84 @@ namespace {
     throw RecurseError(err);
   }
 
-  //______________________________________________________________________
+} // local namespace
 
-  /* Assign the next object name to result. Returns FAILURE if no more
-     names available. Note: An object name is immediately removed from
-     the start of "objects" when it is copied to "result". The name of
-     a file from which filenames are read, in contrast, stays at the
-     head of "objectsFrom" until the file is closed, to allow for
-     proper error messages to be generated. */
-  bool RecurseDir::getNextObjectName(string& result) throw(RecurseError) {
-    while (true) {
+//______________________________________________________________________
 
-      // Try to assign the name of an object (name or dir) to result
-      if (!objects.empty()) {
-        // Out of single list of object names
-        result = objects.front();
-        //cerr << "getNextObjectName: single " << result << endl;
-        objects.pop();
-        return SUCCESS;
-        //________________________________________
-
-      } else if (listStream != 0) {
-        // Read line from open file or stdin
-        if (listStream->eof()) {
-          if (listStream != &cin) fileList.close();
-          objectsFrom.pop();
-          listStream = 0;
-          continue;
-        }
-        if (!listStream->good()) {
-          string err;
-          if (listStream == &cin) {
-            err = subst(
-                _("Error reading filenames from standard input (%1)"),
-                strerror(errno));
-          } else {
-            err = subst(_("Error reading filenames from `%1' (%2)"),
-                        objectsFrom.front(), strerror(errno));
-            fileList.close();
-          }
-          objectsFrom.pop();
-          listStream = 0;
-          throw RecurseError(err);
-        }
-        Paranoid(listStream == &cin || fileList.is_open());
-        getline(*listStream, result);
-        /* An empty line terminates the list of files - this allows both
-           the list and the image data to be fed to stdin with jigdo */
-        if (result.empty()) {
-          if (listStream != &cin) fileList.close();
-          objectsFrom.pop();
-          listStream = 0;
-          continue;
-        }
-        return SUCCESS;
-        //________________________________________
-
-      } else if (!objectsFrom.empty()) {
-        // Open new file to read lines from
-        //cerr << "getNextObjectName: opening list of filenames"<< endl;
-        Paranoid(listStream == 0);
-        //cerr<<"getNextObjectName: open new " << objectsFrom.front()<< endl;
-        if (objectsFrom.front().size() == 0) {
-          listStream = &cin;
-          continue;
-        }
-        fileList.open(objectsFrom.front().c_str(), ios::binary);
-        listStream = &fileList;
+/* Assign the next object name to result. Returns FAILURE if no more
+   names available. Note: An object name is immediately removed from
+   the start of "objects" when it is copied to "result". The name of
+   a file from which filenames are read, in contrast, stays at the
+   head of "objectsFrom" until the file is closed, to allow for
+   proper error messages to be generated. */
+bool RecurseDir::getNextObjectName(string& result) throw(RecurseError) {
+  while (true) {
+    
+    // Try to assign the name of an object (name or dir) to result
+    if (!objects.empty()) {
+      // Out of single list of object names
+      result = objects.front();
+      //cerr << "getNextObjectName: single " << result << endl;
+      objects.pop();
+      return SUCCESS;
+      //________________________________________
+      
+    } else if (listStream != 0) {
+      // Read line from open file or stdin
+      if (listStream->eof()) {
+        if (listStream != &cin) fileList.close();
+        objectsFrom.pop();
+        listStream = 0;
         continue;
-        //________________________________________
-
-      } else {
-        // Out of luck - no more filenames left to supply to caller
-        return FAILURE;
       }
+      if (!listStream->good()) {
+        string err;
+        if (listStream == &cin) {
+          err = subst(
+                      _("Error reading filenames from standard input (%1)"),
+                      strerror(errno));
+        } else {
+          err = subst(_("Error reading filenames from `%1' (%2)"),
+                      objectsFrom.front(), strerror(errno));
+          fileList.close();
+        }
+        objectsFrom.pop();
+        listStream = 0;
+        throw RecurseError(err);
+      }
+      Paranoid(listStream == &cin || fileList.is_open());
+      getline(*listStream, result);
+      /* An empty line terminates the list of files - this allows both
+         the list and the image data to be fed to stdin with jigdo */
+      if (result.empty()) {
+        if (listStream != &cin) fileList.close();
+        objectsFrom.pop();
+        listStream = 0;
+        continue;
+      }
+      return SUCCESS;
+      //________________________________________
+      
+    } else if (!objectsFrom.empty()) {
+      // Open new file to read lines from
+      //cerr << "getNextObjectName: opening list of filenames"<< endl;
+      Paranoid(listStream == 0);
+      //cerr<<"getNextObjectName: open new " << objectsFrom.front()<< endl;
+      if (objectsFrom.front().size() == 0) {
+        listStream = &cin;
+        continue;
+      }
+      fileList.open(objectsFrom.front().c_str(), ios::binary);
+      listStream = &fileList;
+      continue;
+      //________________________________________
+      
+    } else {
+      // Out of luck - no more filenames left to supply to caller
+      return FAILURE;
     }
   }
-
-} // local namespace
+}
 //________________________________________
 
 bool RecurseDir::getName(string& result, struct stat* fileInfo,
