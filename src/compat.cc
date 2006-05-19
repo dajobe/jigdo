@@ -118,6 +118,10 @@ bool compat_setenv(const char* name, const char* value) {
 //====================================================================
 
 #if !WINDOWS && HAVE_IOCTL_WINSZ && HAVE_FILENO
+// Solaris 10 includes:
+#include <termio.h>
+#include <unistd.h>
+// Linux includes:
 #include <sys/ioctl.h>
 #include <errno.h>
 int ttyWidth() {

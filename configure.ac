@@ -560,7 +560,9 @@ dnl Check whether reading width of TTY via ioctl() works
 AC_CACHE_CHECK([for TIOCGWINSZ ioctl],
                jigdo_cv_ioctl_winsz,
     AC_TRY_COMPILE(
-        [ #include <stdio.h>
+        [ #include <termio.h>
+          #include <unistd.h>
+          #include <stdio.h>
           #include <sys/ioctl.h>],
         [ struct winsize w; int i;
           ioctl(fileno(stdout), TIOCGWINSZ, &w);
