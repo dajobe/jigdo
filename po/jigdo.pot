@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-07-05 14:48+0200\n"
+"POT-Creation-Date: 2006-05-19 18:21+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -246,33 +246,33 @@ msgstr ""
 msgid "%1 hours and %2 minutes"
 msgstr ""
 
-#: jigdo-file-cmd.cc:345
+#: jigdo-file-cmd.cc:347
 msgid "%1 list-template: %2"
 msgstr ""
 
-#: jigdo-file-cmd.cc:319
+#: jigdo-file-cmd.cc:321
 msgid "%1 list-template: --template not specified.\n"
 msgstr ""
 
-#: jigdo-file-cmd.cc:324
+#: jigdo-file-cmd.cc:326
 msgid "%1 list-template: Sorry, cannot read from standard input.\n"
 msgstr ""
 
-#: jigdo-file-cmd.cc:283
+#: jigdo-file-cmd.cc:285
 msgid ""
 "%1 make-image: Not both --image and --template specified.\n"
 "(Attempt to deduce missing names failed.)\n"
 msgstr ""
 
-#: jigdo-file-cmd.cc:229
+#: jigdo-file-cmd.cc:231
 msgid "%1 make-template: Could not read `%2' (%3)"
 msgstr ""
 
-#: jigdo-file-cmd.cc:270
+#: jigdo-file-cmd.cc:272
 msgid "%1 make-template: Could not write `%2' (%3)"
 msgstr ""
 
-#: jigdo-file-cmd.cc:202 jigdo-file-cmd.cc:442
+#: jigdo-file-cmd.cc:204 jigdo-file-cmd.cc:444
 msgid ""
 "%1 make-template: Not all of --image, --jigdo, --template specified.\n"
 "(Attempt to deduce missing names failed.)\n"
@@ -282,54 +282,54 @@ msgstr ""
 msgid "%1 minutes"
 msgstr ""
 
-#: jigdo-file-cmd.cc:479
+#: jigdo-file-cmd.cc:481
 msgid "%1 print-missing: %2"
 msgstr ""
 
-#: jigdo-file-cmd.cc:557
+#: jigdo-file-cmd.cc:559
 msgid "%1 scan: Please specify a --cache file.\n"
 msgstr ""
 
-#: jigdo-file-cmd.cc:383
+#: jigdo-file-cmd.cc:385
 msgid "%1 verify: %2"
 msgstr ""
 
-#: jigdo-file-cmd.cc:389
+#: jigdo-file-cmd.cc:391
 msgid "%1 verify: Invalid template data - corrupted file?"
 msgstr ""
 
-#: jigdo-file-cmd.cc:362
+#: jigdo-file-cmd.cc:364
 msgid ""
 "%1 verify: Not both --image and --template specified.\n"
 "(Attempt to deduce missing names failed.)\n"
 msgstr ""
 
-#: jigdo-file-cmd.cc:351 jigdo-file-cmd.cc:395
+#: jigdo-file-cmd.cc:353 jigdo-file-cmd.cc:397
 msgid "%1: %2"
 msgstr ""
 
-#: jigdo-file-cmd.cc:44 jigdo-file-cmd.cc:65
+#: jigdo-file-cmd.cc:45 jigdo-file-cmd.cc:67
 msgid "%1: Could not open `%2' for input: %3"
 msgstr ""
 
-#: jigdo-file-cmd.cc:96 jigdo-file-cmd.cc:111
+#: jigdo-file-cmd.cc:98 jigdo-file-cmd.cc:113
 msgid "%1: Could not open `%2' for output: %3"
 msgstr ""
 
-#: jigdo-file-cmd.cc:154
+#: jigdo-file-cmd.cc:156
 msgid "%1: Invalid argument to --label: `%2'"
 msgstr ""
 
-#: jigdo-file.cc:575
+#: jigdo-file.cc:583
 msgid ""
 "%1: Invalid argument to --report (allowed: default noprogress quiet grep)"
 msgstr ""
 
-#: jigdo-file-cmd.cc:136
+#: jigdo-file-cmd.cc:138
 msgid "%1: Invalid argument to --uri: `%2'"
 msgstr ""
 
-#: jigdo-file.cc:681
+#: jigdo-file.cc:689
 msgid ""
 "%1: Invalid command `%2'\n"
 "(Must be one of:%3)"
@@ -343,15 +343,15 @@ msgstr ""
 msgid "%1: Invalid time specifier `%2'"
 msgstr ""
 
-#: jigdo-file.cc:728
+#: jigdo-file.cc:481
 msgid "%1: Out of memory - aborted."
 msgstr ""
 
-#: jigdo-file-cmd.cc:82
+#: jigdo-file-cmd.cc:84
 msgid "%1: Output file `%2' already exists - delete it or use --force"
 msgstr ""
 
-#: jigdo-file.cc:638
+#: jigdo-file.cc:646
 msgid "%1: Please specify a command"
 msgstr ""
 
@@ -609,7 +609,7 @@ msgid ""
 "Registered units:"
 msgstr ""
 
-#: job/makeimagedl.cc:230 job/makeimagedl.cc:242
+#: job/makeimagedl.cc:229 job/makeimagedl.cc:241
 msgid "Cache entry %1"
 msgstr ""
 
@@ -617,7 +617,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: mkimage.cc:862
+#: mkimage.cc:868
 msgid "Cannot create image because of missing files"
 msgstr ""
 
@@ -651,7 +651,7 @@ msgstr ""
 msgid "Command supplied with --match-exec failed"
 msgstr ""
 
-#: mkimage.cc:658
+#: mkimage.cc:664
 msgid ""
 "Copied input files to temporary file `%1' - repeat command and supply more "
 "files to continue"
@@ -661,11 +661,11 @@ msgstr ""
 msgid "Corrupted input data"
 msgstr ""
 
-#: job/makeimagedl.cc:128
+#: job/makeimagedl.cc:127
 msgid "Could not create temporary directory: %L1"
 msgstr ""
 
-#: mkimage.cc:667
+#: mkimage.cc:673
 msgid "Could not move finished image from `%1' to `%2' (%3)"
 msgstr ""
 
@@ -673,7 +673,7 @@ msgstr ""
 msgid "Could not open `%1' for input: %2"
 msgstr ""
 
-#: mkimage.cc:905
+#: mkimage.cc:911
 msgid "Could not open `%1' for output: %2"
 msgstr ""
 
@@ -685,7 +685,7 @@ msgstr ""
 msgid "Could not open `%L1' for input: %L2"
 msgstr ""
 
-#: job/makeimagedl.cc:268
+#: job/makeimagedl.cc:267
 msgid "Could not open `%L1' for output: %L2"
 msgstr ""
 
@@ -707,7 +707,7 @@ msgstr ""
 msgid "Could not read from `%L1': %L2"
 msgstr ""
 
-#: job/makeimagedl.cc:407
+#: job/makeimagedl.cc:406
 msgid "Could not rename `%L1' to `%L2': %L3"
 msgstr ""
 
@@ -715,11 +715,11 @@ msgstr ""
 msgid "Could not set up environment for --match-exec command"
 msgstr ""
 
-#: mkimage.cc:639
+#: mkimage.cc:645
 msgid "Could not truncate `%1' (%2)"
 msgstr ""
 
-#: mktemplate.cc:932 zstream.cc:85 zstream.cc:96
+#: mktemplate.cc:934 zstream.cc:85 zstream.cc:96
 msgid "Could not write template data"
 msgstr ""
 
@@ -748,7 +748,7 @@ msgstr ""
 msgid "Default servers"
 msgstr ""
 
-#: mkimage.cc:765
+#: mkimage.cc:771
 msgid "Delete/rename the file or use --force"
 msgstr ""
 
@@ -780,7 +780,7 @@ msgstr ""
 msgid "Download was stopped manually"
 msgstr ""
 
-#: jigdo-file-cmd.cc:411
+#: jigdo-file-cmd.cc:413
 msgid "ERROR: Checksums do not match, image might be corrupted!"
 msgstr ""
 
@@ -801,15 +801,15 @@ msgstr ""
 msgid "Error"
 msgstr ""
 
-#: mkimage.cc:615
+#: mkimage.cc:621
 msgid "Error - could not access temporary file"
 msgstr ""
 
-#: mkimage.cc:543
+#: mkimage.cc:549
 msgid "Error - template data's DESC section invalid"
 msgstr ""
 
-#: scan.cc:265 scan.hh:432
+#: scan.cc:265 scan.hh:433
 msgid "Error accessing cache: %1"
 msgstr ""
 
@@ -832,7 +832,7 @@ msgid ""
 "deleting it."
 msgstr ""
 
-#: mktemplate.cc:922
+#: mktemplate.cc:924
 msgid "Error during compression: %1"
 msgstr ""
 
@@ -853,15 +853,15 @@ msgstr ""
 msgid "Error reading compressed data - %1"
 msgstr ""
 
-#: recursedir.cc:92
+#: recursedir.cc:94
 msgid "Error reading filenames from `%1' (%2)"
 msgstr ""
 
-#: recursedir.cc:89
+#: recursedir.cc:91
 msgid "Error reading filenames from standard input (%1)"
 msgstr ""
 
-#: mkimage.cc:389 mktemplate.cc:323
+#: mkimage.cc:395 mktemplate.cc:323
 msgid "Error reading from `%1' (%2)"
 msgstr ""
 
@@ -869,7 +869,7 @@ msgstr ""
 msgid "Error reading from directory `%1' (%2)"
 msgstr ""
 
-#: mkimage.cc:218
+#: mkimage.cc:224
 msgid "Error reading template data (%1)"
 msgstr ""
 
@@ -881,11 +881,11 @@ msgstr ""
 msgid "Error while reading `%1' - file will be ignored (%2)"
 msgstr ""
 
-#: mkimage.cc:552
+#: mkimage.cc:558
 msgid "Error while writing to `%1' (%2)"
 msgstr ""
 
-#: mkimage.cc:401
+#: mkimage.cc:407
 msgid "Error: `%1' does not match checksum in template data"
 msgstr ""
 
@@ -897,7 +897,7 @@ msgstr ""
 msgid "FTP proxy"
 msgstr ""
 
-#: job/makeimagedl.cc:456
+#: job/makeimagedl.cc:455
 msgid "Failed – see error of child download"
 msgstr ""
 
@@ -917,7 +917,7 @@ msgstr ""
 msgid "Finished - image size is %1 bytes."
 msgstr ""
 
-#: mkimage.cc:833
+#: mkimage.cc:839
 msgid "Found %1 of the %2 files required by the template"
 msgstr ""
 
@@ -938,7 +938,7 @@ msgid ""
 "file downloads, it can also be a filename."
 msgstr ""
 
-#: mkimage.cc:957
+#: mkimage.cc:963
 msgid "Ignoring existing temporary file `%1' - %2"
 msgstr ""
 
@@ -959,15 +959,15 @@ msgstr ""
 msgid "Invalid Template-MD5Sum argument"
 msgstr ""
 
-#: job/url-mapping.cc:237
+#: job/url-mapping.cc:239
 msgid "Invalid argument to --try-first"
 msgstr ""
 
-#: job/url-mapping.cc:246
+#: job/url-mapping.cc:248
 msgid "Invalid argument to --try-last"
 msgstr ""
 
-#: job/makeimagedl.cc:292 job/makeimagedl.cc:330 job/makeimagedl.cc:353
+#: job/makeimagedl.cc:291 job/makeimagedl.cc:329 job/makeimagedl.cc:352
 msgid "Invalid cache entry: `%L1' is not a file"
 msgstr ""
 
@@ -979,8 +979,8 @@ msgstr ""
 msgid "Invalid image name"
 msgstr ""
 
-#: mkimage.cc:83 mkimage.cc:102 mkimage.cc:120 mkimage.cc:212 mkimage.cc:224
-#: mkimage.cc:228
+#: mkimage.cc:85 mkimage.cc:108 mkimage.cc:126 mkimage.cc:218 mkimage.cc:230
+#: mkimage.cc:234
 msgid "Invalid template data - corrupted file?"
 msgstr ""
 
@@ -992,7 +992,7 @@ msgstr ""
 msgid "Jigsaw Download"
 msgstr ""
 
-#: job/makeimagedl.cc:145
+#: job/makeimagedl.cc:144
 msgid ""
 "Jigsaw Download - half-finished download\n"
 "\n"
@@ -1090,7 +1090,7 @@ msgstr ""
 msgid "OK"
 msgstr ""
 
-#: jigdo-file-cmd.cc:406
+#: jigdo-file-cmd.cc:408
 msgid "OK: Checksums match, image is good!"
 msgstr ""
 
@@ -1132,11 +1132,11 @@ msgid ""
 "directory where the CD is mounted, NOT the name of an .iso file."
 msgstr ""
 
-#: mkimage.cc:479
+#: mkimage.cc:485
 msgid "Premature end of template data"
 msgstr ""
 
-#: job/url-mapping.cc:189
+#: job/url-mapping.cc:191
 msgid "Recursive label definition"
 msgstr ""
 
@@ -1174,11 +1174,11 @@ msgstr ""
 msgid "Resuming... %1kB"
 msgstr ""
 
-#: job/makeimagedl.cc:532
+#: job/makeimagedl.cc:531
 msgid "Retrieving .jigdo"
 msgstr ""
 
-#: job/makeimagedl.cc:571
+#: job/makeimagedl.cc:570
 msgid "Retrieving .template"
 msgstr ""
 
@@ -1260,7 +1260,7 @@ msgid ""
 "data and restart the download?"
 msgstr ""
 
-#: mkimage.cc:920
+#: mkimage.cc:926
 msgid ""
 "Sorry, at the moment the Windows port of jigdo cannot create files bigger "
 "than 2 GB. Use the Linux version."
@@ -1274,7 +1274,7 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-#: mkimage.cc:878 mkimage.cc:935
+#: mkimage.cc:884 mkimage.cc:941
 msgid "Successfully created `%1'"
 msgstr ""
 
@@ -1354,13 +1354,13 @@ msgstr ""
 msgid "Waiting..."
 msgstr ""
 
-#: jigdo-file-cmd.cc:209
+#: jigdo-file-cmd.cc:211
 msgid ""
 "Warning - no files specified. The template will contain the complete image "
 "contents!"
 msgstr ""
 
-#: jigdo-file-cmd.cc:337 jigdo-file-cmd.cc:378
+#: jigdo-file-cmd.cc:339 jigdo-file-cmd.cc:380
 msgid "Warning: This does not seem to be a template file"
 msgstr ""
 
@@ -1371,13 +1371,13 @@ msgid ""
 "(from byte %3)?"
 msgstr ""
 
-#: mkimage.cc:854
+#: mkimage.cc:860
 msgid ""
 "Will not create image or temporary file - try again with different input "
 "files"
 msgstr ""
 
-#: mkimage.cc:760
+#: mkimage.cc:766
 msgid "Will not reuse existing temporary file `%1' - %2"
 msgstr ""
 
@@ -1429,7 +1429,7 @@ msgstr ""
 msgid "_Start scan"
 msgstr ""
 
-#: mkimage.cc:682
+#: mkimage.cc:688
 msgid "`%1' is not a template file"
 msgstr ""
 
@@ -1437,15 +1437,15 @@ msgstr ""
 msgid "`%1=...' line missing in [Image] section"
 msgstr ""
 
-#: mkimage.cc:388
+#: mkimage.cc:394
 msgid "file is too short"
 msgstr ""
 
-#: mkimage.cc:708
+#: mkimage.cc:714
 msgid "it corresponds to a different image/template."
 msgstr ""
 
-#: mkimage.cc:705
+#: mkimage.cc:711
 msgid "it was not created by jigdo-file, or is corrupted."
 msgstr ""
 
@@ -1465,7 +1465,7 @@ msgstr ""
 msgid "scanning image"
 msgstr ""
 
-#: mkimage.cc:710 mkimage.cc:714
+#: mkimage.cc:716 mkimage.cc:720
 msgid "since its creation, the template was regenerated."
 msgstr ""
 

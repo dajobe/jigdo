@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: jigdo\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-07-05 14:48+0200\n"
+"POT-Creation-Date: 2006-05-19 18:21+0200\n"
 "PO-Revision-Date: 2005-07-05 14:48+0200\n"
 "Last-Translator: RA -*- coding: utf-8; -*-\n"
 "Language-Team: de\n"
@@ -372,19 +372,19 @@ msgstr "%1 Tage und %2 Stunden"
 msgid "%1 hours and %2 minutes"
 msgstr "%1 Stunden und %2 Minuten"
 
-#: jigdo-file-cmd.cc:345
+#: jigdo-file-cmd.cc:347
 msgid "%1 list-template: %2"
 msgstr "%1 list-template: %2"
 
-#: jigdo-file-cmd.cc:319
+#: jigdo-file-cmd.cc:321
 msgid "%1 list-template: --template not specified.\n"
 msgstr "%1 list-template: --template muss angegeben werden.\n"
 
-#: jigdo-file-cmd.cc:324
+#: jigdo-file-cmd.cc:326
 msgid "%1 list-template: Sorry, cannot read from standard input.\n"
 msgstr "%1 list-template: Sorry, kann nicht von stdin lesen.\n"
 
-#: jigdo-file-cmd.cc:283
+#: jigdo-file-cmd.cc:285
 msgid ""
 "%1 make-image: Not both --image and --template specified.\n"
 "(Attempt to deduce missing names failed.)\n"
@@ -392,15 +392,15 @@ msgstr ""
 "%1 make-image: Es wurde nicht sowohl --image als auch --template\n"
 "angegeben. (Versuch, die Dateinamen zu raten, schlug fehl.)\n"
 
-#: jigdo-file-cmd.cc:229
+#: jigdo-file-cmd.cc:231
 msgid "%1 make-template: Could not read `%2' (%3)"
 msgstr "%1 make-template: Konnte »%2« nicht lesen (%3)"
 
-#: jigdo-file-cmd.cc:270
+#: jigdo-file-cmd.cc:272
 msgid "%1 make-template: Could not write `%2' (%3)"
 msgstr "%1 make-template: Konnte »%2« nicht schreiben (%3)"
 
-#: jigdo-file-cmd.cc:202 jigdo-file-cmd.cc:442
+#: jigdo-file-cmd.cc:204 jigdo-file-cmd.cc:444
 msgid ""
 "%1 make-template: Not all of --image, --jigdo, --template specified.\n"
 "(Attempt to deduce missing names failed.)\n"
@@ -412,23 +412,23 @@ msgstr ""
 msgid "%1 minutes"
 msgstr "%1 Minuten"
 
-#: jigdo-file-cmd.cc:479
+#: jigdo-file-cmd.cc:481
 msgid "%1 print-missing: %2"
 msgstr "%1 print-missing: %2"
 
-#: jigdo-file-cmd.cc:557
+#: jigdo-file-cmd.cc:559
 msgid "%1 scan: Please specify a --cache file.\n"
 msgstr "%1 scan: Bitte geben Sie eine Datei für --cache an.\n"
 
-#: jigdo-file-cmd.cc:383
+#: jigdo-file-cmd.cc:385
 msgid "%1 verify: %2"
 msgstr "%1 verify: %2"
 
-#: jigdo-file-cmd.cc:389
+#: jigdo-file-cmd.cc:391
 msgid "%1 verify: Invalid template data - corrupted file?"
 msgstr "%1 verify: Ungültige template-Daten - kaputte Datei?"
 
-#: jigdo-file-cmd.cc:362
+#: jigdo-file-cmd.cc:364
 msgid ""
 "%1 verify: Not both --image and --template specified.\n"
 "(Attempt to deduce missing names failed.)\n"
@@ -436,33 +436,33 @@ msgstr ""
 "%1 verify: Es wurde nicht sowohl --image als auch --template\n"
 "angegeben. (Versuch, die Dateinamen zu raten, schlug fehl.)\n"
 
-#: jigdo-file-cmd.cc:351 jigdo-file-cmd.cc:395
+#: jigdo-file-cmd.cc:353 jigdo-file-cmd.cc:397
 msgid "%1: %2"
 msgstr "%1: %2"
 
-#: jigdo-file-cmd.cc:44 jigdo-file-cmd.cc:65
+#: jigdo-file-cmd.cc:45 jigdo-file-cmd.cc:67
 msgid "%1: Could not open `%2' for input: %3"
 msgstr "%1: Fehler beim Öffnen von »%2« zur Eingabe: %3"
 
-#: jigdo-file-cmd.cc:96 jigdo-file-cmd.cc:111
+#: jigdo-file-cmd.cc:98 jigdo-file-cmd.cc:113
 msgid "%1: Could not open `%2' for output: %3"
 msgstr "%1: Fehler beim Öffnen von »%2« zur Ausgabe: %3"
 
-#: jigdo-file-cmd.cc:154
+#: jigdo-file-cmd.cc:156
 msgid "%1: Invalid argument to --label: `%2'"
 msgstr "%1: Ungültiges Argument für --label: »%2«"
 
-#: jigdo-file.cc:575
+#: jigdo-file.cc:583
 msgid ""
 "%1: Invalid argument to --report (allowed: default noprogress quiet grep)"
 msgstr ""
 "%1: Ungültiges Argument für --report (Erlaubt: default noprogress quiet grep)"
 
-#: jigdo-file-cmd.cc:136
+#: jigdo-file-cmd.cc:138
 msgid "%1: Invalid argument to --uri: `%2'"
 msgstr "%1: Ungültiges Argument für --uri: »%2«"
 
-#: jigdo-file.cc:681
+#: jigdo-file.cc:689
 msgid ""
 "%1: Invalid command `%2'\n"
 "(Must be one of:%3)"
@@ -478,17 +478,17 @@ msgstr "%1: Ungültige Größenangabe »%2«"
 msgid "%1: Invalid time specifier `%2'"
 msgstr "%1: Ungültige Zeitspanne »%2«"
 
-#: jigdo-file.cc:728
+#: jigdo-file.cc:481
 msgid "%1: Out of memory - aborted."
 msgstr "%1: Nicht genug Speicher - Abbruch."
 
-#: jigdo-file-cmd.cc:82
+#: jigdo-file-cmd.cc:84
 msgid "%1: Output file `%2' already exists - delete it or use --force"
 msgstr ""
 "%1: Ausgabedatei »%2« existiert bereits - löschen Sie sie oder benutzen Sie "
 "--force"
 
-#: jigdo-file.cc:638
+#: jigdo-file.cc:646
 msgid "%1: Please specify a command"
 msgstr "%1: Bitte geben Sie ein Kommando an"
 
@@ -772,7 +772,7 @@ msgstr ""
 "wenn ein »~« vor dem Subsystem-Namen steht, dann wird sie abgeschaltet.\n"
 "Registrierte Subsysteme:"
 
-#: job/makeimagedl.cc:230 job/makeimagedl.cc:242
+#: job/makeimagedl.cc:229 job/makeimagedl.cc:241
 msgid "Cache entry %1"
 msgstr "Cache-Eintrag %1"
 
@@ -780,7 +780,7 @@ msgstr "Cache-Eintrag %1"
 msgid "Cancel"
 msgstr "Schließen"
 
-#: mkimage.cc:862
+#: mkimage.cc:868
 msgid "Cannot create image because of missing files"
 msgstr "Es fehlen noch Dateien zur Erzeugung der Image-Datei"
 
@@ -818,7 +818,7 @@ msgstr "Auf Zeile unten klicken, um Infos über sie oben anzuzeigen"
 msgid "Command supplied with --match-exec failed"
 msgstr "Kommando von --match-exec gab Fehlerstatus zurück"
 
-#: mkimage.cc:658
+#: mkimage.cc:664
 msgid ""
 "Copied input files to temporary file `%1' - repeat command and supply more "
 "files to continue"
@@ -830,11 +830,11 @@ msgstr ""
 msgid "Corrupted input data"
 msgstr "Eingabedaten sind verfälscht"
 
-#: job/makeimagedl.cc:128
+#: job/makeimagedl.cc:127
 msgid "Could not create temporary directory: %L1"
 msgstr "Temporäres Verzeichnis konnte nicht erzeugt werden: %L1"
 
-#: mkimage.cc:667
+#: mkimage.cc:673
 msgid "Could not move finished image from `%1' to `%2' (%3)"
 msgstr "Fertiges Image konnte nicht von »%1« nach »%2« verschoben werden (%3)"
 
@@ -842,7 +842,7 @@ msgstr "Fertiges Image konnte nicht von »%1« nach »%2« verschoben werden (%3
 msgid "Could not open `%1' for input: %2"
 msgstr "Fehler beim Öffnen von »%1« zur Eingabe: %2"
 
-#: mkimage.cc:905
+#: mkimage.cc:911
 msgid "Could not open `%1' for output: %2"
 msgstr "Fehler beim Öffnen von »%1« zur Ausgabe: %2"
 
@@ -854,7 +854,7 @@ msgstr "Fehler beim Öffnen von »%L1« zur Eingabe - Datei wird ignoriert"
 msgid "Could not open `%L1' for input: %L2"
 msgstr "Fehler beim Öffnen von »%L1« zur Eingabe: %L2"
 
-#: job/makeimagedl.cc:268
+#: job/makeimagedl.cc:267
 msgid "Could not open `%L1' for output: %L2"
 msgstr "Fehler beim Öffnen von »%L1« zur Ausgabe: %L2"
 
@@ -876,7 +876,7 @@ msgstr "Ausgabedatei konnte nicht geöffnet werden: %LE1"
 msgid "Could not read from `%L1': %L2"
 msgstr "Von »%L1« konnte nicht gelesen werden: %L2"
 
-#: job/makeimagedl.cc:407
+#: job/makeimagedl.cc:406
 msgid "Could not rename `%L1' to `%L2': %L3"
 msgstr "Datei »%L1« konnte nicht in »%L2« umbenannt werden: %L3"
 
@@ -884,11 +884,11 @@ msgstr "Datei »%L1« konnte nicht in »%L2« umbenannt werden: %L3"
 msgid "Could not set up environment for --match-exec command"
 msgstr "Setzen der Umgebungsvariablen für --match-exec fehlgeschlagen"
 
-#: mkimage.cc:639
+#: mkimage.cc:645
 msgid "Could not truncate `%1' (%2)"
 msgstr "Datei »%1« konnte nicht verkürzt werden (%2)"
 
-#: mktemplate.cc:932 zstream.cc:85 zstream.cc:96
+#: mktemplate.cc:934 zstream.cc:85 zstream.cc:96
 msgid "Could not write template data"
 msgstr "Schreiben der template-Daten schlug fehl"
 
@@ -917,7 +917,7 @@ msgstr "Fehler beim Dekomprimieren"
 msgid "Default servers"
 msgstr "Haupt-Server"
 
-#: mkimage.cc:765
+#: mkimage.cc:771
 msgid "Delete/rename the file or use --force"
 msgstr "Löschen Sie die Datei, benennen Sie sie um oder benutzen Sie --force"
 
@@ -949,7 +949,7 @@ msgstr "Herunterladen wurde neu gestartet - warte..."
 msgid "Download was stopped manually"
 msgstr "Herunterladen wurde gestoppt"
 
-#: jigdo-file-cmd.cc:411
+#: jigdo-file-cmd.cc:413
 msgid "ERROR: Checksums do not match, image might be corrupted!"
 msgstr "FEHLER: Prüfsummen nicht gleich, Image könnte Fehler enthalten!"
 
@@ -975,15 +975,15 @@ msgstr ""
 msgid "Error"
 msgstr "Fehler"
 
-#: mkimage.cc:615
+#: mkimage.cc:621
 msgid "Error - could not access temporary file"
 msgstr "Fehler - Zugriff auf temporäre Datei schlug fehl"
 
-#: mkimage.cc:543
+#: mkimage.cc:549
 msgid "Error - template data's DESC section invalid"
 msgstr "Fehler - DESC-Abschnitt in template-Daten ungültig"
 
-#: scan.cc:265 scan.hh:432
+#: scan.cc:265 scan.hh:433
 msgid "Error accessing cache: %1"
 msgstr "Fehler beim Cache-Zugriff: %1"
 
@@ -1008,7 +1008,7 @@ msgstr ""
 "Fehler beim Entfernen alter Cache-Einträge: %1. Die Cache-Datei könnte "
 "unbrauchbar geworden sein, eventuell sollten Sie sie löschen."
 
-#: mktemplate.cc:922
+#: mktemplate.cc:924
 msgid "Error during compression: %1"
 msgstr "Fehler bei der Komprimierung: %1"
 
@@ -1029,15 +1029,15 @@ msgstr "Fehler bei der Verarbeitung der .jigdo-Datei"
 msgid "Error reading compressed data - %1"
 msgstr "Fehler beim Lesen der komprimierten Daten - %1"
 
-#: recursedir.cc:92
+#: recursedir.cc:94
 msgid "Error reading filenames from `%1' (%2)"
 msgstr "Fehler beim Lesen der Dateinamen von »%1« (%2)"
 
-#: recursedir.cc:89
+#: recursedir.cc:91
 msgid "Error reading filenames from standard input (%1)"
 msgstr "Fehler beim Lesen der Dateinamen von stdin (%2)"
 
-#: mkimage.cc:389 mktemplate.cc:323
+#: mkimage.cc:395 mktemplate.cc:323
 msgid "Error reading from `%1' (%2)"
 msgstr "Fehler beim Lesen von »%1« (%2)"
 
@@ -1045,7 +1045,7 @@ msgstr "Fehler beim Lesen von »%1« (%2)"
 msgid "Error reading from directory `%1' (%2)"
 msgstr "Fehler beim Lesen aus Verzeichnis »%1« (%2)"
 
-#: mkimage.cc:218
+#: mkimage.cc:224
 msgid "Error reading template data (%1)"
 msgstr "Fehler beim Lesen der Template-Daten - %1"
 
@@ -1057,11 +1057,11 @@ msgstr "Fehler beim Scannen der Image-Datei - Abbruch"
 msgid "Error while reading `%1' - file will be ignored (%2)"
 msgstr "Fehler beim Lesen von »%1« - ignoriere Datei (%2)"
 
-#: mkimage.cc:552
+#: mkimage.cc:558
 msgid "Error while writing to `%1' (%2)"
 msgstr "Fehler beim Schreiben in »%1« (%2)"
 
-#: mkimage.cc:401
+#: mkimage.cc:407
 msgid "Error: `%1' does not match checksum in template data"
 msgstr "Fehler: »%1« hat nicht die Prüfsumme, die in der Template-Datei steht"
 
@@ -1073,7 +1073,7 @@ msgstr "Jigsaw Download beenden"
 msgid "FTP proxy"
 msgstr "FTP-Proxy"
 
-#: job/makeimagedl.cc:456
+#: job/makeimagedl.cc:455
 msgid "Failed – see error of child download"
 msgstr "Fehlgeschlagen – siehe Fehlermeldung des Teil-Downloads"
 
@@ -1093,7 +1093,7 @@ msgstr "Fertig - %1 heruntergeladen"
 msgid "Finished - image size is %1 bytes."
 msgstr "Fertig - Image-Größe ist %1 Bytes."
 
-#: mkimage.cc:833
+#: mkimage.cc:839
 msgid "Found %1 of the %2 files required by the template"
 msgstr "%1 der %2 vom Template benötigten Dateien gefunden"
 
@@ -1120,7 +1120,7 @@ msgstr ""
 "Verzeichnisname stehen. Für das Herunterladen einzelner Dateien kann es auch "
 "ein Dateiname sein."
 
-#: mkimage.cc:957
+#: mkimage.cc:963
 msgid "Ignoring existing temporary file `%1' - %2"
 msgstr "Ignoriere bestehende temporäre Datei »%1« - %2"
 
@@ -1141,15 +1141,15 @@ msgstr "Ungültige MD5Sum in Parts-Abschnitt"
 msgid "Invalid Template-MD5Sum argument"
 msgstr "Argument von Template-MD5Sum ungültig"
 
-#: job/url-mapping.cc:237
+#: job/url-mapping.cc:239
 msgid "Invalid argument to --try-first"
 msgstr "Ungültiges Argument für --try-first"
 
-#: job/url-mapping.cc:246
+#: job/url-mapping.cc:248
 msgid "Invalid argument to --try-last"
 msgstr "Ungültiges Argument für --try-last"
 
-#: job/makeimagedl.cc:292 job/makeimagedl.cc:330 job/makeimagedl.cc:353
+#: job/makeimagedl.cc:291 job/makeimagedl.cc:329 job/makeimagedl.cc:352
 msgid "Invalid cache entry: `%L1' is not a file"
 msgstr "Ungültiger Cache-Eintrag: »%L1« ist keine Datei"
 
@@ -1161,8 +1161,8 @@ msgstr "Ungültige Zeichen nach schließendem »]«"
 msgid "Invalid image name"
 msgstr "Ungültiger Image-Name"
 
-#: mkimage.cc:83 mkimage.cc:102 mkimage.cc:120 mkimage.cc:212 mkimage.cc:224
-#: mkimage.cc:228
+#: mkimage.cc:85 mkimage.cc:108 mkimage.cc:126 mkimage.cc:218 mkimage.cc:230
+#: mkimage.cc:234
 msgid "Invalid template data - corrupted file?"
 msgstr "Ungültige Template-Daten - Dateiinhalt zerstört?"
 
@@ -1174,7 +1174,7 @@ msgstr "Logo von jigdo"
 msgid "Jigsaw Download"
 msgstr "Jigsaw Download"
 
-#: job/makeimagedl.cc:145
+#: job/makeimagedl.cc:144
 msgid ""
 "Jigsaw Download - half-finished download\n"
 "\n"
@@ -1305,7 +1305,7 @@ msgstr "Non-US"
 msgid "OK"
 msgstr "OK"
 
-#: jigdo-file-cmd.cc:406
+#: jigdo-file-cmd.cc:408
 msgid "OK: Checksums match, image is good!"
 msgstr "OK: Prüfsummen stimmen überein, Image-Datei ist in Ordnung!"
 
@@ -1366,11 +1366,11 @@ msgstr ""
 "Verzeichnis angeben, unter dem die CD eingebunden (gemountet) ist, NICHT den "
 "Namen einer .iso-Datei."
 
-#: mkimage.cc:479
+#: mkimage.cc:485
 msgid "Premature end of template data"
 msgstr "Vorzeitiges Ende der Template-Daten"
 
-#: job/url-mapping.cc:189
+#: job/url-mapping.cc:191
 msgid "Recursive label definition"
 msgstr "Rekursive Label-Definition"
 
@@ -1408,11 +1408,11 @@ msgstr "Herunterladen wieder aufgenommen - überlappender Bereich %1kB"
 msgid "Resuming... %1kB"
 msgstr "Wieder aufnehmen... %1kB"
 
-#: job/makeimagedl.cc:532
+#: job/makeimagedl.cc:531
 msgid "Retrieving .jigdo"
 msgstr "Lade .jigdo herunter"
 
-#: job/makeimagedl.cc:571
+#: job/makeimagedl.cc:570
 msgid "Retrieving .template"
 msgstr "Lade .template herunter"
 
@@ -1504,7 +1504,7 @@ msgstr ""
 "Es wurden bereits Daten heruntergeladen. Sind Sie sicher, dass sie diese "
 "löschen und das Herunterladen neu starten wollen?"
 
-#: mkimage.cc:920
+#: mkimage.cc:926
 msgid ""
 "Sorry, at the moment the Windows port of jigdo cannot create files bigger "
 "than 2 GB. Use the Linux version."
@@ -1520,7 +1520,7 @@ msgstr "Scan starten"
 msgid "Status"
 msgstr "Status"
 
-#: mkimage.cc:878 mkimage.cc:935
+#: mkimage.cc:884 mkimage.cc:941
 msgid "Successfully created `%1'"
 msgstr "»%1« wurde erfolgreich erzeugt"
 
@@ -1624,7 +1624,7 @@ msgstr "Warte"
 msgid "Waiting..."
 msgstr "Warte..."
 
-#: jigdo-file-cmd.cc:209
+#: jigdo-file-cmd.cc:211
 msgid ""
 "Warning - no files specified. The template will contain the complete image "
 "contents!"
@@ -1632,7 +1632,7 @@ msgstr ""
 "Achtung - es wurden keine Dateien angegeben. Das Template wird die "
 "kompletten Image-Daten enthalten!"
 
-#: jigdo-file-cmd.cc:337 jigdo-file-cmd.cc:378
+#: jigdo-file-cmd.cc:339 jigdo-file-cmd.cc:380
 msgid "Warning: This does not seem to be a template file"
 msgstr "Achtung: Dies scheint keine Template-Datei zu sein"
 
@@ -1646,7 +1646,7 @@ msgstr ""
 "LE1« %2 Bytes, aber jetzt sind es %3 Bytes. Wollen Sie den Download wirklich "
 "wieder (von Byte %3 an) aufnehmen?"
 
-#: mkimage.cc:854
+#: mkimage.cc:860
 msgid ""
 "Will not create image or temporary file - try again with different input "
 "files"
@@ -1654,7 +1654,7 @@ msgstr ""
 "Es wird keine Image-Datei oder temporäre Datei erzeugt - versuchen Sie es "
 "mit anderen Eingabedateien"
 
-#: mkimage.cc:760
+#: mkimage.cc:766
 msgid "Will not reuse existing temporary file `%1' - %2"
 msgstr "Existierende temporäre Datei »%1« wird nicht verwendet - %2"
 
@@ -1708,7 +1708,7 @@ msgstr "_Einfache Auswahl, nach Land: "
 msgid "_Start scan"
 msgstr "_Scan starten"
 
-#: mkimage.cc:682
+#: mkimage.cc:688
 msgid "`%1' is not a template file"
 msgstr "»%1« ist keine Template-Datei"
 
@@ -1716,15 +1716,15 @@ msgstr "»%1« ist keine Template-Datei"
 msgid "`%1=...' line missing in [Image] section"
 msgstr "Zeile »%1=...« fehlt im [Image]-Abschnitt"
 
-#: mkimage.cc:388
+#: mkimage.cc:394
 msgid "file is too short"
 msgstr "Datei ist zu klein"
 
-#: mkimage.cc:708
+#: mkimage.cc:714
 msgid "it corresponds to a different image/template."
 msgstr "sie gehört zu einem anderen Image/Template."
 
-#: mkimage.cc:705
+#: mkimage.cc:711
 msgid "it was not created by jigdo-file, or is corrupted."
 msgstr "sie wurde nicht von jigdo-file erzeugt oder ist zerstört."
 
@@ -1744,7 +1744,7 @@ msgstr "Scanne"
 msgid "scanning image"
 msgstr "Scanne Image"
 
-#: mkimage.cc:710 mkimage.cc:714
+#: mkimage.cc:716 mkimage.cc:720
 msgid "since its creation, the template was regenerated."
 msgstr "seit seiner Erzeugung wurde das Template neu erzeugt."
 
