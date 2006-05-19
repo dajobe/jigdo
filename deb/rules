@@ -3,9 +3,6 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-# This is the debhelper compatibility version to use.
-export DH_COMPAT=2
-
 # Non-standard default goal. This also does enough to allow you to
 # compile from CVS just by typing "deb/rules"
 build-deb: debian/changelog
