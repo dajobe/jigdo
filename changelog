@@ -1,9 +1,11 @@
 Changelog for Jigsaw Download                               -*- Text -*-
 ------------------------------------------------------------------------
 
-Current CVS version
+jigdo 0.7.3 -- Richard Atterer, 19 May 2006
 
+  - A maintenance release with some bug fixes
   - Fix for compilation on 64 bit architectures (sigh, as usual...)
+  - Fixes to make the code compile cleanly with GCC 4.1
 
 jigdo 0.7.2 -- Richard Atterer, 12 Jul 2005
 
