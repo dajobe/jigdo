@@ -1,6 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl $Id$
-AC_INIT(src/jigdo-file.cc)
+AC_INIT
+AC_CONFIG_SRCDIR([src/jigdo-file.cc])
 AC_CONFIG_HEADER(src/config.h)
 dnl ______________________________________________________________________
 
@@ -34,13 +35,13 @@ dnl ______________________________________________________________________
 
 dnl Checks for programs.
 AC_PROG_AWK
-AC_LANG_C
+AC_LANG([C])
 AC_PROG_CC
 dnl Add -Wno-unused-parameter to CFLAGS if supported
 dnl ORIG_CFLAGS="$CFLAGS"
 dnl CFLAGS="$CFLAGS -Wno-unused-parameter" # GCC >=3.0
-dnl AC_TRY_COMPILE(, int x = 0, , CFLAGS="$ORIG_CFLAGS")
-AC_LANG_CPLUSPLUS
+dnl AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[int x = 0]])],[],[CFLAGS="$ORIG_CFLAGS"])
+AC_LANG([C++])
 AC_PROG_CXX
 CFLAGS=`echo "$CFLAGS" | sed 's/\(^\| \)-g\( \|$\)/ /'`
 CXXFLAGS=`echo "$CXXFLAGS" | sed 's/\(^\| \)-g\( \|$\)/ /'`
@@ -104,8 +105,7 @@ dnl ____________________
 
 AC_CACHE_CHECK(whether the C++ compiler is recent enough,
                jigdo_cv_prog_cxx_recent,
-    AC_TRY_COMPILE(
-    #include <vector>
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <vector>
     namespace A {
       namespace B {
         template<typename T = double> struct X {
@@ -114,7 +114,7 @@ AC_CACHE_CHECK(whether the C++ compiler is recent enough,
         template<> struct X<void> { void function(void* t, int* u); };
       }
       void B::X<void>::function(void*, int*) { }
-    },, jigdo_cv_prog_cxx_recent="yes", jigdo_cv_prog_cxx_recent="no")
+    }]], [[]])],[jigdo_cv_prog_cxx_recent="yes"],[jigdo_cv_prog_cxx_recent="no"])
 )
 if test "$jigdo_cv_prog_cxx_recent" = "no"; then
     AC_MSG_RESULT([   * Your compiler failed to recognize some advanced C++])
@@ -128,8 +128,7 @@ dnl ________________________________________
 dnl C99-style vararg macros are not supported by GCC 2.95
 AC_CACHE_CHECK([whether the C++ preprocessor supports variable-arg macros],
                jigdo_cv_prog_cxx_varmacro,
-    AC_TRY_COMPILE(
-    #if defined(__GNUC__) && __GNUC__ < 3
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#if defined(__GNUC__) && __GNUC__ < 3
     #  define debug(_args...) do { } while (false)
     #else
     #  define debug(...) do { } while (false)
@@ -139,7 +138,7 @@ AC_CACHE_CHECK([whether the C++ preprocessor supports variable-arg macros],
       debug("!");
       debug("%1", debug);
       return debug;
-    },, jigdo_cv_prog_cxx_varmacro="yes", jigdo_cv_prog_cxx_varmacro="no")
+    }]], [[]])],[jigdo_cv_prog_cxx_varmacro="yes"],[jigdo_cv_prog_cxx_varmacro="no"])
 )
 if test "$jigdo_cv_prog_cxx_varmacro" = "yes"; then
     AC_DEFINE(HAVE_VARMACRO, 1)
@@ -151,9 +150,7 @@ dnl ________________________________________
 dnl Doesn't work
 dnl AC_CACHE_CHECK([whether C++ supports accessing files larger than 4 GB],
 dnl                jigdo_cv_prog_cxx_lfs,
-dnl     AC_TRY_COMPILE([#include <fstream>],
-dnl         [using namespace std; ifstream i; i.seekg(0x100000000, ios::beg);],
-dnl         jigdo_cv_prog_cxx_lfs="yes", jigdo_cv_prog_cxx_lfs="no")
+dnl     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <fstream>]], [[dnl         using namespace std; ifstream i; i.seekg(0x100000000, ios::beg);]])],[dnl         jigdo_cv_prog_cxx_lfs="yes"],[jigdo_cv_prog_cxx_lfs="no"])
 dnl )
 dnl if test "$jigdo_cv_prog_cxx_lfs" = "no"; then
 dnl     AC_MSG_RESULT([   * There is a problem accessing large files.])
@@ -221,18 +218,15 @@ dnl     ORIG_LIBS="$LIBS"
 dnl     LIBS="$LIBS $CPPUNITCFLAGS $CPPUNITLIBS"
 dnl     AC_CACHE_CHECK([whether cppunit works],
 dnl                    jigdo_cv_prog_cppunit,
-dnl         AC_TRY_LINK(
-dnl             [ #include <cppunit/extensions/TestFactoryRegistry.h>
+dnl         AC_LINK_IFELSE([AC_LANG_PROGRAM([[dnl              #include <cppunit/extensions/TestFactoryRegistry.h>
 dnl               #include <cppunit/ui/text/TestRunner.h>
 dnl               #include <cppunit/CompilerOutputter.h>
-dnl               using namespace CppUnit; ],
-dnl             [ TextUi::TestRunner runner;
+dnl               using namespace CppUnit; ]], [[dnl              TextUi::TestRunner runner;
 dnl               TestFactoryRegistry& registry =
 dnl                   TestFactoryRegistry::getRegistry();
 dnl               runner.addTest(registry.makeTest());
-dnl               runner.run("", false); ],
-dnl             jigdo_cv_prog_cppunit="yes", jigdo_cv_prog_cppunit="no"
-dnl         )
+dnl               runner.run("", false); ]])],[dnl             jigdo_cv_prog_cppunit="yes"],[jigdo_cv_prog_cppunit="no"
+dnl         ])
 dnl     )
 dnl     LIBS="$ORIG_LIBS"
 dnl     if test "$jigdo_cv_prog_cppunit" = "yes"; then
@@ -305,8 +299,7 @@ if test "$jigdo_libdb" = "yes"; then
         AC_MSG_CHECKING(for db_create in lib$db)
         oldLIBS="$LIBS"
         LIBS="$LIBS -l$db"
-        AC_TRY_LINK([#include <db.h>], db_create(0, 0, 0),
-                     have_libdb="yes", have_libdb="no")
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <db.h>]], [[db_create(0, 0, 0)]])],[have_libdb="yes"],[have_libdb="no"])
         AC_MSG_RESULT($have_libdb)
         if test "$have_libdb" != "no"; then break; fi
         LIBS="$oldLIBS"
@@ -469,8 +462,7 @@ AC_ARG_WITH(uint64,
 AC_MSG_RESULT(\"$jigdo_uint64\")
 
 AC_CACHE_CHECK(for unsigned long long, jigdo_cv_have_ulonglong,
-    AC_TRY_COMPILE(, unsigned long long x = 0,
-                   jigdo_cv_have_ulonglong=yes, jigdo_cv_have_ulonglong=no))
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[unsigned long long x = 0]])],[jigdo_cv_have_ulonglong=yes],[jigdo_cv_have_ulonglong=no]))
 if test "$jigdo_cv_have_ulonglong" = "yes"; then
     AC_DEFINE(HAVE_UNSIGNED_LONG_LONG, 1)
 else
@@ -506,13 +498,10 @@ AC_DEFINE_UNQUOTED(TYPE_UINT64, $jigdo_uint64)
 
 AC_CACHE_CHECK(for operator<<(uint64),
                jigdo_cv_prog_cxx_outuint64,
-    AC_TRY_COMPILE(
-    [ #include <iostream>
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ #include <iostream>
       namespace std { }
-      using namespace std; ],
-    [ $jigdo_uint64 x;
-      cout << x << endl; ],
-    jigdo_cv_prog_cxx_outuint64="yes", jigdo_cv_prog_cxx_outuint64="no")
+      using namespace std; ]], [[ $jigdo_uint64 x;
+      cout << x << endl; ]])],[jigdo_cv_prog_cxx_outuint64="yes"],[jigdo_cv_prog_cxx_outuint64="no"])
 )
 if test "$jigdo_cv_prog_cxx_outuint64" = "yes"; then
     AC_DEFINE(HAVE_OUTUINT64, 1)
@@ -522,13 +511,10 @@ fi
 
 AC_CACHE_CHECK([for string::compare(size_t,size_t,string,size_t,size_t)],
                jigdo_cv_prog_cxx_stringcmp,
-    AC_TRY_COMPILE(
-    [ #include <string>
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ #include <string>
       namespace std { }
-      using namespace std; ],
-    [ string s, t;
-      s.compare(0, std::string::npos, t, 0, std::string::npos); ],
-    jigdo_cv_prog_cxx_stringcmp="yes", jigdo_cv_prog_cxx_stringcmp="no")
+      using namespace std; ]], [[ string s, t;
+      s.compare(0, std::string::npos, t, 0, std::string::npos); ]])],[jigdo_cv_prog_cxx_stringcmp="yes"],[jigdo_cv_prog_cxx_stringcmp="no"])
 )
 if test "$jigdo_cv_prog_cxx_stringcmp" = "yes"; then
     AC_DEFINE(HAVE_STRINGCMP, 1)
@@ -537,13 +523,10 @@ else
 fi
 AC_CACHE_CHECK([for string::compare(size_t,size_t,const char*,size_t)],
                jigdo_cv_prog_cxx_stringstrcmp,
-    AC_TRY_COMPILE(
-    [ #include <string>
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ #include <string>
       namespace std { }
-      using namespace std; ],
-    [ string s; const char* t = "x";
-      s.compare(0, std::string::npos, t, 1); ],
-    jigdo_cv_prog_cxx_stringstrcmp="yes", jigdo_cv_prog_cxx_stringstrcmp="no")
+      using namespace std; ]], [[ string s; const char* t = "x";
+      s.compare(0, std::string::npos, t, 1); ]])],[jigdo_cv_prog_cxx_stringstrcmp="yes"],[jigdo_cv_prog_cxx_stringstrcmp="no"])
 )
 if test "$jigdo_cv_prog_cxx_stringstrcmp" = "yes"; then
     AC_DEFINE(HAVE_STRINGSTRCMP, 1)
@@ -559,15 +542,12 @@ AC_CHECK_FUNCS(lstat truncate ftruncate mmap memcpy fileno snprintf \
 dnl Check whether reading width of TTY via ioctl() works
 AC_CACHE_CHECK([for TIOCGWINSZ ioctl],
                jigdo_cv_ioctl_winsz,
-    AC_TRY_COMPILE(
-        [ #include <termio.h>
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ #include <termio.h>
           #include <unistd.h>
           #include <stdio.h>
-          #include <sys/ioctl.h>],
-        [ struct winsize w; int i;
+          #include <sys/ioctl.h>]], [[ struct winsize w; int i;
           ioctl(fileno(stdout), TIOCGWINSZ, &w);
-          i = w.ws_col; ],
-        jigdo_cv_ioctl_winsz="yes", jigdo_cv_ioctl_winsz="no")
+          i = w.ws_col; ]])],[jigdo_cv_ioctl_winsz="yes"],[jigdo_cv_ioctl_winsz="no"])
 )
 if test "$jigdo_cv_ioctl_winsz" = "yes"; then
     AC_DEFINE(HAVE_IOCTL_WINSZ, 1)
@@ -583,12 +563,9 @@ fi
 dnl Check whether getopt_long is present
 AC_CACHE_CHECK([for getopt_long in <getopt.h>],
                jigdo_cv_func_getopt_long,
-    AC_TRY_LINK(
-        [ #include <getopt.h> ],
-        [[ static const struct option longopts[] = { { 0, 0, 0, 0 } };
-          int c = getopt_long(0, 0, "", longopts, 0); ]],
-        jigdo_cv_func_getopt_long="yes", jigdo_cv_func_getopt_long="no"
-    )
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[ #include <getopt.h> ]], [[[ static const struct option longopts[] = { { 0, 0, 0, 0 } };
+          int c = getopt_long(0, 0, "", longopts, 0); ]]])],[jigdo_cv_func_getopt_long="yes"],[jigdo_cv_func_getopt_long="no"
+    ])
 )
 if test "$jigdo_cv_func_getopt_long" = "yes"; then
     AC_DEFINE(HAVE_GETOPT_LONG, 1)
@@ -599,11 +576,8 @@ fi
 dnl Check whether uname() is present
 AC_CACHE_CHECK([for uname in <sys/utsname.h>],
                jigdo_cv_func_uname,
-    AC_TRY_LINK(
-        [ #include <sys/utsname.h> ],
-        [ struct utsname ubuf; uname(&ubuf); ],
-        jigdo_cv_func_uname="yes", jigdo_cv_func_uname="no"
-    )
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[ #include <sys/utsname.h> ]], [[ struct utsname ubuf; uname(&ubuf); ]])],[jigdo_cv_func_uname="yes"],[jigdo_cv_func_uname="no"
+    ])
 )
 if test "$jigdo_cv_func_uname" = "yes"; then
     AC_DEFINE(HAVE_UNAME, 1)
@@ -617,11 +591,9 @@ if test "$ac_cv_func_snprintf" = no -a "$ac_cv_func__snprintf" = "yes"; then
 fi
 dnl On native Windows, must use _stati64 for big file support
 AC_CACHE_CHECK(for _stati64, jigdo_cv_func__stati64,
-    AC_TRY_COMPILE([ #include <sys/types.h>
-                     #include <sys/stat.h>],
-                   [ struct __stati64 buf;
-                     int x = _stati64("file", &buf);],
-                   jigdo_cv_func__stati64=yes, jigdo_cv_func__stati64=no))
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ #include <sys/types.h>
+                     #include <sys/stat.h>]], [[ struct __stati64 buf;
+                     int x = _stati64("file", &buf);]])],[jigdo_cv_func__stati64=yes],[jigdo_cv_func__stati64=no]))
 if test "$is_windows" = "yes" -a "$ac_cv_func__stati64" = "yes"; then
     AC_DEFINE(stat, _stati64)
 fi
@@ -638,14 +610,12 @@ CATALOGS=""
 if test "$USE_NLS" = "yes"; then
     oldLIBS="$LIBS"
     AC_MSG_CHECKING(for dgettext in <libintl.h> and libc)
-    AC_TRY_LINK([#include <libintl.h>], dgettext(0, 0),
-                have_intl="yes", have_intl="no");
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <libintl.h>]], [[dgettext(0, 0)]])],[have_intl="yes"],[have_intl="no"]);
     AC_MSG_RESULT($have_intl)
     if test "$have_intl" = "no"; then
         LIBS="$LIBS -lintl";
         AC_MSG_CHECKING(for dgettext in <libintl.h> and -lintl)
-        AC_TRY_LINK([#include <libintl.h>], dgettext(0, 0),
-                    have_intl="yes", have_intl="no");
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <libintl.h>]], [[dgettext(0, 0)]])],[have_intl="yes"],[have_intl="no"]);
         AC_MSG_RESULT($have_intl)
     fi
     if test "$have_intl" = "no"; then
@@ -752,4 +722,5 @@ dnl Create subdirs in src directory
 for dir in "" $SUBDIRS; do
     test ! -d "src/$dir" && mkdir "src/$dir"
 done
-AC_OUTPUT(Makefile doc/Makefile src/Makefile po/Makefile)
+AC_CONFIG_FILES([Makefile doc/Makefile src/Makefile po/Makefile])
+AC_OUTPUT
