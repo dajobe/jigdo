@@ -15,7 +15,7 @@
 
 #include <time.h>
 #include <errno.h>
-
+#include <string.h>
 #include <autoptr.hh>
 #include <gtk-single-url.hh>
 #include <joblist.hh>

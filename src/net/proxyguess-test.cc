@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <map>
 #include <sstream>
+#include <memory>
 #include <glib.h>
 
 #include <debug.hh>

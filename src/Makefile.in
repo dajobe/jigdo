@@ -50,11 +50,12 @@ debug-programs = torture@exe@ util/random@exe@ \
 windows-res =	@IF_WINDOWS@ jigdo.res
 test-programs =	job/jigdo-io-test@exe@ \
 		job/makeimagedl-info-test@exe@ job/url-mapping-test@exe@ \
-		net/proxyguess-test@exe@ net/uri-test@exe@ \
+		net/proxyguess-test@exe@ \
 		util/autonullptr-test@exe@ util/rsyncsum-test@exe@ \
 		util/gunzip-test@exe@ util/log-test@exe@ \
 		util/md5sum-test@exe@ util/mimestream-test@exe@ \
 		util/string-utf-test@exe@
+# net/uri-test@exe@ needs curl
 
 # fmt -s -w1|sed 's%[^a-zA-Z0-9./-]\+%%g'|sort|fmt -w60|sed 's%$% \\%'
 objects-jigdo =	compat.o glibcurl/glibcurl.o gtk/gtk-makeimage.o \

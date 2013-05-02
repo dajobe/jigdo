@@ -29,6 +29,7 @@
 #include <config.h>
 
 #include <cstdlib>
+#include <cstring>
 #include <iosfwd>
 #include <string>
 

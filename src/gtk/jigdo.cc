@@ -12,10 +12,10 @@
 #include <config.h>
 
 #if DEBUG
-#  include <string.h>
 #  include <unistd-jigdo.h>
 #endif
 
+#include <string.h>
 #include <iostream>
 #include <string>
 #include <vector>

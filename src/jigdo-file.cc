@@ -770,6 +770,7 @@ int main(int argc, char* argv[]) {
     case JigdoFileCmd::LIST_TEMPLATE:
       returnValue = JigdoFileCmd::listTemplate(); break;
     case JigdoFileCmd::MD5SUM:
+      JigdoFileCmd::optCheckFiles = true; // Quick fix, possibly not 100% correct
       returnValue = JigdoFileCmd::md5sumFiles();  break;
     }
   }

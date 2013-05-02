@@ -18,7 +18,7 @@
 
 #include <iostream>
 #include <fstream>
-
+#include <cstring>
 #include <configfile.hh>
 #include <string.hh>
 //______________________________________________________________________

@@ -20,6 +20,7 @@
 
 #include <string>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd-jigdo.h>
 #include <sys/stat.h>
 #include <sys/types.h>
