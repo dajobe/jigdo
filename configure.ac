@@ -288,7 +288,7 @@ if test "$jigdo_libdb" = "yes"; then
     printf "#include <db.h>\nDB_VERSION_MAJOR DB_VERSION_MINOR\n" >conftest.c
     set x `eval $ac_cpp conftest.c | egrep '^ *[[0-9]] *'`; v="$2"; vv="$3"
     AC_MSG_RESULT($v.$vv)
-    if test "$v" -ne 3 -a "$v" -ne 4; then
+    if test "$v" != 3 -a "$v" != 4; then
         AC_MSG_RESULT([   * Warning: jigdo is only known to work with libdb])
         AC_MSG_RESULT([   * version 3 or 4 - maybe you should up/downgrade.])
         installDevel "libdb4.2" "libdb4"
