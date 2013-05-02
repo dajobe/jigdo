@@ -651,7 +651,7 @@ JigdoFileCmd::Command JigdoFileCmd::cmdOptions(int argc, char* argv[]) {
   Command result;
   {
     const char* command = argv[optind++];
-    struct CodesEntry { char* name; Command code; };
+    struct CodesEntry { const char* name; Command code; };
     const CodesEntry codes[] = {
       { "make-template",     MAKE_TEMPLATE },
       { "mt",                MAKE_TEMPLATE },
